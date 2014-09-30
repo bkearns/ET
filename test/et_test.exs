@@ -22,10 +22,18 @@ defmodule ETTest do
           end
        end, nil}
     assert {inc_trans, [nil, nil]} = ET.compose([inc_transducer], list_constructor)
-    assert inc_trans.({:init, [nil, nil]})         == {:cont, [], [nil, nil]}
-    assert inc_trans.({:cont, 0, [2], [nil, nil]}) == {:cont, [1, 2], [nil, nil]}
-    assert inc_trans.({:close, [2,1], [nil, nil]}) == {:close, [1, 2], [nil, nil]}
+    inc_tests({inc_trans, [nil, nil]})
   end
 
-  
+  test "ET.mapping" do
+    inc_trans = [ET.mapping(fn input -> input + 1 end)]
+    |> ET.compose(list_constructor)
+    |> inc_tests
+  end
+
+  defp inc_tests({inc_trans, state}) do
+    assert inc_trans.({:init, state})         == {:cont, [], [nil, nil]}
+    assert inc_trans.({:cont, 0, [2], state}) == {:cont, [1, 2], [nil, nil]}
+    assert inc_trans.({:close, [2,1], state}) == {:close, [1, 2], [nil, nil]}    
+  end
 end
