@@ -10,7 +10,7 @@ defmodule ETTest do
     end
   end
 
-  test "ET.compose" do
+  test "ET.compose/2" do
     inc_transducer = 
       {fn step -> fn trans_wrap ->
          {msg, acc, state} = 
@@ -26,7 +26,7 @@ defmodule ETTest do
     inc_tests({inc_trans, [nil, nil]})
   end
 
-  test "ET.mapping" do
+  test "ET.mapping/1" do
     [ET.mapping(fn input -> input + 1 end)]
     |> ET.compose(list_constructor)
     |> inc_tests
