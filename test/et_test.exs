@@ -3,9 +3,9 @@ defmodule ETTest do
 
   defmacro list_constructor do
     quote do
-      {fn {:init,  [nil]}              -> {:cont, [], [nil]}
-          {:cont,  input,  acc, [nil]} -> {:cont, [input | acc], [nil]}
-          {:close, acc,    [nil]}      -> {:close, :lists.reverse(acc), [nil]}
+      {fn [nil]              -> {:cont, {[], [nil]}}
+          {input, acc, [nil]} -> {:cont, {[input | acc], [nil]}}
+          {acc, [nil]}      -> {:halt, {:lists.reverse(acc), [nil]}}
        end, [nil]}
     end
   end
@@ -13,13 +13,13 @@ defmodule ETTest do
   test "ET.compose/2" do
     inc_transducer = 
       {fn step -> fn trans_wrap ->
-         {msg, acc, state} = 
+         {msg, {acc, state}} = 
            case trans_wrap do
-             {:init, [nil | state]} -> step.({:init, state})
-             {:close, acc, [nil | state]} -> step.({:close, acc, state})
-             {:cont, input, acc, [nil | state]} -> step.({:cont, input + 1, acc, state})
+             [nil | state] -> step.(state)
+             {acc, [nil | state]} -> step.({acc, state})
+             {input, acc, [nil | state]} -> step.({input + 1, acc, state})
            end
-         {msg, acc, [nil | state]}
+         {msg, {acc, [nil | state]}}
        end end, nil}
 
     assert {inc_trans, [nil, nil]} = ET.compose([inc_transducer], list_constructor)
@@ -33,9 +33,9 @@ defmodule ETTest do
   end
 
   defp inc_tests({inc_trans, state}) do
-    assert inc_trans.({:init, state})         == {:cont, [], [nil, nil]}
-    assert inc_trans.({:cont, 0, [2], state}) == {:cont, [1, 2], [nil, nil]}
-    assert inc_trans.({:close, [2,1], state}) == {:close, [1, 2], [nil, nil]}    
+    assert inc_trans.(state)         == {:cont, {[], [nil, nil]}}
+    assert inc_trans.({0, [2], state}) == {:cont, {[1, 2], [nil, nil]}}
+    assert inc_trans.({[2,1], state}) == {:halt, {[1, 2], [nil, nil]}} 
   end
 
   test "ET.reduce/3" do
