@@ -12,21 +12,22 @@ defmodule ETTest do
 
   test "ET.compose" do
     inc_transducer = 
-      {fn step -> 
-            fn {:init, [nil | state]}            -> {msg, return, state} = step.({:init, state})
-              {msg, return, [nil | state]}
-              {:cont, input, acc, [nil | state]} -> {msg, return, state} = step.({:cont, input + 1, acc, state})
-              {msg, return, [nil | state]}
-              {:close, acc, [nil | state]}       -> {msg, return, state} = step.({:close, acc, state})
-              {msg, return, [nil | state]}
-          end
-       end, nil}
+      {fn step -> fn trans_wrap ->
+         {msg, acc, state} = 
+           case trans_wrap do
+             {:init, [nil | state]} -> step.({:init, state})
+             {:close, acc, [nil | state]} -> step.({:close, acc, state})
+             {:cont, input, acc, [nil | state]} -> step.({:cont, input + 1, acc, state})
+           end
+         {msg, acc, [nil | state]}
+       end end, nil}
+
     assert {inc_trans, [nil, nil]} = ET.compose([inc_transducer], list_constructor)
     inc_tests({inc_trans, [nil, nil]})
   end
 
   test "ET.mapping" do
-    inc_trans = [ET.mapping(fn input -> input + 1 end)]
+    [ET.mapping(fn input -> input + 1 end)]
     |> ET.compose(list_constructor)
     |> inc_tests
   end
