@@ -37,4 +37,11 @@ defmodule ETTest do
     assert inc_trans.({:cont, 0, [2], state}) == {:cont, [1, 2], [nil, nil]}
     assert inc_trans.({:close, [2,1], state}) == {:close, [1, 2], [nil, nil]}    
   end
+
+  test "ET.reduce/3" do
+    inc_trans = [ET.mapping(&(&1+1))]
+      |> ET.compose(list_constructor)
+
+    assert ET.reduce([1,2,3], [], inc_trans) == [2,3,4]
+  end
 end

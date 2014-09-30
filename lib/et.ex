@@ -15,4 +15,26 @@ defmodule ET do
        end |> prepend_state(nil)
      end end, nil}
   end
+
+  def reduce(coll, init, {trans, state}) do
+    do_reduce(coll, {:cont, init, state}, trans)
+  end
+
+  defp do_reduce(coll, {:init, state}, trans) do
+    do_reduce(coll, trans.({:init, state}), trans)
+  end
+  defp do_reduce(coll, {:cont, acc, state}, trans) do
+    case Transducible.next(coll) do
+      :empty -> do_reduce(coll, {:close, acc, state}, trans)
+      {next, rem} ->
+        do_reduce(rem, trans.({:cont, next, acc, state}), trans)
+    end
+  end
+  defp do_reduce(coll, {:halt, acc, state}, trans) do
+    do_reduce(coll, {:close, acc, state}, trans)
+  end
+  defp do_reduce(_coll, {:close, acc, state}, trans) do
+    {_msg, result, _state} = trans.({:close, acc, state})
+    result
+  end
 end
