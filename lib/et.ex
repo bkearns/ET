@@ -16,6 +16,11 @@ defmodule ET do
      end end, nil}
   end
 
+
+  def reduce(coll, {trans, state}) do
+    do_reduce(coll, {:init, state}, trans)
+  end
+
   def reduce(coll, init, {trans, state}) do
     do_reduce(coll, {:cont, init, state}, trans)
   end

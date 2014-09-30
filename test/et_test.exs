@@ -44,4 +44,11 @@ defmodule ETTest do
 
     assert ET.reduce([1,2,3], [], inc_trans) == [2,3,4]
   end
+
+  test "ET.reduce/2" do
+    inc_trans = [ET.mapping(&(&1+1))]
+      |> ET.compose(list_constructor)
+
+    assert ET.reduce([1,2,3], inc_trans) == [2,3,4]
+  end
 end
