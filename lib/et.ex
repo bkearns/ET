@@ -9,8 +9,8 @@ defmodule ET do
   def mapping(fun) do
     {fn step -> fn trans_wrap ->
        case trans_wrap do
-         [nil | state] -> step.(state)
-         {acc, [nil | state]} -> step.({acc, state})
+         [nil | state]               -> step.(state)
+         {acc, [nil | state]}        -> step.({acc, state})
          {input, acc, [nil | state]} -> step.({fun.(input), acc, state})
        end |> prepend_state(nil)
      end end, nil}

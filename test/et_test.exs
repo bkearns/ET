@@ -3,9 +3,9 @@ defmodule ETTest do
 
   defmacro list_constructor do
     quote do
-      {fn [nil]              -> {:cont, {[], [nil]}}
+      {fn [nil]               -> {:cont, {[], [nil]}}
           {input, acc, [nil]} -> {:cont, {[input | acc], [nil]}}
-          {acc, [nil]}      -> {:halt, {:lists.reverse(acc), [nil]}}
+          {acc, [nil]}        -> {:halt, {:lists.reverse(acc), [nil]}}
        end, [nil]}
     end
   end
@@ -15,8 +15,8 @@ defmodule ETTest do
       {fn step -> fn trans_wrap ->
          {msg, {acc, state}} = 
            case trans_wrap do
-             [nil | state] -> step.(state)
-             {acc, [nil | state]} -> step.({acc, state})
+             [nil | state]               -> step.(state)
+             {acc, [nil | state]}        -> step.({acc, state})
              {input, acc, [nil | state]} -> step.({input + 1, acc, state})
            end
          {msg, {acc, [nil | state]}}
@@ -33,9 +33,9 @@ defmodule ETTest do
   end
 
   defp inc_tests({inc_trans, state}) do
-    assert inc_trans.(state)         == {:cont, {[], [nil, nil]}}
+    assert inc_trans.(state)           == {:cont, {[], [nil, nil]}}
     assert inc_trans.({0, [2], state}) == {:cont, {[1, 2], [nil, nil]}}
-    assert inc_trans.({[2,1], state}) == {:halt, {[1, 2], [nil, nil]}} 
+    assert inc_trans.({[2,1], state})  == {:halt, {[1, 2], [nil, nil]}} 
   end
 
   test "ET.reduce/3" do
