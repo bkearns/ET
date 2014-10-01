@@ -13,4 +13,4 @@ With transducers, we separate concerns and produce composable functions which tr
 
 No documentation and a lot of missing conveniences, but the core is here and implmented in not much code.
 
-I can find surprisingly little on the subject and have based what I have done mostly on (a talk by Rich Hickey)[https://www.youtube.com/watch?v=6mTbuzafcII]. Resources and thoughts are welcome, although I apologize if I am slow to respond.
+I can find surprisingly little on the subject and have based what I have done mostly on [a talk by Rich Hickey](https://www.youtube.com/watch?v=6mTbuzafcII). Resources and thoughts are welcome, although I apologize if I am slow to respond.
