@@ -17,7 +17,7 @@ defmodule ET do
   end
 
   def reduce(coll, init, {trans, state}) do
-    {msg, {acc, new_state}} = Enumerable.reduce(coll, {:cont, {init, state}}, reducify(trans))
+    {_msg, {acc, new_state}} = Enumerable.reduce(coll, {:cont, {init, state}}, reducify(trans))
     {:halt, {result, _state}} = trans.({acc, new_state})
     result
   end
@@ -28,4 +28,20 @@ defmodule ET do
   end
 
   defp reducify(trans), do: fn input, {acc, state} -> trans.({input, acc, state}) end
+
+  def stateful_transducer(fun, init_state) do
+    {fn step -> 
+      # initialization
+      fn [my_state | rem_state] -> prepend_state(step.(rem_state), my_state)
+      # completion
+         {acc, [my_state | rem_state]} -> prepend_state(step.({acc, rem_state}), my_state)
+      # action
+         {input, acc, [my_state | rem_state]} ->
+           case fun.(input, acc, my_state) do
+             {:halt, acc, new_state} -> {:halt, {acc, [new_state | rem_state]}}
+             {:cont, input, acc, new_state} -> prepend_state(step.({input, acc, rem_state}), new_state)
+           end
+      end
+    end, init_state}
+  end
 end

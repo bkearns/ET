@@ -51,4 +51,14 @@ defmodule ETTest do
 
     assert ET.reduce([1,2,3], inc_trans) == [2,3,4]
   end
+
+  test "ET.stateful_transducer/2" do
+    take_2 = ET.stateful_transducer(
+      fn
+        _input, acc, 0 -> {:halt, acc, 0}
+        input, acc, n -> {:cont, input, acc, n-1}
+      end, 2)
+    take_2_trans = ET.compose([take_2], list_constructor)
+    assert ET.reduce([1,2,3,4], take_2_trans) == [1,2]
+  end
 end
