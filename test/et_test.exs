@@ -54,8 +54,8 @@ defmodule ETTest do
     assert ET.reduce([1,2,3], inc_trans) == [2,3,4]
   end
 
-  test "ET.stateful_transducer/2" do
-    take_2 = ET.stateful_transducer(
+  test "ET.stateful/2" do
+    take_2 = ET.stateful(
       fn
         _input, 0 -> {:halt, 0}
         input, n  -> {:cont, input, n-1}

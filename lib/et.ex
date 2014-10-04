@@ -34,7 +34,7 @@ defmodule ET do
 
   defp reducify(trans), do: fn input, state -> trans.({:cont, input, state}) end
 
-  def stateful_transducer(fun, init_state) do
+  def stateful(fun, init_state) do
     fn step ->
       fn 
         # initialization
