@@ -9,10 +9,9 @@ defmodule ET do
   def map(fun) do
     fn step ->
       fn
-        :init                 -> step.(:init)
-        {:init, init}         -> step.({:init, init})
         {:fin, state}         -> step.({:fin, state})
         {:cont, input, state} -> step.({:cont, fun.(input), state})
+        init                  -> step.(init)
       end
     end
   end
@@ -36,10 +35,7 @@ defmodule ET do
 
   def stateful(fun, init_state) do
     fn step ->
-      fn 
-        # initialization
-        :init         -> step.(:init)         |> prepend_state(init_state)
-        {:init, init} -> step.({:init, init}) |> prepend_state(init_state)
+      fn
         # completion
         {:fin, [my_state | rem_state]} ->
           step.({:fin, rem_state})
@@ -51,6 +47,8 @@ defmodule ET do
               step.({:cont, input, rem_state})
               |> prepend_state(new_state)
           end
+        # initialization
+        init -> step.(init) |> prepend_state(init_state)
       end
     end
   end
