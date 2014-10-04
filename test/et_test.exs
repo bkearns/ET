@@ -27,8 +27,8 @@ defmodule ETTest do
      inc_tests(inc_trans, [])
   end
 
-  test "ET.mapping/1" do
-    [ET.mapping(fn input -> input + 1 end)]
+  test "ET.map/1" do
+    [ET.map(fn input -> input + 1 end)]
     |> ET.compose(list_constructor)
     |> inc_tests([])
   end
@@ -41,14 +41,14 @@ defmodule ETTest do
   end
 
   test "ET.reduce/3" do
-    inc_trans = [ET.mapping(&(&1+1))]
+    inc_trans = [ET.map(&(&1+1))]
       |> ET.compose(list_constructor)
 
     assert ET.reduce([1,2,3], [], inc_trans) == [2,3,4]
   end
 
   test "ET.reduce/2" do
-    inc_trans = [ET.mapping(&(&1+1))]
+    inc_trans = [ET.map(&(&1+1))]
       |> ET.compose(list_constructor)
 
     assert ET.reduce([1,2,3], inc_trans) == [2,3,4]

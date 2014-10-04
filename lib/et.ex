@@ -6,7 +6,7 @@ defmodule ET do
 
   def prepend_state({msg, state}, new_state), do: {msg, [new_state | state]}
 
-  def mapping(fun) do
+  def map(fun) do
     fn step ->
       fn
         :init                 -> step.(:init)
