@@ -3,39 +3,42 @@ defmodule ETTest do
 
   defmacro list_constructor do
     quote do
-      {fn [nil]               -> {:cont, {[], [nil]}}
-          {input, acc, [nil]} -> {:cont, {[input | acc], [nil]}}
-          {acc, [nil]}        -> {:halt, {:lists.reverse(acc), [nil]}}
-       end, [nil]}
+      fn
+        :state           -> []
+        []               -> {:cont, {[], []}}
+        {acc, []}        -> {:halt, {:lists.reverse(acc), []}}
+        {input, acc, []} -> {:cont, {[input | acc], []}}
+      end
     end
   end
 
   test "ET.compose/2" do
     inc_transducer = 
-      {fn step -> fn trans_wrap ->
-         {msg, {acc, state}} = 
-           case trans_wrap do
-             [nil | state]               -> step.(state)
-             {acc, [nil | state]}        -> step.({acc, state})
-             {input, acc, [nil | state]} -> step.({input + 1, acc, state})
-           end
-         {msg, {acc, [nil | state]}}
-       end end, nil}
+      fn step -> 
+        sub_state = step.(:state)
+        fn
+          :state                    -> sub_state
+          state when is_list(state) -> step.(state)
+          {acc, state}              -> step.({acc, state})
+          {input, acc, state}       -> step.({input + 1, acc, state})
+         end
+       end
 
-    assert {inc_trans, [nil, nil]} = ET.compose([inc_transducer], list_constructor)
-    inc_tests({inc_trans, [nil, nil]})
+    inc_trans = ET.compose([inc_transducer], list_constructor)
+    assert inc_trans.(:state) == []
+    inc_tests(inc_trans, [])
   end
 
   test "ET.mapping/1" do
     [ET.mapping(fn input -> input + 1 end)]
     |> ET.compose(list_constructor)
-    |> inc_tests
+    |> inc_tests([])
   end
 
-  defp inc_tests({inc_trans, state}) do
-    assert inc_trans.(state)           == {:cont, {[], [nil, nil]}}
-    assert inc_trans.({0, [2], state}) == {:cont, {[1, 2], [nil, nil]}}
-    assert inc_trans.({[2,1], state})  == {:halt, {[1, 2], [nil, nil]}} 
+  defp inc_tests(inc_trans, state) do
+    assert inc_trans.(state)           == {:cont, {[], []}}
+    assert inc_trans.({0, [2], state}) == {:cont, {[1, 2], []}}
+    assert inc_trans.({[2,1], state})  == {:halt, {[1, 2], []}} 
   end
 
   test "ET.reduce/3" do
