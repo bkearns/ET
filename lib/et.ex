@@ -4,53 +4,54 @@ defmodule ET do
   end
   def compose([], reducer), do: reducer
 
-  def prepend_state({msg, {acc, state}}, new_state), do: {msg, {acc, [new_state | state]}}
+  def prepend_state({msg, state}, new_state), do: {msg, [new_state | state]}
 
   def mapping(fun) do
     fn step ->
-      sub_state = step.(:state)
       fn
-        :state                    -> sub_state
-        state when is_list(state) -> step.(state)
-        {acc, state}              -> step.({acc, state})
-        {input, acc, state}       -> step.({fun.(input), acc, state})
+        :init                 -> step.(:init)
+        {:init, init}         -> step.({:init, init})
+        {:comp, state}        -> step.({:comp, state})
+        {:cont, input, state} -> step.({:cont, fun.(input), state})
       end
     end
   end
 
   def reduce(coll, init, trans) do
-    state = trans.(:state)
-    {_msg, {acc, new_state}} = Enumerable.reduce(coll, {:cont, {init, state}}, reducify(trans))
-    {:halt, {result, _state}} = trans.({acc, new_state})
-    result
+    do_reduce(coll, trans.({:init, init}), trans)
   end
 
   def reduce(coll, trans) do
-    state = trans.(:state)
-    {:cont, {init, new_state}} = trans.(state)
-    reduce(coll, init, trans)
+    do_reduce(coll, trans.(:init), trans)
   end
 
-  defp reducify(trans), do: fn input, {acc, state} -> trans.({input, acc, state}) end
+  defp do_reduce(coll, init, trans) do
+    {_msg, new_state} =
+      Enumerable.reduce(coll, init, reducify(trans))
+    {:comp, result} = trans.({:comp, new_state})
+    result    
+  end
+
+  defp reducify(trans), do: fn input, state -> trans.({:cont, input, state}) end
 
   def stateful_transducer(fun, init_state) do
     fn step ->
-      sub_state = step.(:state)
-      fn
-        # state_builder
-        :state -> [init_state | sub_state]
+      fn 
         # initialization
-        [my_state | rem_state] -> prepend_state(step.(rem_state), my_state)
+        :init         -> step.(:init)         |> prepend_state(init_state)
+        {:init, init} -> step.({:init, init}) |> prepend_state(init_state)
         # completion
-        {acc, [my_state | rem_state]} -> prepend_state(step.({acc, rem_state}), my_state)
+        {:comp, [my_state | rem_state]} ->
+          step.({:comp, rem_state})
         # action
-        {input, acc, [my_state | rem_state]} ->
-          case fun.(input, acc, my_state) do
-            {:halt, acc, new_state} -> {:halt, {acc, [new_state | rem_state]}}
-            {:cont, input, acc, new_state} ->
-              prepend_state(step.({input, acc, rem_state}), new_state)
+        {:cont, input, [my_state | rem_state]} ->
+          case fun.(input, my_state) do
+            {:halt, new_state} -> {:halt, [new_state | rem_state]}
+            {:cont, input, new_state} ->
+              step.({:cont, input, rem_state})
+              |> prepend_state(new_state)
           end
-       end
+      end
     end
   end
 end

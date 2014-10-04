@@ -4,29 +4,27 @@ defmodule ETTest do
   defmacro list_constructor do
     quote do
       fn
-        :state           -> []
-        []               -> {:cont, {[], []}}
-        {acc, []}        -> {:halt, {:lists.reverse(acc), []}}
-        {input, acc, []} -> {:cont, {[input | acc], []}}
+        :init                            -> { :cont, [[]] }
+        {:init, init} when is_list(init) -> { :cont, [init] }
+        {:comp, [acc]}                   -> { :comp, :lists.reverse(acc) }
+        {:cont, input, [acc]}            -> { :cont, [[input | acc]] }
       end
     end
   end
 
   test "ET.compose/2" do
     inc_transducer = 
-      fn step -> 
-        sub_state = step.(:state)
+      fn step ->
         fn
-          :state                    -> sub_state
-          state when is_list(state) -> step.(state)
-          {acc, state}              -> step.({acc, state})
-          {input, acc, state}       -> step.({input + 1, acc, state})
+          :init                 -> step.(:init)
+          {:init, init}         -> step.({:init, init})
+          {:comp, state}        -> step.({:comp, state})
+          {:cont, input, state} -> step.({:cont, input + 1, state})
          end
        end
 
     inc_trans = ET.compose([inc_transducer], list_constructor)
-    assert inc_trans.(:state) == []
-    inc_tests(inc_trans, [])
+     inc_tests(inc_trans, [])
   end
 
   test "ET.mapping/1" do
@@ -36,9 +34,10 @@ defmodule ETTest do
   end
 
   defp inc_tests(inc_trans, state) do
-    assert inc_trans.(state)           == {:cont, {[], []}}
-    assert inc_trans.({0, [2], state}) == {:cont, {[1, 2], []}}
-    assert inc_trans.({[2,1], state})  == {:halt, {[1, 2], []}} 
+    assert inc_trans.(:init)              == {:cont, [[]]}
+    assert inc_trans.({:init, [1]})       == {:cont, [[1]]}
+    assert inc_trans.({:cont, 0, [[2]]})  == {:cont, [[1, 2]]}
+    assert inc_trans.({:comp, [[2,1]]})   == {:comp, [1, 2]} 
   end
 
   test "ET.reduce/3" do
@@ -58,8 +57,8 @@ defmodule ETTest do
   test "ET.stateful_transducer/2" do
     take_2 = ET.stateful_transducer(
       fn
-        _input, acc, 0 -> {:halt, acc, 0}
-        input, acc, n -> {:cont, input, acc, n-1}
+        _input, 0 -> {:halt, 0}
+        input, n  -> {:cont, input, n-1}
       end, 2)
     take_2_trans = ET.compose([take_2], list_constructor)
     assert ET.reduce([1,2,3,4], take_2_trans) == [1,2]
