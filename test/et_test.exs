@@ -6,7 +6,7 @@ defmodule ETTest do
       fn
         :init                            -> { :cont, [[]] }
         {:init, init} when is_list(init) -> { :cont, [init] }
-        {:comp, [acc]}                   -> { :comp, :lists.reverse(acc) }
+        {:fin, [acc]}                   -> { :fin, :lists.reverse(acc) }
         {:cont, input, [acc]}            -> { :cont, [[input | acc]] }
       end
     end
@@ -18,7 +18,7 @@ defmodule ETTest do
         fn
           :init                 -> step.(:init)
           {:init, init}         -> step.({:init, init})
-          {:comp, state}        -> step.({:comp, state})
+          {:fin, state}        -> step.({:fin, state})
           {:cont, input, state} -> step.({:cont, input + 1, state})
          end
        end
@@ -37,7 +37,7 @@ defmodule ETTest do
     assert inc_trans.(:init)              == {:cont, [[]]}
     assert inc_trans.({:init, [1]})       == {:cont, [[1]]}
     assert inc_trans.({:cont, 0, [[2]]})  == {:cont, [[1, 2]]}
-    assert inc_trans.({:comp, [[2,1]]})   == {:comp, [1, 2]} 
+    assert inc_trans.({:fin, [[2,1]]})   == {:fin, [1, 2]} 
   end
 
   test "ET.reduce/3" do

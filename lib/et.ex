@@ -11,7 +11,7 @@ defmodule ET do
       fn
         :init                 -> step.(:init)
         {:init, init}         -> step.({:init, init})
-        {:comp, state}        -> step.({:comp, state})
+        {:fin, state}         -> step.({:fin, state})
         {:cont, input, state} -> step.({:cont, fun.(input), state})
       end
     end
@@ -28,7 +28,7 @@ defmodule ET do
   defp do_reduce(coll, init, trans) do
     {_msg, new_state} =
       Enumerable.reduce(coll, init, reducify(trans))
-    {:comp, result} = trans.({:comp, new_state})
+    {:fin, result} = trans.({:fin, new_state})
     result    
   end
 
@@ -41,8 +41,8 @@ defmodule ET do
         :init         -> step.(:init)         |> prepend_state(init_state)
         {:init, init} -> step.({:init, init}) |> prepend_state(init_state)
         # completion
-        {:comp, [my_state | rem_state]} ->
-          step.({:comp, rem_state})
+        {:fin, [my_state | rem_state]} ->
+          step.({:fin, rem_state})
         # action
         {:cont, input, [my_state | rem_state]} ->
           case fun.(input, my_state) do
