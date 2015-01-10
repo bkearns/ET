@@ -53,6 +53,14 @@ defmodule ET do
      end | transducers]
   end
 
+  def take(transducers \\ [], num) do
+    ET.stateful(
+      fn
+        _input, 0 -> {:halt, 0}
+        input, n  -> {:cont, input, n-1}
+      end, num)
+  end
+
   def zip(transducers \\ []) do
     [fn reducer ->
        fn

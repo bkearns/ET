@@ -63,6 +63,11 @@ defmodule ETTest do
     assert ET.reduce([1,2,3], compound_reducer) == [4,6,8]
   end
 
+  test "ET.take/2" do
+    take_three = ET.take(3) |> ET.compose(list_reducer)
+    assert ET.reduce([1,2,3,4], take_three) == [1,2,3]
+  end
+  
   test "ET.zip/1" do
     zip_reducer =
       ET.zip
@@ -71,7 +76,7 @@ defmodule ETTest do
     assert ET.reduce([[1,2,3,4], [8, 9]], zip_reducer) ==
            [2, 9, 3, 10, 4, 5]
   end
-
+  
   test "ET.zip/1 properly terminates early" do
     zip_two =
       ET.zip
@@ -83,7 +88,6 @@ defmodule ETTest do
       |> ET.compose(list_reducer)
 
     assert ET.reduce([[1,2],[3,4],[5,6]], zip_two) == [1,3]
-    
     
     # I know this is important, but I need to write too much to test for it. Bad TDD for me, I already wrote the code.
     # ET.zip should terminate on take-x halting even if not all transducers have been passed to zip, since that could be infinite
