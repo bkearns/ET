@@ -17,12 +17,8 @@ defmodule ET do
   end
 
   def reduce(coll, init \\ nil, trans) do
-    do_reduce(coll, trans.({:init, init}), trans)
-  end
-
-  defp do_reduce(coll, init, trans) do
     {_msg, new_state} =
-      Enumerable.reduce(coll, init, reducify(trans))
+      Enumerable.reduce(coll, trans.({:init,init}), reducify(trans))
     {:fin, result} = trans.({:fin, new_state})
     result    
   end
@@ -33,7 +29,7 @@ defmodule ET do
     fn step ->
       fn
         # completion
-        {:fin, [my_state | rem_state]} ->
+        {:fin, [_my_state | rem_state]} ->
           step.({:fin, rem_state})
         # action
         {:cont, input, [my_state | rem_state]} ->
