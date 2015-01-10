@@ -33,23 +33,23 @@ defmodule ET do
     result
   end
 
-  def stateful(fun, init_state) do
-    fn reducer ->
-      fn
-        # completion
-        {:fin, [_my_state | rem_state]} ->
-          reducer.({:fin, rem_state})
-        # action
-        {:cont, input, [my_state | rem_state]} ->
-          case fun.(input, my_state) do
-            {:halt, new_state} -> {:halt, [new_state | rem_state]}
-            {:cont, input, new_state} ->
-              reducer.({:cont, input, rem_state})
-              |> prepend_state(new_state)
-          end
-        # initialization
-        :init -> reducer.(:init) |> prepend_state(init_state)
-      end
-    end
+  def stateful(transducers \\ [], fun, init_state) do
+    [fn reducer ->
+       fn
+         # completion
+         {:fin, [_my_state | rem_state]} ->
+           reducer.({:fin, rem_state})
+         # action
+         {:cont, input, [my_state | rem_state]} ->
+           case fun.(input, my_state) do
+             {:halt, new_state} -> {:halt, [new_state | rem_state]}
+             {:cont, input, new_state} ->
+               reducer.({:cont, input, rem_state})
+               |> prepend_state(new_state)
+           end
+         # initialization
+         :init -> reducer.(:init) |> prepend_state(init_state)
+       end
+     end | transducers]
   end
 end

@@ -50,7 +50,7 @@ defmodule ETTest do
         _input, 0 -> {:halt, 0}
         input, n  -> {:cont, input, n-1}
       end, 2)
-    take_2_trans = ET.compose([take_2], list_reducer)
+    take_2_trans = ET.compose(take_2, list_reducer)
     assert ET.reduce([1,2,3,4], take_2_trans) == [1,2]
   end
 
