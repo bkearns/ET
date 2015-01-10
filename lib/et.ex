@@ -7,11 +7,11 @@ defmodule ET do
   def prepend_state({msg, state}, new_state), do: {msg, [new_state | state]}
 
   def map(transducers \\ [], fun) do
-    [fn step ->
+    [fn reducer ->
        fn
-         {:fin, state}         -> step.({:fin, state})
-         {:cont, input, state} -> step.({:cont, fun.(input), state})
-         :init                 -> step.(:init)
+         {:fin, state}         -> reducer.({:fin, state})
+         {:cont, input, state} -> reducer.({:cont, fun.(input), state})
+         :init                 -> reducer.(:init)
        end
      end | transducers]
   end
