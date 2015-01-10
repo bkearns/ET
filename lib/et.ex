@@ -54,7 +54,7 @@ defmodule ET do
   end
 
   def take(transducers \\ [], num) do
-    ET.stateful(
+    ET.stateful(transducers,
       fn
         _input, 0 -> {:halt, 0}
         input, n  -> {:cont, input, n-1}

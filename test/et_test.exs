@@ -65,7 +65,7 @@ defmodule ETTest do
 
   test "ET.take/2" do
     take_three = ET.take(3) |> ET.compose(list_reducer)
-    assert ET.reduce([1,2,3,4], take_three) == [1,2,3]
+    ET.reduce([1,2,3,4], take_three) == [1,2,3]
   end
   
   test "ET.zip/1" do
@@ -80,11 +80,7 @@ defmodule ETTest do
   test "ET.zip/1 properly terminates early" do
     zip_two =
       ET.zip
-      |> ET.stateful(
-           fn
-             _input, 0 -> {:halt, 0}
-             input, n  -> {:cont, input, n-1}
-           end, 2)
+      |> ET.take(2)
       |> ET.compose(list_reducer)
 
     assert ET.reduce([[1,2],[3,4],[5,6]], zip_two) == [1,3]
