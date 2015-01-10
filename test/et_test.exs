@@ -4,8 +4,7 @@ defmodule ETTest do
   defmacro list_reducer do
     quote do
       fn
-        {:init, nil}                     -> { :cont, [[]] }
-        {:init, init} when is_list(init) -> { :cont, [init] }
+        :init                            -> { :cont, [[]] }
         {:fin, [acc]}                    -> { :fin, :lists.reverse(acc) }
         {:cont, input, [acc]}            -> { :cont, [[input | acc]] }
       end
@@ -16,8 +15,7 @@ defmodule ETTest do
     inc_transducer = 
       fn reducer ->
         fn
-          {:init, nil}          -> reducer.({:init, nil})
-          {:init, init}         -> reducer.({:init, init})
+          :init                 -> reducer.(:init)
           {:fin, state}         -> reducer.({:fin, state})
           {:cont, input, state} -> reducer.({:cont, input + 1, state})
          end
@@ -34,17 +32,9 @@ defmodule ETTest do
   end
 
   defp inc_tests(inc_trans, state) do
-    assert inc_trans.({:init, :nil})      == {:cont, [[]]}
-    assert inc_trans.({:init, [1]})       == {:cont, [[1]]}
+    assert inc_trans.(:init)              == {:cont, [[]]}
     assert inc_trans.({:cont, 0, [[2]]})  == {:cont, [[1, 2]]}
     assert inc_trans.({:fin, [[2,1]]})    == {:fin, [1, 2]} 
-  end
-
-  test "ET.reduce/3" do
-    inc_trans = ET.map(&(&1+1))
-      |> ET.compose(list_reducer)
-
-    assert ET.reduce([1,2,3], [], inc_trans) == [2,3,4]
   end
 
   test "ET.reduce/2" do
@@ -70,6 +60,6 @@ defmodule ETTest do
     |> ET.map(fn input -> input * 2 end)
     |> ET.compose(list_reducer)
 
-    assert ET.reduce([1,2,3], [], compound_reducer) == [4,6,8]
+    assert ET.reduce([1,2,3], compound_reducer) == [4,6,8]
   end
 end

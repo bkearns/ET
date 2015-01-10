@@ -11,13 +11,13 @@ defmodule ET do
        fn
          {:fin, state}         -> step.({:fin, state})
          {:cont, input, state} -> step.({:cont, fun.(input), state})
-         {:init, init}         -> step.({:init, init})
+         :init                 -> step.(:init)
        end
      end | transducers]
   end
 
-  def reduce(coll, init \\ nil, reducer) do
-    do_reduce(coll, reducer.({:init, init}), reducer)
+  def reduce(coll, reducer) do
+    do_reduce(coll, reducer.(:init), reducer)
   end
 
   defp do_reduce(coll, {:cont, state}, reducer) do
@@ -48,7 +48,7 @@ defmodule ET do
               |> prepend_state(new_state)
           end
         # initialization
-        {:init, init} -> reducer.({:init, init}) |> prepend_state(init_state)
+        :init -> reducer.(:init) |> prepend_state(init_state)
       end
     end
   end
