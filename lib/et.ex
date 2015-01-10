@@ -16,31 +16,31 @@ defmodule ET do
     end
   end
 
-  def reduce(coll, init \\ nil, trans) do
+  def reduce(coll, init \\ nil, reducer) do
     {_msg, new_state} =
-      Enumerable.reduce(coll, trans.({:init,init}), reducify(trans))
-    {:fin, result} = trans.({:fin, new_state})
-    result    
+      Enumerable.reduce(coll, reducer.({:init,init}), reducify(reducer))
+    {:fin, result} = reducer.({:fin, new_state})
+    result
   end
 
-  defp reducify(trans), do: fn input, state -> trans.({:cont, input, state}) end
+  defp reducify(reducer), do: fn input, state -> reducer.({:cont, input, state}) end
 
   def stateful(fun, init_state) do
-    fn step ->
+    fn reducer ->
       fn
         # completion
         {:fin, [_my_state | rem_state]} ->
-          step.({:fin, rem_state})
+          reducer.({:fin, rem_state})
         # action
         {:cont, input, [my_state | rem_state]} ->
           case fun.(input, my_state) do
             {:halt, new_state} -> {:halt, [new_state | rem_state]}
             {:cont, input, new_state} ->
-              step.({:cont, input, rem_state})
+              reducer.({:cont, input, rem_state})
               |> prepend_state(new_state)
           end
         # initialization
-        {:init, init} -> step.({:init, init}) |> prepend_state(init_state)
+        {:init, init} -> reducer.({:init, init}) |> prepend_state(init_state)
       end
     end
   end

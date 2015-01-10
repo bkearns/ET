@@ -14,12 +14,12 @@ defmodule ETTest do
 
   test "ET.compose/2" do
     inc_transducer = 
-      fn step ->
+      fn reducer ->
         fn
-          {:init, nil}          -> step.({:init, nil})
-          {:init, init}         -> step.({:init, init})
-          {:fin, state}         -> step.({:fin, state})
-          {:cont, input, state} -> step.({:cont, input + 1, state})
+          {:init, nil}          -> reducer.({:init, nil})
+          {:init, init}         -> reducer.({:init, init})
+          {:fin, state}         -> reducer.({:fin, state})
+          {:cont, input, state} -> reducer.({:cont, input + 1, state})
          end
        end
 
