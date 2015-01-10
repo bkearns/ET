@@ -58,9 +58,16 @@ defmodule ET do
        fn
          # initialization
          :init -> reducer.(:init) |> prepend_state([])
-         # collect transducers
+         # collect transducers passing first element of each
          {:cont, input, [my_state | rem_state]} ->
-           {:cont, [[input | my_state] | rem_state]}
+           case Transducible.next(input) do
+             :empty -> {:cont, [my_state | rem_state]}
+             {elem, rem} ->
+               case reducer.({:cont, elem, rem_state}) do
+                 {:halt, state} -> prepend_state({:halt, state}, [])
+                 {:cont, state} -> prepend_state({:cont, state}, [rem | my_state])
+               end
+           end  
          # do zip on finish
          {:fin, [transducibles | rem_state]} ->
            zipper =
