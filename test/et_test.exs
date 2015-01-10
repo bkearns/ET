@@ -28,7 +28,7 @@ defmodule ETTest do
   end
 
   test "ET.map/1" do
-    [ET.map(fn input -> input + 1 end)]
+    ET.map(fn input -> input + 1 end)
     |> ET.compose(list_reducer)
     |> inc_tests([])
   end
@@ -41,14 +41,14 @@ defmodule ETTest do
   end
 
   test "ET.reduce/3" do
-    inc_trans = [ET.map(&(&1+1))]
+    inc_trans = ET.map(&(&1+1))
       |> ET.compose(list_reducer)
 
     assert ET.reduce([1,2,3], [], inc_trans) == [2,3,4]
   end
 
   test "ET.reduce/2" do
-    inc_trans = [ET.map(&(&1+1))]
+    inc_trans = ET.map(&(&1+1))
       |> ET.compose(list_reducer)
 
     assert ET.reduce([1,2,3], inc_trans) == [2,3,4]
@@ -62,5 +62,14 @@ defmodule ETTest do
       end, 2)
     take_2_trans = ET.compose([take_2], list_reducer)
     assert ET.reduce([1,2,3,4], take_2_trans) == [1,2]
+  end
+
+  test "transducer composition" do
+    compound_reducer =
+      ET.map(fn input -> input + 1 end)
+    |> ET.map(fn input -> input * 2 end)
+    |> ET.compose(list_reducer)
+
+    assert ET.reduce([1,2,3], [], compound_reducer) == [4,6,8]
   end
 end
