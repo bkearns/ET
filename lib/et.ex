@@ -17,13 +17,21 @@ defmodule ET do
   end
 
   def reduce(coll, init \\ nil, reducer) do
-    {_msg, new_state} =
-      Enumerable.reduce(coll, reducer.({:init,init}), reducify(reducer))
-    {:fin, result} = reducer.({:fin, new_state})
-    result
+    do_reduce(coll, reducer.({:init, init}), reducer)
   end
 
-  defp reducify(reducer), do: fn input, state -> reducer.({:cont, input, state}) end
+  defp do_reduce(coll, {:cont, state}, reducer) do
+    case Transducible.next(coll) do
+      {elem, rem} -> do_reduce(rem, reducer.({:cont, elem, state}), reducer)
+      :empty      -> finish_reduce(state, reducer)
+    end
+  end
+  defp do_reduce(_coll, {:halt, state}, reducer), do: finish_reduce(state, reducer)
+
+  defp finish_reduce(state, reducer) do
+    {:fin, result} = reducer.({:fin, state})
+    result
+  end
 
   def stateful(fun, init_state) do
     fn reducer ->
