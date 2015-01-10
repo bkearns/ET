@@ -21,8 +21,8 @@ defmodule ETTest do
          end
        end
 
-    inc_trans = ET.compose([inc_transducer], list_reducer)
-     inc_tests(inc_trans, [])
+    inc_reducer = ET.compose([inc_transducer], list_reducer)
+    inc_tests(inc_reducer, [])
   end
 
   test "ET.map/1" do
@@ -31,17 +31,17 @@ defmodule ETTest do
     |> inc_tests([])
   end
 
-  defp inc_tests(inc_trans, state) do
-    assert inc_trans.(:init)              == {:cont, [[]]}
-    assert inc_trans.({:cont, 0, [[2]]})  == {:cont, [[1, 2]]}
-    assert inc_trans.({:fin, [[2,1]]})    == {:fin, [1, 2]} 
+  defp inc_tests(inc_reducer, state) do
+    assert inc_reducer.(:init)              == {:cont, [[]]}
+    assert inc_reducer.({:cont, 0, [[2]]})  == {:cont, [[1, 2]]}
+    assert inc_reducer.({:fin, [[2,1]]})    == {:fin, [1, 2]} 
   end
 
   test "ET.reduce/2" do
-    inc_trans = ET.map(&(&1+1))
+    inc_reducer = ET.map(&(&1+1))
       |> ET.compose(list_reducer)
 
-    assert ET.reduce([1,2,3], inc_trans) == [2,3,4]
+    assert ET.reduce([1,2,3], inc_reducer) == [2,3,4]
   end
 
   test "ET.stateful/2" do
@@ -50,8 +50,8 @@ defmodule ETTest do
         _input, 0 -> {:halt, 0}
         input, n  -> {:cont, input, n-1}
       end, 2)
-    take_2_trans = ET.compose(take_2, list_reducer)
-    assert ET.reduce([1,2,3,4], take_2_trans) == [1,2]
+    take_2_reducer = ET.compose(take_2, list_reducer)
+    assert ET.reduce([1,2,3,4], take_2_reducer) == [1,2]
   end
 
   test "transducer composition" do
