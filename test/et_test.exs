@@ -4,7 +4,7 @@ defmodule ETTest do
   defmacro list_constructor do
     quote do
       fn
-        :init                            -> { :cont, [[]] }
+        {:init, nil}                     -> { :cont, [[]] }
         {:init, init} when is_list(init) -> { :cont, [init] }
         {:fin, [acc]}                    -> { :fin, :lists.reverse(acc) }
         {:cont, input, [acc]}            -> { :cont, [[input | acc]] }
@@ -16,7 +16,7 @@ defmodule ETTest do
     inc_transducer = 
       fn step ->
         fn
-          :init                 -> step.(:init)
+          {:init, nil}          -> step.({:init, nil})
           {:init, init}         -> step.({:init, init})
           {:fin, state}         -> step.({:fin, state})
           {:cont, input, state} -> step.({:cont, input + 1, state})
@@ -34,7 +34,7 @@ defmodule ETTest do
   end
 
   defp inc_tests(inc_trans, state) do
-    assert inc_trans.(:init)              == {:cont, [[]]}
+    assert inc_trans.({:init, :nil})      == {:cont, [[]]}
     assert inc_trans.({:init, [1]})       == {:cont, [[1]]}
     assert inc_trans.({:cont, 0, [[2]]})  == {:cont, [[1, 2]]}
     assert inc_trans.({:fin, [[2,1]]})    == {:fin, [1, 2]} 

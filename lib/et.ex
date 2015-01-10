@@ -11,17 +11,13 @@ defmodule ET do
       fn
         {:fin, state}         -> step.({:fin, state})
         {:cont, input, state} -> step.({:cont, fun.(input), state})
-        init                  -> step.(init)
+        {:init, init}         -> step.({:init, init})
       end
     end
   end
 
-  def reduce(coll, init, trans) do
+  def reduce(coll, init \\ nil, trans) do
     do_reduce(coll, trans.({:init, init}), trans)
-  end
-
-  def reduce(coll, trans) do
-    do_reduce(coll, trans.(:init), trans)
   end
 
   defp do_reduce(coll, init, trans) do
@@ -48,7 +44,7 @@ defmodule ET do
               |> prepend_state(new_state)
           end
         # initialization
-        init -> step.(init) |> prepend_state(init_state)
+        {:init, init} -> step.({:init, init}) |> prepend_state(init_state)
       end
     end
   end
