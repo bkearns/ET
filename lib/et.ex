@@ -9,9 +9,9 @@ defmodule ET do
   def map(transducers \\ [], fun) do
     [fn reducer ->
        fn
-         {:fin, state}         -> reducer.({:fin, state})
-         {:cont, input, state} -> reducer.({:cont, fun.(input), state})
          :init                 -> reducer.(:init)
+         {:cont, input, state} -> reducer.({:cont, fun.(input), state})
+         {:fin, state}         -> reducer.({:fin, state})
        end
      end | transducers]
   end
@@ -36,9 +36,8 @@ defmodule ET do
   def stateful(transducers \\ [], fun, init_state) do
     [fn reducer ->
        fn
-         # completion
-         {:fin, [_my_state | rem_state]} ->
-           reducer.({:fin, rem_state})
+         # initialization
+         :init -> reducer.(:init) |> prepend_state(init_state)
          # action
          {:cont, input, [my_state | rem_state]} ->
            case fun.(input, my_state) do
@@ -47,8 +46,9 @@ defmodule ET do
                reducer.({:cont, input, rem_state})
                |> prepend_state(new_state)
            end
-         # initialization
-         :init -> reducer.(:init) |> prepend_state(init_state)
+         # completion
+         {:fin, [_my_state | rem_state]} ->
+           reducer.({:fin, rem_state})
        end
      end | transducers]
   end
