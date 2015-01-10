@@ -1,7 +1,7 @@
 defmodule ETTest do
   use ExUnit.Case
 
-  defmacro list_constructor do
+  defmacro list_reducer do
     quote do
       fn
         {:init, nil}                     -> { :cont, [[]] }
@@ -23,13 +23,13 @@ defmodule ETTest do
          end
        end
 
-    inc_trans = ET.compose([inc_transducer], list_constructor)
+    inc_trans = ET.compose([inc_transducer], list_reducer)
      inc_tests(inc_trans, [])
   end
 
   test "ET.map/1" do
     [ET.map(fn input -> input + 1 end)]
-    |> ET.compose(list_constructor)
+    |> ET.compose(list_reducer)
     |> inc_tests([])
   end
 
@@ -42,14 +42,14 @@ defmodule ETTest do
 
   test "ET.reduce/3" do
     inc_trans = [ET.map(&(&1+1))]
-      |> ET.compose(list_constructor)
+      |> ET.compose(list_reducer)
 
     assert ET.reduce([1,2,3], [], inc_trans) == [2,3,4]
   end
 
   test "ET.reduce/2" do
     inc_trans = [ET.map(&(&1+1))]
-      |> ET.compose(list_constructor)
+      |> ET.compose(list_reducer)
 
     assert ET.reduce([1,2,3], inc_trans) == [2,3,4]
   end
@@ -60,7 +60,7 @@ defmodule ETTest do
         _input, 0 -> {:halt, 0}
         input, n  -> {:cont, input, n-1}
       end, 2)
-    take_2_trans = ET.compose([take_2], list_constructor)
+    take_2_trans = ET.compose([take_2], list_reducer)
     assert ET.reduce([1,2,3,4], take_2_trans) == [1,2]
   end
 end
