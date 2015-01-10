@@ -62,4 +62,13 @@ defmodule ETTest do
 
     assert ET.reduce([1,2,3], compound_reducer) == [4,6,8]
   end
+
+  test "ET.zip/1" do
+    zip_reducer =
+      ET.zip
+      |> ET.map(fn input -> input + 1 end)
+      |> ET.compose(list_reducer)
+    assert ET.reduce([[1,2,3,4], [8, 9]], zip_reducer) ==
+           [2, 9, 3, 10, 4, 5]
+  end
 end

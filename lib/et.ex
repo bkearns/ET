@@ -52,4 +52,32 @@ defmodule ET do
        end
      end | transducers]
   end
+
+  def zip(transducers \\ []) do
+    [fn reducer ->
+       fn
+         # initialization
+         :init -> reducer.(:init) |> prepend_state([])
+         # collect transducers
+         {:cont, input, [my_state | rem_state]} ->
+           {:cont, [[input | my_state] | rem_state]}
+         # do zip on finish
+         {:fin, [transducibles | rem_state]} ->
+           zipper =
+             fn
+               _rfun,  _,  _, {:halt, state} -> state
+               _rfun, [], [], {:cont, state} -> state
+               rfun, [], t_acc, state ->
+                 rfun.(rfun, :lists.reverse(t_acc), [], state)
+               rfun, [transducible | rem], t_acc, {:cont, state} ->
+                 case Transducible.next(transducible) do
+                   :empty -> rfun.(rfun, rem, t_acc, {:cont, state})   
+                   {elem, trans} -> rfun.(rfun, rem, [trans | t_acc], reducer.({:cont, elem, state}))
+                 end
+             end
+           result_state = zipper.(zipper, [], transducibles, {:cont, rem_state})
+           reducer.({:fin, result_state})
+       end
+     end | transducers]
+  end
 end
