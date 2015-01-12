@@ -8,6 +8,7 @@ defimpl Transducible, for: Any do
   def next(enum) do
     case Enumerable.reduce(enum, {:cont, nil}, fn elem, _ -> {:suspend, elem} end) do
       {:suspended, next_elem, cont_fun} -> {next_elem, cont_fun}
+      {:done, nil} -> :done
     end
   end
 end
