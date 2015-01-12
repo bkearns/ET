@@ -14,14 +14,14 @@ end
 
 defimpl Transducible, for: List do
   def next([elem | rem]), do: {elem, rem}
-  def next([]), do: :empty
+  def next([]), do: :done
 end
 
 defimpl Transducible, for: Function do
   def next(fun) do
     case fun.({:cont, nil}) do
       {:suspended, next_elem, cont_fun} -> {next_elem, cont_fun}
-      {:done, nil} -> :empty
+      {:done, nil} -> :done
     end
   end
 end

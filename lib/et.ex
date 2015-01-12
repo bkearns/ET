@@ -23,7 +23,7 @@ defmodule ET do
   defp do_reduce(coll, {:cont, state}, reducer) do
     case Transducible.next(coll) do
       {elem, rem} -> do_reduce(rem, reducer.({:cont, elem, state}), reducer)
-      :empty      -> finish_reduce(state, reducer)
+      :done      -> finish_reduce(state, reducer)
     end
   end
   defp do_reduce(_coll, {:halt, state}, reducer), do: finish_reduce(state, reducer)
@@ -69,7 +69,7 @@ defmodule ET do
          # collect transducers passing first element of each
          {:cont, input, [my_state | rem_state]} ->
            case Transducible.next(input) do
-             :empty -> {:cont, [my_state | rem_state]}
+             :done -> {:cont, [my_state | rem_state]}
              {elem, rem} ->
                case reducer.({:cont, elem, rem_state}) do
                  {:halt, state} -> prepend_state({:halt, state}, [])
@@ -86,7 +86,7 @@ defmodule ET do
                  rfun.(rfun, :lists.reverse(t_acc), [], state)
                rfun, [transducible | rem], t_acc, {:cont, state} ->
                  case Transducible.next(transducible) do
-                   :empty -> rfun.(rfun, rem, t_acc, {:cont, state})   
+                   :done -> rfun.(rfun, rem, t_acc, {:cont, state})   
                    {elem, trans} -> rfun.(rfun, rem, [trans | t_acc], reducer.({:cont, elem, state}))
                  end
              end
