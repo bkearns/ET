@@ -18,4 +18,17 @@ defmodule TransducibleTest do
     completed_fun = fn {:cont, _state} -> {:done, nil} end
     assert :done == Transducible.next(completed_fun)
   end
+
+  test "transducible double-argument functions" do
+    suspening_fun =
+      fn {:cont, acc}, fun ->
+        {:suspend, result} = fun.(1,acc)
+        {:suspended, result, :fun}
+      end
+    assert {1, :fun} == Transducible.next(suspening_fun)
+                                                  
+    completed_fun = fn {:cont, _acc}, fun -> {:done, nil} end
+    assert :done == Transducible.next(completed_fun)
+  end
+
 end

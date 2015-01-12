@@ -19,7 +19,13 @@ defimpl Transducible, for: List do
 end
 
 defimpl Transducible, for: Function do
-  def next(fun) do
+  def next(fun) when is_function(fun, 2) do
+    case Enumerable.reduce(fun, {:cont, nil}, fn elem, _ -> {:suspend, elem} end) do
+      {:suspended, next_elem, cont_fun} -> {next_elem, cont_fun}
+      {:done, nil} -> :done
+    end
+  end
+  def next(fun) when is_function(fun, 1) do
     case fun.({:cont, nil}) do
       {:suspended, next_elem, cont_fun} -> {next_elem, cont_fun}
       {:done, nil} -> :done
