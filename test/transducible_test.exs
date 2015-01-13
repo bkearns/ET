@@ -20,7 +20,7 @@ defmodule TransducibleTest do
   end
 
   test "transducible double-argument functions" do
-    suspening_fun =
+    suspending_fun =
       fn {:cont, acc}, fun ->
         {:suspend, result} = fun.(1,acc)
         {:suspended, result, :fun}
