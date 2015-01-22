@@ -12,20 +12,6 @@ defmodule ETTest do
     end
   end
 
-  test "compose/2" do
-    inc_transducer = 
-      fn reducer ->
-        fn
-          :init                 -> reducer.(:init)
-          {:fin, state}         -> reducer.({:fin, state})
-          {:cont, input, state} -> reducer.({:cont, input + 1, state})
-         end
-       end
-
-    inc_reducer = compose(%ET.Transducer{elements: [inc_transducer]}, list_reducer)
-    inc_tests(inc_reducer, [])
-  end
-
   test "ET.map/1" do
     ET.map(fn input -> input + 1 end)
     |> compose(list_reducer)
