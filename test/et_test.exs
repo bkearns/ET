@@ -1,5 +1,6 @@
 defmodule ETTest do
   use ExUnit.Case
+  import ET.Transducer
 
   defmacro list_reducer do
     quote do
@@ -11,7 +12,7 @@ defmodule ETTest do
     end
   end
 
-  test "ET.compose/2" do
+  test "compose/2" do
     inc_transducer = 
       fn reducer ->
         fn
@@ -21,13 +22,13 @@ defmodule ETTest do
          end
        end
 
-    inc_reducer = ET.compose([inc_transducer], list_reducer)
+    inc_reducer = compose(%ET.Transducer{elements: [inc_transducer]}, list_reducer)
     inc_tests(inc_reducer, [])
   end
 
   test "ET.map/1" do
     ET.map(fn input -> input + 1 end)
-    |> ET.compose(list_reducer)
+    |> compose(list_reducer)
     |> inc_tests([])
   end
 
@@ -39,7 +40,7 @@ defmodule ETTest do
 
   test "ET.reduce/2" do
     inc_reducer = ET.map(&(&1+1))
-      |> ET.compose(list_reducer)
+      |> compose(list_reducer)
 
     assert ET.reduce([1,2,3], inc_reducer) == [2,3,4]
   end
@@ -50,7 +51,7 @@ defmodule ETTest do
         _input, 0 -> {:halt, 0}
         input, n  -> {:cont, input, n-1}
       end, 2)
-    take_2_reducer = ET.compose(take_2, list_reducer)
+    take_2_reducer = compose(take_2, list_reducer)
     assert ET.reduce([1,2,3,4], take_2_reducer) == [1,2]
   end
 
@@ -58,13 +59,13 @@ defmodule ETTest do
     compound_reducer =
       ET.map(fn input -> input + 1 end)
     |> ET.map(fn input -> input * 2 end)
-    |> ET.compose(list_reducer)
+    |> compose(list_reducer)
 
     assert ET.reduce([1,2,3], compound_reducer) == [4,6,8]
   end
 
   test "ET.take/2" do
-    take_three = ET.take(3) |> ET.compose(list_reducer)
+    take_three = ET.take(3) |> compose(list_reducer)
     assert ET.reduce([1,2,3,4], take_three) == [1,2,3]
   end
   
@@ -72,7 +73,7 @@ defmodule ETTest do
     zip_reducer =
       ET.zip
       |> ET.map(fn input -> input + 1 end)
-      |> ET.compose(list_reducer)
+      |> compose(list_reducer)
     assert ET.reduce([[1,2,3,4], [8, 9]], zip_reducer) ==
            [2, 9, 3, 10, 4, 5]
   end
@@ -81,7 +82,7 @@ defmodule ETTest do
     zip_two =
       ET.zip
       |> ET.take(2)
-      |> ET.compose(list_reducer)
+      |> compose(list_reducer)
 
     assert ET.reduce([[1,2],[3,4],[5,6]], zip_two) == [1,3]
     
