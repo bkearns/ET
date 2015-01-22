@@ -3,14 +3,24 @@ ET - Elixir Transducers
 
 ## Why Transducers?
 
-    fn input, accumulator -> [input + 1 | accumulator] end
+Standard enumerators get us very far already, why a different model? Well, let's say you have something like this:
 
-This incrementing reducing function seems straightforward, but it has a problem; it conflates the transformation and reconstruction steps. In order to use this as part of a composable chain of transformations, we have to ensure the initial collection is a list, save it to an intermediate list between each step, and then convert it from the list to what we want at the end.
+    big_list
+    |> Enum.map( &some_expensive_transformation/1 )
+    |> Enum.take_while( &bool_test/1 )
 
-With transducers, we separate concerns and produce composable functions which transform data and manage control flow without the need to know where this data is coming or where it will go to.
+You just did a big, expensive transformation against a big list and you might only end up keeping a hand-full of them.
+
+Transducers solve this by creating Stream-like composable functions, but with the added benefit of managing their own flow-control. Transducer elements also don't care what sort of collection it is coming from or what sort it is going to.
+
+## How does it look?
+
+    reducer =
+         ET.Transducers.map( &some_expensive_transformation/1 )
+      |> ET.Transducers.take_while( &bool_test/1 )
+      |> ET.Reducers.list
+    ET.reduce( big_list, reducer )
 
 ## Status
 
-No documentation and a lot of missing conveniences, but the core is here and implmented in not much code.
-
-I can find surprisingly little on the subject and have based what I have done mostly on [a talk by Rich Hickey](https://www.youtube.com/watch?v=6mTbuzafcII). Resources and thoughts are welcome, although I apologize if I am slow to respond.
+Taking shape. Getting ready to start churning out standard enumerable elements in transducer form. Still thinking on if/how the reduce function should be able to change the default arguments.
