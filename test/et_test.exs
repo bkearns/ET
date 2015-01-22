@@ -31,7 +31,7 @@ defmodule ETTest do
     |> inc_tests([])
   end
 
-  defp inc_tests(inc_reducer, state) do
+  defp inc_tests(inc_reducer, _state) do
     assert inc_reducer.(:init)              == {:cont, [[]]}
     assert inc_reducer.({:cont, 0, [[2]]})  == {:cont, [[1, 2]]}
     assert inc_reducer.({:fin, [[2,1]]})    == {:fin, [1, 2]} 
@@ -65,7 +65,7 @@ defmodule ETTest do
 
   test "ET.take/2" do
     take_three = ET.take(3) |> ET.compose(list_reducer)
-    ET.reduce([1,2,3,4], take_three) == [1,2,3]
+    assert ET.reduce([1,2,3,4], take_three) == [1,2,3]
   end
   
   test "ET.zip/1" do

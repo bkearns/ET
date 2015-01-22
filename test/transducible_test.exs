@@ -25,9 +25,9 @@ defmodule TransducibleTest do
         {:suspend, result} = fun.(1,acc)
         {:suspended, result, :fun}
       end
-    assert {1, :fun} == Transducible.next(suspening_fun)
+    assert {1, :fun} == Transducible.next(suspending_fun)
                                                   
-    completed_fun = fn {:cont, _acc}, fun -> {:done, nil} end
+    completed_fun = fn {:cont, _acc}, _fun -> {:done, nil} end
     assert :done == Transducible.next(completed_fun)
   end
 
