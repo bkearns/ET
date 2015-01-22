@@ -42,40 +42,10 @@ defmodule ET.Transducers do
   end
 
   @doc """
-  A generic stateful transducer with halting capabilities.
-
-  The supplied function should be in the form of:
-    element, state -> {:halt, new_state} | {:cont, new_state}
-  """
-
-  @type stateful_message :: {:halt, term} | {:cont, term}
-  
-  @spec stateful(ET.Transducer.t, (term, term -> stateful_message), term) :: ET.Transducer.t
-  @spec stateful((term, term -> stateful_message), term) :: ET.Transducer.t
-  def stateful(%ET.Transducer{} = trans, fun, init_state), do: combine(trans, stateful(fun, init_state))
-  def stateful(fun, init_state) do
-    %ET.Transducer{elements: 
-      [fn reducer ->
-         fn
-           # initialization
-           :init -> reducer.(:init) |> prepend_state(init_state)
-           # action
-           {:cont, input, [my_state | rem_state]} ->
-             case fun.(input, my_state) do
-               {:halt, new_state} -> {:halt, [new_state | rem_state]}
-               {:cont, input, new_state} ->
-                 reducer.({:cont, input, rem_state})
-                 |> prepend_state(new_state)
-             end
-           # completion
-           {:fin, [_my_state | rem_state]} ->
-             reducer.({:fin, rem_state})
-         end
-       end]}
-  end
-
-  @doc """
   A transducer which limits the number of elements processed.
+
+  This transducer will halt on the element *after* the last one it sends to
+  its reducer.
 
     iex> take_two = ET.Transducers.take(2) |> ET.Reducers.list
     iex> ET.reduce(1..3, take_two)
@@ -85,12 +55,17 @@ defmodule ET.Transducers do
   
   @spec take(ET.Transducer.t , non_neg_integer) :: ET.Transducer.t
   @spec take(non_neg_integer) :: ET.Transducer.t
-  def take(transducers \\ %ET.Transducer{}, num) do
-    stateful(transducers,
-      fn
-        _input, 0 -> {:halt, 0}
-        input, n  -> {:cont, input, n-1}
-      end, num)
+  def take(%ET.Transducer{} = trans, num), do: combine(trans, take(num))
+  def take(num) do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init) |> prepend_state(num)
+         {:cont, _elem, [0 | _] = state} ->
+           {:halt, state}
+         {:cont, elem, [my_state | state]} ->
+           reducer.({:cont, elem, state}) |> prepend_state(my_state-1)
+         {:fin, [_|state]} -> reducer.({:fin, state})
+      end
+    end]}
   end
 
   @doc """
