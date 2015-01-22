@@ -1,6 +1,30 @@
 defprotocol Transducible do
+  @moduledoc """
+  Transducible protocol used by ET.reduce.
+
+  Transducible collections are able to return one item at a time
+  along with a continuation.
+  """
+
   @fallback_to_any true
+
+  @typedoc """
+  The result of next.
+
+  :done -> indicates that there are no more elements forthcoming.
+  {element, continuation} -> the next element along with a
+                             transducible continuation
+
+  """
   
+  @type result :: :done | {term, Transducible.t}
+  
+  @doc """
+  Gets the next element in a collection and a transducible continuation
+  or :done if there are no more elements.
+
+  """
+
   def next(collection)
 end
 
