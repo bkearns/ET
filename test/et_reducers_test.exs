@@ -3,6 +3,6 @@ defmodule ETReducersTest do
 
   test "list reducer" do
     assert ET.reduce([1,2,3,4], ET.Reducers.list) == [1,2,3,4]
-    assert ET.reduce([1,2,3,4], (ET.take(2) |> ET.Reducers.list)) == [1,2]
+    assert ET.reduce([1,2,3,4], (ET.Transducers.take(2) |> ET.Reducers.list)) == [1,2]
   end
 end
