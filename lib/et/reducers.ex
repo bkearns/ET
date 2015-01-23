@@ -84,7 +84,10 @@ defmodule ET.Reducers do
   
   @spec any?(ET.Transducer.t, (term -> boolean)) :: ET.reducer
   @spec any?((term -> boolean)) :: ET.reducer
+  @spec any?(ET.Transducer.t) :: ET.reducer
+  @spec any?() :: ET.reducer
   def any?(%ET.Transducer{} = trans, fun), do: compose(trans, any?(fun))
+  def any?(%ET.Transducer{} = trans), do: any?(trans, fn x -> x end)
   def any?(fun) do
     fn
       :init -> {:cont, [false]}
@@ -96,8 +99,9 @@ defmodule ET.Reducers do
         end
       {:fin, [result]} -> {:fin, result}
     end
-  end  
-  
+  end
+  def any?(), do: any?(fn x -> x end)
+
   @doc """
   A reducer which returns a list of items received in the same order.
 
