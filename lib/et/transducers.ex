@@ -19,6 +19,40 @@ defmodule ET.Transducers do
   import ET.Transducer
 
   @doc """
+  A transducer which will not relay :halt signals until it has recieved a specified
+  number of elements. Elements received after a :halt signal is recieved are not
+  passed to the reducer. It has no special effect if a :fin signal is received
+  before a :halt.
+
+  """
+  @spec ensure(ET.Transducer.t, non_neg_integer) :: ET.Transducer.t
+  @spec ensure(non_neg_integer) :: ET.Transducer.t
+  def ensure(%ET.Transducer{} = trans, n), do: combine(trans, ensure(n))
+  def ensure(n) do
+    %ET.Transducer{elements: [fn reducer -> &(do_ensure(&1, reducer, n)) end]}
+  end
+
+  defp do_ensure(:init, reducer, n), do: reducer.(:init) |> prepend_state({:cont, n})
+  defp do_ensure({:cont, elem, [{:cont, n} | rem_state]}, reducer, _n) when n < 2 do
+    reducer.({:cont, elem, rem_state}) |> prepend_state({:cont, n})
+  end
+  defp do_ensure({:cont, elem, [{:cont, n} | rem_state]}, reducer, _n) do
+    case reducer.({:cont, elem, rem_state}) do
+      {:halt, state} -> {:cont, [{:halt, n-1} | state]}
+      {:cont, state} -> {:cont, [{:cont, n-1} | state]}
+    end
+  end
+   defp do_ensure({:cont, elem, [{:halt, n} | rem_state]}, _reducer, _n) when n < 2 do
+     {:halt, [{:halt, n} | rem_state]}
+  end
+  defp do_ensure({:cont, elem, [{:halt, n} | rem_state]}, _reducer, _n) do
+    {:cont, [{:halt, n-1} | rem_state]}
+  end
+  defp do_ensure({:fin, [_my_state | rem_state]}, reducer, _n) do
+    reducer.({:fin, rem_state})
+  end
+  
+  @doc """
   A transducer which applies the supplied function and passes the result to the reducer.
 
     iex> add_one = ET.Transducers.map(&(&1+1) |> ET.Reducers.list()

@@ -1,5 +1,18 @@
 defmodule ETTransducersTest do
   use ExUnit.Case
+
+  test "ET.Transducers.ensure" do
+    ensure_list = ET.Transducers.ensure(2)
+                  |> ET.Transducers.take(1)
+                  |> ET.Reducers.list
+    coll = [1,2,3]
+    {:cont, state} = ensure_list.(:init)
+    assert {{:cont, state},  coll} = ET.reduce_step(coll, state, ensure_list)
+    assert {{:halt, state}, _coll} = ET.reduce_step(coll, state, ensure_list)
+    assert {:fin, [1]} = ensure_list.({:fin, state})
+
+    
+  end
   
   test "ET.Transducers.map" do
     inc_list =
