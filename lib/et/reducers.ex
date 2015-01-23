@@ -36,6 +36,36 @@ defmodule ET.Reducers do
   argument to aid in pipelining and all of the functions in this module do so.
   """
 
+  import ET.Transducer, only: [compose: 2]
+
+  @doc """
+  A reducer which returns true if the function returns true for every element
+  received and short-circuits false if it ever returns false.
+
+    iex> ET.reduce([1,2,3], ET.Reducers.all?(&(&1<4)))
+    true
+
+    iex> ET.reduce([1,2,3,4], ET.Reducers.all?(&(&1<4)))
+    false
+
+  """
+
+  @spec all?(ET.Transducer.t, (term -> boolean)) :: ET.reducer
+  @spec all?((term -> boolean)) :: ET.reducer
+  def all?(%ET.Transducer{} = trans, fun), do: compose(trans, all?(fun))
+  def all?(fun) do
+    fn
+      :init -> {:cont, [true]}
+      {:cont, input, [_]} ->
+        if fun.(input) do
+          {:cont, [true]}
+        else
+          {:halt, [false]}
+        end
+      {:fin, [result]} -> {:fin, result}
+    end
+  end
+  
   @doc """
   A reducer which returns a list of items received in the same order.
 
