@@ -93,38 +93,27 @@ defmodule ET.Transducers do
     %ET.Transducer{elements:
       [fn reducer ->
         fn
-          # initialization
           :init -> reducer.(:init) |> prepend_state([])
-                   
-          # collect transducers passing first element of each
-          {:cont, input, [my_state | rem_state]} ->
-            case Transducible.next(input) do
-              :done -> {:cont, [my_state | rem_state]}
-              {elem, rem} ->
-                case reducer.({:cont, elem, rem_state}) do
-                  {:halt, state} -> prepend_state({:halt, state}, [])
-                  {:cont, state} -> prepend_state({:cont, state}, [rem | my_state])
-                end
-            end
-            
-          # do zip on finish
+          {:cont, input, [transducibles | rem_state]} ->
+            do_first_zip(ET.reduce_step(input, rem_state, reducer), transducibles)
           {:fin, [transducibles | rem_state]} ->
-            zipper =
-              fn
-                _rfun,  _,  _, {:halt, state} -> state
-                _rfun, [], [], {:cont, state} -> state
-                rfun, [], t_acc, state ->
-                  rfun.(rfun, :lists.reverse(t_acc), [], state)
-                rfun, [transducible | rem], t_acc, {:cont, state} ->
-                  case Transducible.next(transducible) do
-                    :done -> rfun.(rfun, rem, t_acc, {:cont, state})   
-                    {elem, trans} -> rfun.(rfun, rem, [trans | t_acc], reducer.({:cont, elem, state}))
-                  end
-              end
-            result_state = zipper.(zipper, [], transducibles, {:cont, rem_state})
-            reducer.({:fin, result_state})
+            do_final_zip([], transducibles, {:cont, rem_state}, reducer)
         end
       end]}
   end
 
+  defp do_first_zip({{:done, state}, _coll}, my_state), do: {:cont, [my_state | state]}
+  defp do_first_zip({{:halt, state}, _coll}, my_state), do: prepend_state({:halt, state}, [])
+  defp do_first_zip({{:cont, state},  coll}, my_state), do: prepend_state({:cont, state}, [coll | my_state])
+
+  defp do_final_zip( _,  _, {:halt, state}, reducer), do: reducer.({:fin, state})
+  defp do_final_zip([], [], {:cont, state}, reducer), do: reducer.({:fin, state})
+  defp do_final_zip(ts, [_done_trans | rem], {:done, state}, reducer) do
+    do_final_zip(ts, rem, {:cont, state}, reducer)
+  end
+  defp do_final_zip([], t_acc, signal, reducer), do: do_final_zip(:lists.reverse(t_acc), [], signal, reducer)
+  defp do_final_zip([transducible | rem], t_acc, {:cont, state}, reducer) do
+    {signal, new_t} = ET.reduce_step(transducible, state, reducer)
+    do_final_zip(rem, [new_t | t_acc], signal, reducer)
+  end
 end

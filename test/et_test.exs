@@ -7,4 +7,9 @@ defmodule ETTest do
 
     assert ET.reduce([1,2,3], inc_reducer) == [2,3,4]
   end
+
+  test "ET.reduce_step" do
+    assert ET.reduce_step([1,2], [[]], ET.Reducers.list()) == {{:cont, [[1]]}, [2]}
+    assert ET.reduce_step([], [[1]], ET.Reducers.list()) == {{:done, [[1]]}, []}
+  end
 end

@@ -72,7 +72,7 @@ defmodule ET.Reducers do
 
   @doc """
   A reducer which returns false if the function returns false for every element
-  received and short-circuits false if it ever returns true.
+  received and short-circuits true if it ever returns true.
 
     iex> ET.reduce([1,2,3], ET.Reducers.any?(&(&1<2)))
     true

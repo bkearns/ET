@@ -52,16 +52,30 @@ defmodule ET do
     do_reduce(coll, reducer.(:init), reducer)
   end
 
+  @spec do_reduce(Transducible.t, {:cont | :halt | :done, list}, reducer) :: term
   defp do_reduce(coll, {:cont, state}, reducer) do
-    case Transducible.next(coll) do
-      {elem, rem} -> do_reduce(rem, reducer.({:cont, elem, state}), reducer)
-      :done      -> finish_reduce(state, reducer)
-    end
+    {signal, collection} = reduce_step(coll, state, reducer)
+    do_reduce(collection, signal, reducer)
   end
+  defp do_reduce(_coll, {:done, state}, reducer), do: finish_reduce(state, reducer)
   defp do_reduce(_coll, {:halt, state}, reducer), do: finish_reduce(state, reducer)
 
+  @spec finish_reduce(list, reducer) :: term
   defp finish_reduce(state, reducer) do
     {:fin, result} = reducer.({:fin, state})
     result
+  end
+
+  @doc """
+  A helper function for performing a single :cont step of the reduce operation.
+
+  """
+  
+  @spec reduce_step(Transducible.t, list, reducer) :: return_message | {:done, list}
+  def reduce_step(collection, state, reducer) do
+    case Transducible.next(collection) do
+      {elem, rem} -> {reducer.({:cont, elem, state}), rem}
+      :done       -> {{:done, state}, collection}
+    end
   end
 end
