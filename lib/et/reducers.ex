@@ -65,6 +65,34 @@ defmodule ET.Reducers do
       {:fin, [result]} -> {:fin, result}
     end
   end
+
+  @doc """
+  A reducer which returns true if the function returns true for every element
+  received and short-circuits false if it ever returns false.
+
+    iex> ET.reduce([1,2,3], ET.Reducers.any?(&(&1<2)))
+    true
+
+    iex> ET.reduce([2,3,4], ET.Reducers.any?(&(&1<2)))
+    false
+
+  """
+  
+  @spec any?(ET.Transducer.t, (term -> boolean)) :: ET.reducer
+  @spec any?((term -> boolean)) :: ET.reducer
+  def any?(%ET.Transducer{} = trans, fun), do: compose(trans, any?(fun))
+  def any?(fun) do
+    fn
+      :init -> {:cont, [false]}
+      {:cont, input, [_]} ->
+        if fun.(input) do
+          {:halt, [true]}
+        else
+          {:cont, [false]}
+        end
+      {:fin, [result]} -> {:fin, result}
+    end
+  end  
   
   @doc """
   A reducer which returns a list of items received in the same order.

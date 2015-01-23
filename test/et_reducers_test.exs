@@ -6,6 +6,12 @@ defmodule ETReducersTest do
     assert ET.reduce([1,2,3], lt_four) == true
     assert ET.reduce([1,2,3,4], lt_four) == false
   end
+
+  test "any?" do
+    lt_two = ET.Reducers.any?(&(&1<2))
+    assert ET.reduce([1,2,3], lt_two) == true
+    assert ET.reduce([2,3,4], lt_two) == false
+  end
   
   test "list reducer" do
     assert ET.reduce([1,2,3,4], ET.Reducers.list) == [1,2,3,4]
