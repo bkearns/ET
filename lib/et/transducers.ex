@@ -44,9 +44,6 @@ defmodule ET.Transducers do
   @doc """
   A transducer which limits the number of elements processed.
 
-  This transducer will halt on the element *after* the last one it sends to
-  its reducer.
-
     iex> take_two = ET.Transducers.take(2) |> ET.Reducers.list
     iex> ET.reduce(1..3, take_two)
     [1,2]
@@ -59,8 +56,9 @@ defmodule ET.Transducers do
   def take(num) do
     %ET.Transducer{elements: [fn reducer ->
       fn :init -> reducer.(:init) |> prepend_state(num)
-         {:cont, _elem, [0 | _] = state} ->
-           {:halt, state}
+         {:cont, elem, [1 | rem_state]} ->
+           {_signal, state} = reducer.({:cont, elem, rem_state})
+           {:halt, [0 | state]}
          {:cont, elem, [my_state | state]} ->
            reducer.({:cont, elem, state}) |> prepend_state(my_state-1)
          {:fin, [_|state]} -> reducer.({:fin, state})
