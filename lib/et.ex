@@ -69,6 +69,13 @@ defmodule ET do
   @doc """
   A helper function for performing a single :cont step of the reduce operation.
 
+  It returns a tuple in the form of {{signal, reducer_state}, collection} with the normal
+  reducer signals with the addition of :done, which will be returned when the collection
+  doesn't provide a new element and thus the reducer is not called.
+
+  This function is intended for functions which wish to implement their own version of
+  reduce with more complicated functionality.
+
   """
   
   @spec reduce_step(Transducible.t, list, reducer) :: return_message | {:done, list}
