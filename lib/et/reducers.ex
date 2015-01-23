@@ -52,7 +52,10 @@ defmodule ET.Reducers do
 
   @spec all?(ET.Transducer.t, (term -> boolean)) :: ET.reducer
   @spec all?((term -> boolean)) :: ET.reducer
+  @spec all?(ET.Transducer.t) :: ET.reducer
+  @spec all?() :: ET.reducer
   def all?(%ET.Transducer{} = trans, fun), do: compose(trans, all?(fun))
+  def all?(%ET.Transducer{} = trans), do: all?(trans, fn x -> x end)
   def all?(fun) do
     fn
       :init -> {:cont, [true]}
@@ -65,6 +68,7 @@ defmodule ET.Reducers do
       {:fin, [result]} -> {:fin, result}
     end
   end
+  def all?(), do: all?(fn x -> x end)
 
   @doc """
   A reducer which returns true if the function returns true for every element
@@ -103,7 +107,7 @@ defmodule ET.Reducers do
 
   @spec list(ET.Transducer.t) :: ET.reducer
   @spec list() :: ET.reducer
-  def list(%ET.Transducer{} = trans), do: ET.Transducer.compose(trans, list())
+  def list(%ET.Transducer{} = trans), do: compose(trans, list())
   def list do
     fn
       :init                            -> { :cont, [[]] }
