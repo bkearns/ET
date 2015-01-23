@@ -71,8 +71,8 @@ defmodule ET.Reducers do
   def all?(), do: all?(fn x -> x end)
 
   @doc """
-  A reducer which returns true if the function returns true for every element
-  received and short-circuits false if it ever returns false.
+  A reducer which returns false if the function returns false for every element
+  received and short-circuits false if it ever returns true.
 
     iex> ET.reduce([1,2,3], ET.Reducers.any?(&(&1<2)))
     true
