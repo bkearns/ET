@@ -1,6 +1,21 @@
 defmodule ETTransducersTest do
   use ExUnit.Case
 
+  test "ET.Transducers.chunk" do
+    chunker = ET.Transducers.chunk(2) |> ET.Reducers.list()
+    assert ET.reduce(1..5, chunker) == [[1,2], [3,4]]
+
+    chunker = ET.Transducers.chunk(2,1) |> ET.Reducers.list()
+    assert ET.reduce(1..4, chunker) == [[1,2], [2,3], [3,4]]
+
+    chunker = ET.Transducers.chunk(2, ET.Reducers.count()) |> ET.Reducers.list()
+    assert ET.reduce(1..5, chunker) == [2, 2]
+
+    chunker = ET.Transducers.chunk(2, 1, ET.Reducers.count()) |> ET.Reducers.list()
+    assert ET.reduce(1..4, chunker) == [2, 2, 2]
+
+  end
+  
   test "ET.Transducers.ensure" do
     ensure_list = ET.Transducers.ensure(2)
                   |> ET.Transducers.take(1)
@@ -10,8 +25,6 @@ defmodule ETTransducersTest do
     assert {{:cont, state},  coll} = ET.reduce_step(coll, state, ensure_list)
     assert {{:halt, state}, _coll} = ET.reduce_step(coll, state, ensure_list)
     assert {:fin, [1]} = ensure_list.({:fin, state})
-
-    
   end
   
   test "ET.Transducers.map" do

@@ -102,13 +102,33 @@ defmodule ET.Reducers do
   end
   def any?(), do: any?(fn x -> x end)
 
+
+  @doc """
+  A reducer which counts the number of items recieved.
+
+    iex> ET.reduce(1..3, ET.Reducers.count)
+    3
+
+  """
+
+  @spec count(ET.Transducer.t) :: ET.reducer
+  @spec count() :: ET.reducer
+  def count(%ET.Transducer{} = trans), do: compose(trans, count())
+  def count() do
+    fn :init                 -> {:cont, [0]}
+       {:cont, input, [acc]} -> {:cont, [acc+1]}
+       {:fin, [acc]}         -> {:fin, acc}
+    end
+  end
+
+    
   @doc """
   A reducer which returns a list of items received in the same order.
 
     iex> ET.reduce(1..3, ET.Reducers.list)
     [1,2,3]
   """
-
+  
   @spec list(ET.Transducer.t) :: ET.reducer
   @spec list() :: ET.reducer
   def list(%ET.Transducer{} = trans), do: compose(trans, list())

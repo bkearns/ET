@@ -18,6 +18,68 @@ defmodule ET.Transducers do
   
   import ET.Transducer
 
+  def chunk(size), do: chunk(size, size, ET.Reducers.list)
+  def chunk(%ET.Transducer{} = trans, size), do: combine(trans, chunk(size))
+  def chunk(size, step) when is_integer(step), do: chunk(size, step, ET.Reducers.list)
+  def chunk(size, inner_reducer) when is_function(inner_reducer, 1) do
+    chunk(size, size, inner_reducer)
+  end
+  def chunk(%ET.Transducer{} = trans, this, that), do: combine(trans, chunk(this, that))
+  def chunk(size, step, inner_reducer) do
+    inner_reducer =
+      ET.Transducers.take(size)
+      |> ET.Transducers.ensure(size)
+      |> ET.Transducer.compose(inner_reducer)
+    
+    %ET.Transducer{elements: [fn reducer ->
+      fn signal ->
+        do_chunk(signal, step, inner_reducer, reducer)
+      end
+    end]}
+  end
+
+  defp do_chunk(:init, _step, _inner_reducer, outer_reducer) do
+    outer_reducer.(:init) |> prepend_state({0, []})
+  end
+  defp do_chunk({:cont, elem, [{0, chunks} | rem_state]}, step, inner_reducer, outer_reducer) do
+    {:cont, state} = inner_reducer.(:init)
+    do_chunk({:cont, elem, [{step, [state | chunks]} | rem_state]},
+             step, inner_reducer, outer_reducer)
+  end
+  defp do_chunk({:cont, elem, [{countdown, chunks} | rem_state]}, _step, inner_reducer, outer_reducer) do
+    {cont, halt} = apply_element_to_states(:lists.reverse(chunks), elem, inner_reducer)
+    fin = finish_states(:lists.reverse(halt), inner_reducer)
+    {signal, new_state} = continue_elements(fin, {:cont, rem_state}, outer_reducer)
+    {signal, [{countdown-1, cont} | new_state]}
+  end
+  defp do_chunk({:fin, [_my_state | rem_state]}, _step, _inner_reducer, outer_reducer) do
+    outer_reducer.({:fin, rem_state})
+  end
+
+  defp apply_element_to_states(states, elem, reducer, acc \\ {[],[]})
+  defp apply_element_to_states([], _elem, _reducer, {cont, halt}), do: {cont, halt}
+  defp apply_element_to_states([state | rem_states], elem, reducer, {cont, halt}) do
+    result =
+    case reducer.({:cont, elem, state}) do
+      {:cont, new_state} -> {[new_state | cont], halt}
+      {_, new_state}     -> {cont, [new_state | halt]}
+    end
+    apply_element_to_states(rem_states, elem, reducer, result)
+  end
+
+  defp finish_states(states, reducer, acc \\ [])
+  defp finish_states([], _reducer, acc), do: :lists.reverse(acc)
+  defp finish_states([state | rem_states], reducer, acc) do
+    {:fin, result} = reducer.({:fin, state})
+    finish_states(rem_states, reducer, [result | acc])
+  end
+
+  defp continue_elements([], signal, _reducer), do: signal
+  defp continue_elements(_, {:halt, state}, _reducer), do: {:halt, state}
+  defp continue_elements([elem | elements], {:cont, state}, reducer) do
+    continue_elements(elements, reducer.({:cont, elem, state}), reducer)
+  end
+  
   @doc """
   A transducer which will not relay :halt signals until it has recieved a specified
   number of elements. Elements received after a :halt signal is recieved are not
@@ -25,6 +87,7 @@ defmodule ET.Transducers do
   before a :halt.
 
   """
+  
   @spec ensure(ET.Transducer.t, non_neg_integer) :: ET.Transducer.t
   @spec ensure(non_neg_integer) :: ET.Transducer.t
   def ensure(%ET.Transducer{} = trans, n), do: combine(trans, ensure(n))
@@ -42,10 +105,10 @@ defmodule ET.Transducers do
       {:cont, state} -> {:cont, [{:cont, n-1} | state]}
     end
   end
-   defp do_ensure({:cont, elem, [{:halt, n} | rem_state]}, _reducer, _n) when n < 2 do
+   defp do_ensure({:cont, _elem, [{:halt, n} | rem_state]}, _reducer, _n) when n < 2 do
      {:halt, [{:halt, n} | rem_state]}
   end
-  defp do_ensure({:cont, elem, [{:halt, n} | rem_state]}, _reducer, _n) do
+  defp do_ensure({:cont, _elem, [{:halt, n} | rem_state]}, _reducer, _n) do
     {:cont, [{:halt, n-1} | rem_state]}
   end
   defp do_ensure({:fin, [_my_state | rem_state]}, reducer, _n) do
@@ -135,7 +198,7 @@ defmodule ET.Transducers do
   end
 
   defp do_first_zip({{:done, state}, _coll}, my_state), do: {:cont, [my_state | state]}
-  defp do_first_zip({{:halt, state}, _coll}, my_state), do: prepend_state({:halt, state}, [])
+  defp do_first_zip({{:halt, state}, _coll}, _my_state), do: prepend_state({:halt, state}, [])
   defp do_first_zip({{:cont, state},  coll}, my_state), do: prepend_state({:cont, state}, [coll | my_state])
 
   defp do_final_zip( _,  _, {:halt, state}, reducer), do: reducer.({:fin, state})

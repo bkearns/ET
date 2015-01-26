@@ -16,6 +16,11 @@ defmodule ETReducersTest do
     assert ET.reduce([false, true], ET.Reducers.any?) == true
     assert ET.reduce([false, false], ET.Reducers.any?) == false
   end
+
+  test "count" do
+    assert ET.reduce(1..3, ET.Reducers.count) == 3
+    assert ET.reduce(1..4, ET.Reducers.count) == 4
+  end
   
   test "list reducer" do
     assert ET.reduce([1,2,3,4], ET.Reducers.list) == [1,2,3,4]
