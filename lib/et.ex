@@ -49,19 +49,32 @@ defmodule ET do
 
   @spec reduce(Transducible.t, reducer) :: term
   def reduce(coll, reducer) do
-    do_reduce(coll, reducer.(:init), reducer)
+    {_signal, state} = reduce_elements(coll, reducer.(:init), reducer)
+    finish_reduce(state, reducer)
   end
 
-  @spec do_reduce(Transducible.t, {:cont | :halt | :done, list}, reducer) :: term
-  defp do_reduce(coll, {:cont, state}, reducer) do
+
+  @doc """
+  A helper function for performing the :cont recursion over a transducible into a reducer
+  with an already generated state.
+
+  """
+  
+  @spec reduce_elements(Transducible.t, {:cont | :halt | :done, list}, reducer) :: term
+  def reduce_elements(coll, {:cont, state}, reducer) do
     {signal, collection} = reduce_step(coll, state, reducer)
-    do_reduce(collection, signal, reducer)
+    reduce_elements(collection, signal, reducer)
   end
-  defp do_reduce(_coll, {:done, state}, reducer), do: finish_reduce(state, reducer)
-  defp do_reduce(_coll, {:halt, state}, reducer), do: finish_reduce(state, reducer)
+  def reduce_elements(_coll, signal, _reducer), do: signal
 
+
+  @doc """
+  A helper function for finishing a reducer with a state.
+
+  """
+    
   @spec finish_reduce(list, reducer) :: term
-  defp finish_reduce(state, reducer) do
+  def finish_reduce(state, reducer) do
     {:fin, result} = reducer.({:fin, state})
     result
   end

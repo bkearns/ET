@@ -18,66 +18,168 @@ defmodule ET.Transducers do
   
   import ET.Transducer
 
-  def chunk(size), do: chunk(size, size, ET.Reducers.list)
+  @doc """
+  A transducer which takes elements and emits chunks of size elements. These chunks default
+  to ET.Reducers.list(), but an alternate reducer may be substituted. Elements in each chunk
+  are cached until size elements are received and then all are resolved immediately and 
+  the result is handed to the main reducer.
+
+  Chunking begins with the first element and by default a new chunk is created every size
+  elements, but step can be defined to start chunks more or less frequently.
+
+  If padding is not defined, then incomplete chunks are discarded. If it is defined, then
+  elements are applied to incomplete chunks until either all chunks are complete or 
+  padding is done and incomplete chunks are processed.
+
+    iex> chunker = ET.Transducers.chunk(2) |> ET.Reducers.list()
+    iex> ET.reduce(1..5, chunker)
+    [[1,2], [3,4]]
+
+    iex> chunker = ET.Transducers.chunk(2, 1) |> ET.Reducers.list()
+    iex> ET.reduce(1..5, chunker)
+    [[1,2], [2,3], [3,4], [4,5]]
+
+    iex> chunker = ET.Transducers.chunk(2, [:a,:b,:c]) |> ET.Reducers.list()
+    iex> ET.reduce(1..5, chunker)
+    [[1,2], [3,4], [5,:a]]
+
+    iex> chunker = ET.Transducers.chunk(2, []) |> ET.Reducers.list()
+    iex> ET.reduce(1..5, chunker)
+    [[1,2], [3,4], [5]]
+
+  """
+
+  # TODO spec definition for chunk
+  def chunk(size), do: chunk(size, size, ET.Reducers.list(), nil)
   def chunk(%ET.Transducer{} = trans, size), do: combine(trans, chunk(size))
-  def chunk(size, step) when is_integer(step), do: chunk(size, step, ET.Reducers.list)
+  def chunk(size, step) when is_integer(step), do: chunk(size, step, ET.Reducers.list(), nil)
   def chunk(size, inner_reducer) when is_function(inner_reducer, 1) do
-    chunk(size, size, inner_reducer)
+    chunk(size, size, inner_reducer, nil)
   end
+  def chunk(size, padding), do: chunk(size, size, ET.Reducers.list(), padding)
   def chunk(%ET.Transducer{} = trans, this, that), do: combine(trans, chunk(this, that))
-  def chunk(size, step, inner_reducer) do
-    inner_reducer =
-      ET.Transducers.take(size)
-      |> ET.Transducers.ensure(size)
-      |> ET.Transducer.compose(inner_reducer)
-    
+  def chunk(size, step, inner_reducer), do: chunk(size, step, inner_reducer, nil)
+  def chunk(%ET.Transducer{} = trans, this, that, other) do
+    combine(trans, chunk(this, that, other))
+  end
+  def chunk(size, step, inner_reducer, padding) do
     %ET.Transducer{elements: [fn reducer ->
+      inner_reducer =
+        ET.Transducers.cache(size, !padding)
+        |> ET.Transducers.take(size)
+        |> ET.Transducer.compose(inner_reducer)
+
       fn signal ->
-        do_chunk(signal, step, inner_reducer, reducer)
+        do_chunk(signal, step, inner_reducer, reducer, padding)
       end
     end]}
   end
-
-  defp do_chunk(:init, _step, _inner_reducer, outer_reducer) do
-    outer_reducer.(:init) |> prepend_state({0, []})
-  end
-  defp do_chunk({:cont, elem, [{0, chunks} | rem_state]}, step, inner_reducer, outer_reducer) do
-    {:cont, state} = inner_reducer.(:init)
-    do_chunk({:cont, elem, [{step, [state | chunks]} | rem_state]},
-             step, inner_reducer, outer_reducer)
-  end
-  defp do_chunk({:cont, elem, [{countdown, chunks} | rem_state]}, _step, inner_reducer, outer_reducer) do
-    {cont, halt} = apply_element_to_states(:lists.reverse(chunks), elem, inner_reducer)
-    fin = finish_states(:lists.reverse(halt), inner_reducer)
-    {signal, new_state} = continue_elements(fin, {:cont, rem_state}, outer_reducer)
-    {signal, [{countdown-1, cont} | new_state]}
-  end
-  defp do_chunk({:fin, [_my_state | rem_state]}, _step, _inner_reducer, outer_reducer) do
-    outer_reducer.({:fin, rem_state})
+  def chunk(%ET.Transducer{} = trans, this, that, other, another) do
+    combine(trans, chunk(this, that, other, another))
   end
 
-  defp apply_element_to_states(states, elem, reducer, acc \\ {[],[]})
-  defp apply_element_to_states([], _elem, _reducer, {cont, halt}), do: {cont, halt}
-  defp apply_element_to_states([state | rem_states], elem, reducer, {cont, halt}) do
-    result =
-    case reducer.({:cont, elem, state}) do
-      {:cont, new_state} -> {[new_state | cont], halt}
-      {_, new_state}     -> {cont, [new_state | halt]}
+  defp do_chunk(:init, step, _inner_reducer, reducer, _padding) do
+    {r_signal, state} = reducer.(:init)
+    {r_signal, [{0, [], r_signal} | state]}
+  end
+  defp do_chunk({:cont, elem, [{0, chunks, r_signal} | rem_state]}, step, inner_reducer, reducer, padding) do
+    do_chunk({:cont, elem, [{step, [inner_reducer.(:init) | chunks], r_signal} | rem_state]}, step, inner_reducer, reducer, padding)
+  end
+  defp do_chunk({:cont, elem, [{countdown, chunks, r_signal} | rem_state]}, _step, inner_reducer, reducer, _padding) do
+    {{signal, state}, new_chunks} = apply_element(chunks, elem, inner_reducer, reducer, {r_signal, rem_state})
+    {signal, [{countdown-1, new_chunks, signal} | state]}
+  end
+  defp do_chunk({:fin, [{_, chunks, r_signal} | rem_state]}, _step, inner_reducer, reducer, nil) do
+    finish_chunks(chunks, inner_reducer)
+    reducer.({:fin, rem_state})
+  end
+  defp do_chunk({:fin, [{countdown, chunks, r_signal} | rem_state]}, step, inner_reducer, reducer, padding) do
+    {{r_signal, rem_state}, chunks} =
+      apply_padding(chunks, Transducible.next(padding), inner_reducer, reducer, {r_signal, rem_state})
+    do_chunk({:fin, [{countdown, chunks, r_signal} | rem_state]}, step, inner_reducer, reducer, nil)
+  end
+
+  defp apply_element(chunks, elem, inner_reducer, halt_reducer, halt_signal) do
+    apply_element(:lists.reverse(chunks), elem, inner_reducer, halt_reducer, halt_signal, [])
+  end
+  defp apply_element([], _, _, _, halt_signal, acc) do
+    {halt_signal, acc}
+  end
+  defp apply_element([chunk | chunks], elem, inner_reducer, halt_reducer, {:halt, state}, acc) do
+    apply_element(chunks, elem, inner_reducer, halt_reducer, {:halt, state}, [chunk | acc])
+  end
+  defp apply_element([signal | chunks], elem, inner_reducer, halt_reducer, {:cont, halt_state}, acc) do
+    case ET.reduce_elements([elem], signal, inner_reducer) do
+      {:done, state} ->
+        apply_element(chunks, elem, inner_reducer, halt_reducer, {:cont, halt_state}, [{:cont, state} | acc])
+      {:halt, state} ->
+        h_elem = ET.finish_reduce(state, inner_reducer)
+        apply_element(chunks, elem, inner_reducer, halt_reducer, halt_reducer.({:cont, h_elem, halt_state}), acc) 
     end
-    apply_element_to_states(rem_states, elem, reducer, result)
   end
 
-  defp finish_states(states, reducer, acc \\ [])
-  defp finish_states([], _reducer, acc), do: :lists.reverse(acc)
-  defp finish_states([state | rem_states], reducer, acc) do
-    {:fin, result} = reducer.({:fin, state})
-    finish_states(rem_states, reducer, [result | acc])
+  defp finish_chunks(chunks, inner_reducer) do
+    chunks = :lists.reverse(chunks)
+    for {_, chunk} <- chunks, do: ET.finish_reduce(chunk, inner_reducer)
   end
 
-  defp continue_elements([], signal, _reducer), do: signal
-  defp continue_elements(_, {:halt, state}, _reducer), do: {:halt, state}
-  defp continue_elements([elem | elements], {:cont, state}, reducer) do
-    continue_elements(elements, reducer.({:cont, elem, state}), reducer)
+  defp apply_padding(chunks, :done, inner_reducer, reducer, r_signal) do
+    halt_signal = ET.reduce_elements(finish_chunks(chunks, inner_reducer), r_signal, reducer)
+    {halt_signal, []}
+  end
+  defp apply_padding(chunks, {elem, cont}, inner_reducer, halt_reducer, halt_signal) do
+    case apply_element(chunks, elem, inner_reducer, halt_reducer, halt_signal) do
+      {signal, []} -> {signal, []}
+      {{:halt, _} = signal, chunks} -> {signal, chunks}
+      {halt_signal, chunks} -> apply_padding(chunks, Transducible.next(cont), inner_reducer, halt_reducer, halt_signal)
+    end
+  end
+
+
+  @doc """
+  A transducer which caches a number of elements before sending them to be processed.
+  Discard to true will discard cache on :fin signal.
+
+    iex> three_cache = ET.Transducers.cache(3, true) |> ET.Reducers.list()
+    iex> ET.reduce(1..2, three_cache)
+    []
+    iex> ET.reduce(1..3, three_cache)
+    [1,2,3]
+
+    iex> three_cache = ET.Transducers.cache(3) |> ET.Reducers.list()
+    iex> ET.reduce(1..2, three_cache)
+    [1,2]
+    iex> ET.reduce(1..3, three_cache)
+    [1,2,3]
+
+  """
+
+  @spec cache(ET.Transducer.t, non_neg_integer) :: ET.Transducer.t
+  @spec cache(non_neg_integer) :: ET.Transducer.t
+  @spec cache(ET.Transducer.t, non_neg_integer, boolean) :: ET.Transducer.t
+  @spec cache(non_neg_integer, boolean) :: ET.Transducer.t
+  def cache(size), do: cache(size, false)
+  def cache(%ET.Transducer{} = trans, size), do: combine(trans, cache(size))
+  def cache(size, discard) do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init) |> prepend_state({size, []})
+         {:cont, elem, [{1, elems} | rem_state]} ->
+           case ET.reduce_elements(:lists.reverse([elem | elems]), {:cont, rem_state}, reducer) do
+             {:halt, state} -> {:halt, state}
+             {:done, state} -> {:cont, state}
+           end
+           |> prepend_state({size, []})
+         {:cont, elem, [{n, elems} | rem_state]} -> {:cont, [{n-1,[elem | elems]} | rem_state]}
+         {:fin, [{_n, elems} | rem_state]} ->
+           unless discard do
+             {_signal, rem_state} = ET.reduce_elements(:lists.reverse(elems), {:cont, rem_state}, reducer)
+           end
+           reducer.({:fin, rem_state})
+      end
+    end]}
+  end
+  def cache(%ET.Transducer{} = trans, size, discard) do
+    combine(trans, cache(size, discard))
   end
   
   @doc """

@@ -14,6 +14,20 @@ defmodule ETTransducersTest do
     chunker = ET.Transducers.chunk(2, 1, ET.Reducers.count()) |> ET.Reducers.list()
     assert ET.reduce(1..4, chunker) == [2, 2, 2]
 
+    chunker = ET.Transducers.chunk(2, [:a, :b, :c]) |> ET.Reducers.list()
+    assert ET.reduce(1..5, chunker) == [[1,2], [3,4], [5,:a]]
+
+    chunker = ET.Transducers.chunk(2, []) |> ET.Reducers.list()
+    assert ET.reduce(1..5, chunker) == [[1,2], [3,4], [5]]
+  end
+
+  test "ET.Transducers.cache" do
+    three_cache = ET.Transducers.cache(3) |> ET.Reducers.list()
+    assert ET.reduce(1..2, three_cache) == [1,2]
+    assert ET.reduce(1..3, three_cache) == [1,2,3]
+
+    three_cache = ET.Transducers.cache(3, true) |> ET.Reducers.list()
+    assert ET.reduce(1..2, three_cache) == []
   end
   
   test "ET.Transducers.ensure" do
