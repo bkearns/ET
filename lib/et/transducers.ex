@@ -51,16 +51,16 @@ defmodule ET.Transducers do
 
   # TODO spec definition for chunk
   def chunk(size), do: chunk(size, size, ET.Reducers.list(), nil)
-  def chunk(%ET.Transducer{} = trans, size), do: combine(trans, chunk(size))
+  def chunk(%ET.Transducer{} = trans, size), do: compose(trans, chunk(size))
   def chunk(size, step) when is_integer(step), do: chunk(size, step, ET.Reducers.list(), nil)
   def chunk(size, inner_reducer) when is_function(inner_reducer, 1) do
     chunk(size, size, inner_reducer, nil)
   end
   def chunk(size, padding), do: chunk(size, size, ET.Reducers.list(), padding)
-  def chunk(%ET.Transducer{} = trans, this, that), do: combine(trans, chunk(this, that))
+  def chunk(%ET.Transducer{} = trans, this, that), do: compose(trans, chunk(this, that))
   def chunk(size, step, inner_reducer), do: chunk(size, step, inner_reducer, nil)
   def chunk(%ET.Transducer{} = trans, this, that, other) do
-    combine(trans, chunk(this, that, other))
+    compose(trans, chunk(this, that, other))
   end
   def chunk(size, step, inner_reducer, padding) do
     %ET.Transducer{elements: [fn reducer ->
@@ -75,10 +75,10 @@ defmodule ET.Transducers do
     end]}
   end
   def chunk(%ET.Transducer{} = trans, this, that, other, another) do
-    combine(trans, chunk(this, that, other, another))
+    compose(trans, chunk(this, that, other, another))
   end
 
-  defp do_chunk(:init, step, _inner_reducer, reducer, _padding) do
+  defp do_chunk(:init, _step, _inner_reducer, reducer, _padding) do
     {r_signal, state} = reducer.(:init)
     {r_signal, [{0, [], r_signal} | state]}
   end
@@ -89,7 +89,7 @@ defmodule ET.Transducers do
     {{signal, state}, new_chunks} = apply_element(chunks, elem, inner_reducer, reducer, {r_signal, rem_state})
     {signal, [{countdown-1, new_chunks, signal} | state]}
   end
-  defp do_chunk({:fin, [{_, chunks, r_signal} | rem_state]}, _step, inner_reducer, reducer, nil) do
+  defp do_chunk({:fin, [{_, chunks, _r_signal} | rem_state]}, _step, inner_reducer, reducer, nil) do
     finish_chunks(chunks, inner_reducer)
     reducer.({:fin, rem_state})
   end
@@ -159,7 +159,7 @@ defmodule ET.Transducers do
   @spec cache(ET.Transducer.t, non_neg_integer, boolean) :: ET.Transducer.t
   @spec cache(non_neg_integer, boolean) :: ET.Transducer.t
   def cache(size), do: cache(size, false)
-  def cache(%ET.Transducer{} = trans, size), do: combine(trans, cache(size))
+  def cache(%ET.Transducer{} = trans, size), do: compose(trans, cache(size))
   def cache(size, discard) do
     %ET.Transducer{elements: [fn reducer ->
       fn :init -> reducer.(:init) |> prepend_state({size, []})
@@ -179,7 +179,7 @@ defmodule ET.Transducers do
     end]}
   end
   def cache(%ET.Transducer{} = trans, size, discard) do
-    combine(trans, cache(size, discard))
+    compose(trans, cache(size, discard))
   end
   
   @doc """
@@ -192,7 +192,7 @@ defmodule ET.Transducers do
   
   @spec ensure(ET.Transducer.t, non_neg_integer) :: ET.Transducer.t
   @spec ensure(non_neg_integer) :: ET.Transducer.t
-  def ensure(%ET.Transducer{} = trans, n), do: combine(trans, ensure(n))
+  def ensure(%ET.Transducer{} = trans, n), do: compose(trans, ensure(n))
   def ensure(n) do
     %ET.Transducer{elements: [fn reducer -> &(do_ensure(&1, reducer, n)) end]}
   end
@@ -228,7 +228,7 @@ defmodule ET.Transducers do
   
   @spec map(ET.Transducer.t, (term -> term)) :: ET.Transducer.t
   @spec map((term -> term)) :: ET.Transducer.t
-  def map(%ET.Transducer{} = trans, fun), do: combine(trans, map(fun))
+  def map(%ET.Transducer{} = trans, fun), do: compose(trans, map(fun))
   def map(fun) do
     %ET.Transducer{elements:
       [fn reducer ->
@@ -251,7 +251,7 @@ defmodule ET.Transducers do
   
   @spec take(ET.Transducer.t , non_neg_integer) :: ET.Transducer.t
   @spec take(non_neg_integer) :: ET.Transducer.t
-  def take(%ET.Transducer{} = trans, num), do: combine(trans, take(num))
+  def take(%ET.Transducer{} = trans, num), do: compose(trans, take(num))
   def take(num) do
     %ET.Transducer{elements: [fn reducer ->
       fn :init -> reducer.(:init) |> prepend_state(num)
@@ -285,7 +285,7 @@ defmodule ET.Transducers do
   
   @spec zip(ET.Transducer.t) :: ET.Transducer.t
   @spec zip() :: ET.Transducer.t
-  def zip(%ET.Transducer{} = trans), do: combine(trans, zip())
+  def zip(%ET.Transducer{} = trans), do: compose(trans, zip())
   def zip() do
     %ET.Transducer{elements:
       [fn reducer ->

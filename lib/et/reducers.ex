@@ -116,7 +116,7 @@ defmodule ET.Reducers do
   def count(%ET.Transducer{} = trans), do: compose(trans, count())
   def count() do
     fn :init                 -> {:cont, [0]}
-       {:cont, input, [acc]} -> {:cont, [acc+1]}
+       {:cont, _input, [acc]} -> {:cont, [acc+1]}
        {:fin, [acc]}         -> {:fin, acc}
     end
   end

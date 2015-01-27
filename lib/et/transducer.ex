@@ -7,7 +7,8 @@ defmodule ET.Transducer do
   """
 
   @doc """
-  Combines two transducers to make a new transducer.
+  Combines two transducers to make a new transducer or one transducer with a
+  reducer.
 
   The shape of two transducers in a chain is the same as a single transducer.
   ET.Transducer.Combine ensures the resulting transducer, when eventually
@@ -30,27 +31,21 @@ defmodule ET.Transducer do
       |> ET.Reducers.list()
 
     ET.reduce(1..3, reducer)
-  """
-
-  @spec combine(ET.Transducer.t, ET.Transducer.t) :: ET.Transducer.t
-  def combine(%ET.Transducer{elements: t1}, %ET.Transducer{elements: [t2]}) do
-    %ET.Transducer{elements: [t2 | t1]}
-  end
-  def combine(%ET.Transducer{elements: t1}, %ET.Transducer{elements: t2}) do
-    %ET.Transducer{elements: t2 ++ t1}
-  end
-
-  @doc """
-  Applies a reducer to a transducer, returning a new reducer.
-
-  ET.reduce only takes reducers, so transducers need to be wrapped around an
-  existing reducer, producing a new reducer.
 
     iex> add_one = ET.Transducers.map(&(&1+1))
     iex> ET.Transducer.combine(add_one, ET.Reducers.list)
     iex> ET.reduce(1..3, reducer)
     [2,3,4]
+
   """
+
+  @spec compose(ET.Transducer.t, ET.Transducer.t) :: ET.Transducer.t
+  def compose(%ET.Transducer{elements: t1}, %ET.Transducer{elements: [t2]}) do
+    %ET.Transducer{elements: [t2 | t1]}
+  end
+  def compose(%ET.Transducer{elements: t1}, %ET.Transducer{elements: t2}) do
+    %ET.Transducer{elements: t2 ++ t1}
+  end
 
   @spec compose(ET.Transducer.t, ET.reducer) :: ET.reducer
   def compose(%ET.Transducer{elements: [transducer | rest]}, reducer) do
