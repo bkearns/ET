@@ -137,6 +137,69 @@ defmodule ET.Transducers do
 
 
   @doc """
+  A transducer which makes a new input whenever the chunking function returns a new value.
+  By default, each chunk is reduced into ET.Reducers.list(), but this can be overridden.
+
+  """
+
+  @spec chunk_by((term -> term)) :: ET.Transducer.t
+  @spec chunk_by((term -> term), ET.reducer) :: ET.Transducer.t
+  @spec chunk_by(ET.Transducer.t, (term -> term)) :: ET.Transducer.t
+  @spec chunk_by(ET.Transducer.t, (term -> term), ET.reducer) :: ET.Transducer.t
+  def chunk_by(chunk_fun), do: chunk_by(chunk_fun, ET.Reducers.list())
+  def chunk_by(%ET.Transducer{} = trans, chunk_fun), do: compose(trans, chunk_by(chunk_fun))
+  def chunk_by(chunk_fun, inner_reducer) do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init) |> prepend_state({nil, nil})
+         {:cont, input, [{nil, nil} | r_state]} ->
+           chunk_result = chunk_fun.(input) 
+           do_chunk_by(input, chunk_result, chunk_result, inner_reducer.(:init), inner_reducer, reducer, r_state)
+         {:cont, input, [{c_input, c_signal} | r_state]} ->
+           do_chunk_by(input, chunk_fun.(input), c_input, c_signal, inner_reducer, reducer, r_state)
+         {:fin, [{_c_input, c_signal} | r_state]} ->
+           finish_chunk_by(c_signal, inner_reducer, reducer, r_state)
+      end
+    end]}
+  end
+  def chunk_by(%ET.Transducer{} = trans, chunk_fun, inner_reducer) do
+    compose(trans, chunk_by(chunk_fun, inner_reducer))
+  end
+
+  defp do_chunk_by(_input, c_input, c_input, {:halt, _} = signal, _inner_reducer, _outer_reducer, r_state) do
+    {:cont, r_state} |> prepend_state({c_input, signal})
+  end
+  defp do_chunk_by(input, c_input, c_input, {:cont, c_state}, inner_reducer, outer_reducer, r_state) do
+    case inner_reducer.({:cont, input, c_state}) do
+      {:cont, state} -> {:cont, r_state} |> prepend_state({c_input, {:cont, state}})
+      {:halt, state} ->
+        case outer_reducer.({:cont, ET.finish_reduce(state, inner_reducer), r_state}) do
+          {:cont, state} -> {:cont, state} |> prepend_state({c_input, {:halt, state}})
+          {:halt, state} -> {:halt, state} |> prepend_state({c_input, {nil,nil}})
+        end
+    end
+  end
+  defp do_chunk_by(input, c_input, _, {:cont, c_state}, inner_reducer, outer_reducer, r_state) do
+    result = ET.finish_reduce(c_state, inner_reducer)
+    case outer_reducer.({:cont, result, r_state}) do
+      {:cont, r_state} ->
+        do_chunk_by(input, c_input, c_input, inner_reducer.(:init), inner_reducer, outer_reducer, r_state)
+      {:halt, state} -> {:halt, state} |> prepend_state({c_input, {nil,nil}})
+    end
+  end
+  defp do_chunk_by(input, c_input, _, {:halt, _}, inner_reducer, outer_reducer, r_state) do
+    do_chunk_by(input, c_input, c_input, inner_reducer.(:init), inner_reducer, outer_reducer, r_state)
+  end
+
+  defp finish_chunk_by({:cont, c_state}, inner_reducer, outer_reducer, r_state) do
+    result = ET.finish_reduce(c_state, inner_reducer)
+      {_, r_state} = outer_reducer.({:cont, result, r_state})
+      outer_reducer.({:fin, r_state})
+  end
+  defp finish_chunk_by(_, _inner_reducer, outer_reducer, r_state) do
+    outer_reducer.({:fin, r_state})
+  end
+  
+  @doc """
   A transducer which caches a number of elements before sending them to be processed.
   Discard to true will discard cache on :fin signal.
 
