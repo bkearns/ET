@@ -192,10 +192,14 @@ defmodule ET.Transducers do
 
   """
 
+  @spec chunk_by() :: ET.Transducer.t
+  @spec chunk_by(ET.Transducer.t) :: ET.Transducer.t
   @spec chunk_by((term -> term)) :: ET.Transducer.t
   @spec chunk_by((term -> term), ET.reducer) :: ET.Transducer.t
   @spec chunk_by(ET.Transducer.t, (term -> term)) :: ET.Transducer.t
   @spec chunk_by(ET.Transducer.t, (term -> term), ET.reducer) :: ET.Transducer.t
+  def chunk_by(), do: chunk_by(&(&1))
+  def chunk_by(%ET.Transducer{} = trans), do: compose(trans, chunk_by())
   def chunk_by(change_fun), do: chunk_by(change_fun, ET.Reducers.list())
   def chunk_by(%ET.Transducer{} = trans, change_fun), do: compose(trans, chunk_by(change_fun))
   def chunk_by(change_fun, inner_reducer) do
@@ -232,7 +236,7 @@ defmodule ET.Transducers do
          {:cont, {false, elem}, [false | r_state]} ->
            reducer.({:cont, elem, r_state})
            |> prepend_state(false)
-         {:cont, {true, elem}, [false | r_state]} ->
+         {:cont, {true, _elem}, [false | r_state]} ->
            {:halt, [false | r_state]}
          {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
        end
