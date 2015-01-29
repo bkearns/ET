@@ -48,6 +48,11 @@ defmodule ET.Transducers do
     iex> ET.reduce(1..5, chunker)
     [[1,2], [3,4], [5]]
 
+  A generic version of chunk is available which takes a raw inner reducer and a padding transducer.
+  This version expects {boolean, value} tuples and triggers a new chunk each time boolean is true.
+  The inner reducer should expect to receive the tuples allowing it to react dependent upon the
+  result of whatever is creating them.
+
   """
 
   # TODO spec definition for chunk
