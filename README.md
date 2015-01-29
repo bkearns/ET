@@ -5,9 +5,11 @@ ET - Elixir Transducers
 
 Standard enumerators get us very far already, why a different model? Well, let's say you have something like this:
 
-    big_list
-    |> Enum.map( &some_expensive_transformation/1 )
-    |> Enum.take_while( &bool_test/1 )
+```elixir
+big_list
+|> Enum.map( &some_expensive_transformation/1 )
+|> Enum.take_while( &bool_test/1 )
+```
 
 You just did a big, expensive transformation against a big list and you might only end up keeping a hand-full of them.
 
@@ -15,11 +17,13 @@ Transducers solve this by creating Stream-like composable functions, but with th
 
 ## How does it look?
 
-    reducer =
-         ET.Transducers.map( &some_expensive_transformation/1 )
-      |> ET.Transducers.take_while( &bool_test/1 )
-      |> ET.Reducers.list
-    ET.reduce( big_list, reducer )
+```elixir
+reducer =
+     ET.Transducers.map( &some_expensive_transformation/1 )
+  |> ET.Transducers.take_while( &bool_test/1 )
+  |> ET.Reducers.list
+ET.reduce( big_list, reducer )
+```
 
 ## Status
 
