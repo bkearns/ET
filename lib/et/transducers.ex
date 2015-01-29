@@ -99,27 +99,27 @@ defmodule ET.Transducers do
   end
 
   defp apply_element(chunks, elem, inner_reducer, halt_reducer, halt_signal) do
-    apply_element(:lists.reverse(chunks), elem, inner_reducer, halt_reducer, halt_signal, [], true)
+    apply_element(:lists.reverse(chunks), elem, inner_reducer, halt_reducer, halt_signal, [])
   end
-  defp apply_element([], _, _, _, halt_signal, acc, _) do
+  defp apply_element([], _, _, _, halt_signal, acc) do
     {halt_signal, acc}
   end
-  defp apply_element([chunk | chunks], elem, inner_reducer, halt_reducer, {:halt, state}, acc, _) do
-    apply_element(chunks, elem, inner_reducer, halt_reducer, {:halt, state}, [chunk | acc], false)
+  defp apply_element([chunk | chunks], elem, inner_reducer, halt_reducer, {:halt, state}, acc) do
+    apply_element(chunks, elem, inner_reducer, halt_reducer, {:halt, state}, [chunk | acc])
   end
-  defp apply_element([signal | chunks], elem, inner_reducer, halt_reducer, {:cont, halt_state}, acc, on_head) do
+  defp apply_element([signal | chunks], elem, inner_reducer, halt_reducer, {:cont, halt_state}, acc) do
     case ET.reduce_elements([elem], signal, inner_reducer) do
       {:done, state} ->
-        apply_element(chunks, elem, inner_reducer, halt_reducer, {:cont, halt_state}, [{:cont, state} | acc], false)
+        apply_element(chunks, elem, inner_reducer, halt_reducer, {:cont, halt_state}, [{:cont, state} | acc])
       {:halt, state} ->
         halt_signal =
-          if on_head do
+          if acc == [] do
             h_elem = ET.finish_reduce(state, inner_reducer)
             halt_reducer.({:cont, h_elem, halt_state})
           else
             {:cont, halt_state}
           end
-        apply_element(chunks, elem, inner_reducer, halt_reducer, halt_signal, acc, on_head)
+        apply_element(chunks, elem, inner_reducer, halt_reducer, halt_signal, acc)
     end
   end
 
