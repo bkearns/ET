@@ -18,6 +18,7 @@ defmodule ET.Transducers do
   
   import ET.Transducer
 
+
   @doc """
   A transducer which takes elements and emits chunks of size elements. These chunks default
   to ET.Reducers.list(), but an alternate reducer may be substituted. Elements in each chunk
@@ -50,77 +51,96 @@ defmodule ET.Transducers do
   """
 
   # TODO spec definition for chunk
-  def chunk(size), do: chunk(size, size, ET.Reducers.list(), nil)
-  def chunk(%ET.Transducer{} = trans, size), do: compose(trans, chunk(size))
-  def chunk(size, step) when is_integer(step), do: chunk(size, step, ET.Reducers.list(), nil)
-  def chunk(size, inner_reducer) when is_function(inner_reducer, 1) do
-    chunk(size, size, inner_reducer, nil)
+  def chunk(size), do: chunk(size, size)
+  def chunk(%ET.Transducer{} = trans, two) do
+    compose(trans, chunk(two))
   end
-  def chunk(size, padding), do: chunk(size, size, ET.Reducers.list(), padding)
-  def chunk(%ET.Transducer{} = trans, this, that), do: compose(trans, chunk(this, that))
-  def chunk(size, step, inner_reducer), do: chunk(size, step, inner_reducer, nil)
-  def chunk(%ET.Transducer{} = trans, this, that, other) do
-    compose(trans, chunk(this, that, other))
+  def chunk(size, step) when is_integer(size) and is_integer(step) do
+    chunk(size, step, nil)
   end
-  def chunk(size, step, inner_reducer, padding) do
+  def chunk(size, reducer) when is_integer(size) and is_function(reducer, 1) do
+    chunk(size, size, nil, reducer)
+  end
+  def chunk(size, padding) when is_integer(size) do
+    chunk(size, size, padding)
+  end
+  def chunk(inner_reducer, padding) do
     %ET.Transducer{elements: [fn reducer ->
-      inner_reducer =
-        ET.Transducers.take(size)
-        |> ET.Transducer.compose(inner_reducer)
-
-      fn signal ->
-        do_chunk(signal, step, inner_reducer, reducer, padding)
+      fn :init ->
+           r_signal = {signal, _} = reducer.(:init)
+           r_signal |> prepend_state({signal, []})
+         {:cont, elem, [{signal, chunks} | r_state]} ->
+           do_chunk(elem, chunks, inner_reducer, reducer, {signal, r_state})
+         {:fin, [{signal, chunks} | r_state]} ->
+           finish_chunk(chunks, inner_reducer, reducer, {signal, r_state}, padding)
       end
     end]}
   end
-  def chunk(%ET.Transducer{} = trans, this, that, other, another) do
-    compose(trans, chunk(this, that, other, another))
+  def chunk(%ET.Transducer{} = trans, two, three) do
+    compose(trans, chunk(two, three))
   end
+  def chunk(size, step, reducer) when is_integer(size) and is_integer(step) and is_function(reducer, 1) do
+    chunk(size, step, nil, reducer)
+  end
+  def chunk(size, step, padding) when is_integer(size) and is_integer(step) do
+    chunk(size, step, padding, ET.Reducers.list())
+  end
+  def chunk(%ET.Transducer{} = trans, two, three, four) do
+    compose(trans, chunk(two, three, four))
+  end
+  def chunk(size, step, padding, reducer) do
+    inner_reducer =
+      destructure
+      |> take(size)
+      |> compose(reducer)
 
-  defp do_chunk(:init, _step, _inner_reducer, reducer, _padding) do
-    {r_signal, state} = reducer.(:init)
-    {r_signal, [{0, [], r_signal} | state]}
+    step_trans(step)
+    |> chunk(inner_reducer, padding)
   end
-  defp do_chunk({:cont, elem, [{0, chunks, r_signal} | rem_state]}, step, inner_reducer, reducer, padding) do
-    do_chunk({:cont, elem, [{step, [inner_reducer.(:init) | chunks], r_signal} | rem_state]}, step, inner_reducer, reducer, padding)
+  def chunk(%ET.Transducer{} = trans, two, three, four, five) do
+    compose(trans, chunk(two, three, four, five))
   end
-  defp do_chunk({:cont, elem, [{countdown, chunks, r_signal} | rem_state]}, _step, inner_reducer, reducer, _padding) do
-    {{signal, state}, new_chunks} = apply_element(chunks, elem, inner_reducer, reducer, {r_signal, rem_state})
-    {signal, [{countdown-1, new_chunks, signal} | state]}
-  end
-  defp do_chunk({:fin, [{_, chunks, _r_signal} | rem_state]}, _step, inner_reducer, reducer, nil) do
-    finish_chunks(chunks, inner_reducer)
-    reducer.({:fin, rem_state})
-  end
-  defp do_chunk({:fin, [{countdown, chunks, r_signal} | rem_state]}, step, inner_reducer, reducer, padding) do
-    {{r_signal, rem_state}, chunks} =
-      apply_padding(chunks, Transducible.next(padding), inner_reducer, reducer, {r_signal, rem_state})
-    do_chunk({:fin, [{countdown, chunks, r_signal} | rem_state]}, step, inner_reducer, reducer, nil)
-  end
+  
 
-  defp apply_element(chunks, elem, inner_reducer, halt_reducer, halt_signal) do
-    apply_element(:lists.reverse(chunks), elem, inner_reducer, halt_reducer, halt_signal, [])
+  defp do_chunk({false, _} = elem, chunks, inner_reducer, outer_reducer, r_signal) do
+    apply_element(elem, chunks, inner_reducer, outer_reducer, r_signal)
   end
-  defp apply_element([], _, _, _, halt_signal, acc) do
-    {halt_signal, acc}
+  defp do_chunk({true, _} = elem, chunks, inner_reducer, outer_reducer, r_signal) do
+    apply_element(elem, [inner_reducer.(:init) | chunks], inner_reducer, outer_reducer, r_signal)
   end
-  defp apply_element([chunk | chunks], elem, inner_reducer, halt_reducer, {:halt, state}, acc) do
-    apply_element(chunks, elem, inner_reducer, halt_reducer, {:halt, state}, [chunk | acc])
+  
+  defp apply_element(elem, chunks, inner_reducer, outer_reducer, r_signal) do
+    apply_element(elem, :lists.reverse(chunks), inner_reducer, outer_reducer, r_signal, [])
   end
-  defp apply_element([signal | chunks], elem, inner_reducer, halt_reducer, {:cont, halt_state}, acc) do
-    case ET.reduce_elements([elem], signal, inner_reducer) do
-      {:done, state} ->
-        apply_element(chunks, elem, inner_reducer, halt_reducer, {:cont, halt_state}, [{:cont, state} | acc])
-      {:halt, state} ->
-        halt_signal =
-          if acc == [] do
-            h_elem = ET.finish_reduce(state, inner_reducer)
-            halt_reducer.({:cont, h_elem, halt_state})
-          else
-            {:cont, halt_state}
-          end
-        apply_element(chunks, elem, inner_reducer, halt_reducer, halt_signal, acc)
+  defp apply_element(_, [], _, _, {signal, _} = r_signal, acc) do
+    r_signal |> prepend_state({signal, acc})
+  end
+  defp apply_element(elem, [chunk | chunks], inner_reducer, outer_reducer, {:halt, _} = r_signal, acc) do
+    apply_element(elem, chunks, inner_reducer, outer_reducer, r_signal, [chunk | acc])
+  end
+  defp apply_element(elem, [chunk | chunks], inner_reducer, outer_reducer, {:cont, r_state}, acc) do
+    c_signal =
+      case chunk do
+        {:cont, state} -> inner_reducer.({:cont, elem, state})
+        {:halt, _} -> chunk
+      end
+    case {c_signal, acc} do
+      {{:halt, state}, []} ->
+        r_elem = ET.finish_reduce(state, inner_reducer)
+        r_signal = outer_reducer.({:cont, r_elem, r_state})
+        apply_element(elem, chunks, inner_reducer, outer_reducer, r_signal, acc)
+      _ ->
+        apply_element(elem, chunks, inner_reducer, outer_reducer, {:cont, r_state}, [c_signal | acc])
     end
+  end
+
+  defp finish_chunk(chunks, inner_reducer, outer_reducer, {signal, r_state}, padding) when signal == :halt or padding == nil do
+    finish_chunks(chunks, inner_reducer)
+    outer_reducer.({:fin, r_state})
+  end
+  defp finish_chunk(chunks, inner_reducer, outer_reducer, {:cont, _} = r_signal, padding) do
+    r_state = apply_padding(Transducible.next(padding), chunks, inner_reducer, outer_reducer, r_signal)
+    outer_reducer.({:fin, r_state})
   end
 
   defp finish_chunks(chunks, inner_reducer) do
@@ -128,18 +148,38 @@ defmodule ET.Transducers do
     for {_, chunk} <- chunks, do: ET.finish_reduce(chunk, inner_reducer)
   end
 
-  defp apply_padding(chunks, :done, inner_reducer, reducer, r_signal) do
-    halt_signal = ET.reduce_elements(finish_chunks(chunks, inner_reducer), r_signal, reducer)
-    {halt_signal, []}
+  defp apply_padding(:done, chunks, inner_reducer, outer_reducer, r_signal) do
+    {_signal, r_state} = ET.reduce_elements(finish_chunks(chunks, inner_reducer), r_signal, outer_reducer)
+    r_state
   end
-  defp apply_padding(chunks, {elem, cont}, inner_reducer, halt_reducer, halt_signal) do
-    case apply_element(chunks, elem, inner_reducer, halt_reducer, halt_signal) do
-      {signal, []} -> {signal, []}
-      {{:halt, _} = signal, chunks} -> {signal, chunks}
-      {halt_signal, chunks} -> apply_padding(chunks, Transducible.next(cont), inner_reducer, halt_reducer, halt_signal)
+  defp apply_padding({elem, cont}, chunks, inner_reducer, outer_reducer, r_signal) do
+    case apply_element({nil, elem}, chunks, inner_reducer, outer_reducer, r_signal) do
+      {_, [{_, []} | r_state]}     -> r_state
+      {:halt,  [{_, chunks} | r_state]} ->
+        finish_chunks(chunks, inner_reducer)
+        r_state
+      {signal, [{_, chunks} | r_state]} ->
+        apply_padding(Transducible.next(cont), chunks, inner_reducer, outer_reducer, {signal, r_state})
     end
   end
 
+  defp step_trans(n) when is_integer(n) do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init) |> prepend_state(1)
+         {:cont, elem, [1 | r_state]} ->
+           reducer.({:cont, {true, elem}, r_state})
+           |> prepend_state(n)
+         {:cont, elem, [countdown | r_state]} ->
+           reducer.({:cont, {false, elem}, r_state})
+           |> prepend_state(countdown - 1)
+         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
+      end
+    end]}
+  end
+
+  defp destructure() do
+    map(fn {_, elem} -> elem end)
+  end
 
   @doc """
   A transducer which makes a new input whenever the chunking function returns a new value.
@@ -151,59 +191,49 @@ defmodule ET.Transducers do
   @spec chunk_by((term -> term), ET.reducer) :: ET.Transducer.t
   @spec chunk_by(ET.Transducer.t, (term -> term)) :: ET.Transducer.t
   @spec chunk_by(ET.Transducer.t, (term -> term), ET.reducer) :: ET.Transducer.t
-  def chunk_by(chunk_fun), do: chunk_by(chunk_fun, ET.Reducers.list())
-  def chunk_by(%ET.Transducer{} = trans, chunk_fun), do: compose(trans, chunk_by(chunk_fun))
-  def chunk_by(chunk_fun, inner_reducer) do
+  def chunk_by(change_fun), do: chunk_by(change_fun, ET.Reducers.list())
+  def chunk_by(%ET.Transducer{} = trans, change_fun), do: compose(trans, chunk_by(change_fun))
+  def chunk_by(change_fun, inner_reducer) do
+    compose(change_trans(change_fun),
+            chunk(compose(change_halter, inner_reducer), []))
+  end
+  def chunk_by(%ET.Transducer{} = trans, change_fun, inner_reducer) do
+    compose(trans, chunk_by(change_fun, inner_reducer))
+  end
+
+  defp change_trans(%ET.Transducer{} = trans, change_fun) do
+    compose(trans, change_trans(change_fun))
+  end
+  defp change_trans(change_fun) do
+    ref = :erlang.make_ref
     %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state({nil, nil})
-         {:cont, input, [{nil, nil} | r_state]} ->
-           chunk_result = chunk_fun.(input) 
-           do_chunk_by(input, chunk_result, chunk_result, inner_reducer.(:init), inner_reducer, reducer, r_state)
-         {:cont, input, [{c_input, c_signal} | r_state]} ->
-           do_chunk_by(input, chunk_fun.(input), c_input, c_signal, inner_reducer, reducer, r_state)
-         {:fin, [{_c_input, c_signal} | r_state]} ->
-           finish_chunk_by(c_signal, inner_reducer, reducer, r_state)
-      end
+      fn :init -> reducer.(:init) |> prepend_state(ref)
+         {:cont, elem, [prev | r_state]} ->
+           curr = change_fun.(elem)
+           reducer.({:cont, {curr != prev, elem}, r_state})
+           |> prepend_state(curr)
+         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
+       end
     end]}
   end
-  def chunk_by(%ET.Transducer{} = trans, chunk_fun, inner_reducer) do
-    compose(trans, chunk_by(chunk_fun, inner_reducer))
+
+  defp change_halter(%ET.Transducer{} = trans), do: compose(trans, change_reducer())
+  defp change_halter do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init) |> prepend_state(true)
+         {:cont, {true, elem}, [true | r_state]} ->
+           reducer.({:cont, elem, r_state})
+           |> prepend_state(false)
+         {:cont, {false, elem}, [false | r_state]} ->
+           reducer.({:cont, elem, r_state})
+           |> prepend_state(false)
+         {:cont, {true, elem}, [false | r_state]} ->
+           {:halt, [false | r_state]}
+         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
+       end
+    end]}
   end
 
-  defp do_chunk_by(_input, c_input, c_input, {:halt, _} = signal, _inner_reducer, _outer_reducer, r_state) do
-    {:cont, r_state} |> prepend_state({c_input, signal})
-  end
-  defp do_chunk_by(input, c_input, c_input, {:cont, c_state}, inner_reducer, outer_reducer, r_state) do
-    case inner_reducer.({:cont, input, c_state}) do
-      {:cont, state} -> {:cont, r_state} |> prepend_state({c_input, {:cont, state}})
-      {:halt, state} ->
-        case outer_reducer.({:cont, ET.finish_reduce(state, inner_reducer), r_state}) do
-          {:cont, state} -> {:cont, state} |> prepend_state({c_input, {:halt, state}})
-          {:halt, state} -> {:halt, state} |> prepend_state({c_input, {nil,nil}})
-        end
-    end
-  end
-  defp do_chunk_by(input, c_input, _, {:cont, c_state}, inner_reducer, outer_reducer, r_state) do
-    result = ET.finish_reduce(c_state, inner_reducer)
-    case outer_reducer.({:cont, result, r_state}) do
-      {:cont, r_state} ->
-        do_chunk_by(input, c_input, c_input, inner_reducer.(:init), inner_reducer, outer_reducer, r_state)
-      {:halt, state} -> {:halt, state} |> prepend_state({c_input, {nil,nil}})
-    end
-  end
-  defp do_chunk_by(input, c_input, _, {:halt, _}, inner_reducer, outer_reducer, r_state) do
-    do_chunk_by(input, c_input, c_input, inner_reducer.(:init), inner_reducer, outer_reducer, r_state)
-  end
-
-  defp finish_chunk_by({:cont, c_state}, inner_reducer, outer_reducer, r_state) do
-    result = ET.finish_reduce(c_state, inner_reducer)
-      {_, r_state} = outer_reducer.({:cont, result, r_state})
-      outer_reducer.({:fin, r_state})
-  end
-  defp finish_chunk_by(_, _inner_reducer, outer_reducer, r_state) do
-    outer_reducer.({:fin, r_state})
-  end
-  
   @doc """
   A transducer which caches a number of elements before sending them to be processed.
   Discard to true will discard cache on :fin signal.

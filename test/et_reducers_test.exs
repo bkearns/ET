@@ -18,6 +18,7 @@ defmodule ETReducersTest do
   end
 
   test "count" do
+    assert ET.reduce([], ET.Reducers.count) == 0
     assert ET.reduce(1..3, ET.Reducers.count) == 3
     assert ET.reduce(1..4, ET.Reducers.count) == 4
   end
