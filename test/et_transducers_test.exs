@@ -19,6 +19,8 @@ defmodule ETTransducersTest do
 
     chunker = ET.Transducers.chunk(2, []) |> ET.Reducers.list()
     assert ET.reduce(1..5, chunker) == [[1,2], [3,4], [5]]
+
+    #TODO test early :halt timing and order for inner reducer
   end
 
   test "ET.Transducers.chunk_by" do

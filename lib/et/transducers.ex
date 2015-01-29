@@ -65,8 +65,7 @@ defmodule ET.Transducers do
   def chunk(size, step, inner_reducer, padding) do
     %ET.Transducer{elements: [fn reducer ->
       inner_reducer =
-        ET.Transducers.cache(size, !padding)
-        |> ET.Transducers.take(size)
+        ET.Transducers.take(size)
         |> ET.Transducer.compose(inner_reducer)
 
       fn signal ->
@@ -100,21 +99,27 @@ defmodule ET.Transducers do
   end
 
   defp apply_element(chunks, elem, inner_reducer, halt_reducer, halt_signal) do
-    apply_element(:lists.reverse(chunks), elem, inner_reducer, halt_reducer, halt_signal, [])
+    apply_element(:lists.reverse(chunks), elem, inner_reducer, halt_reducer, halt_signal, [], true)
   end
-  defp apply_element([], _, _, _, halt_signal, acc) do
+  defp apply_element([], _, _, _, halt_signal, acc, _) do
     {halt_signal, acc}
   end
-  defp apply_element([chunk | chunks], elem, inner_reducer, halt_reducer, {:halt, state}, acc) do
-    apply_element(chunks, elem, inner_reducer, halt_reducer, {:halt, state}, [chunk | acc])
+  defp apply_element([chunk | chunks], elem, inner_reducer, halt_reducer, {:halt, state}, acc, _) do
+    apply_element(chunks, elem, inner_reducer, halt_reducer, {:halt, state}, [chunk | acc], false)
   end
-  defp apply_element([signal | chunks], elem, inner_reducer, halt_reducer, {:cont, halt_state}, acc) do
+  defp apply_element([signal | chunks], elem, inner_reducer, halt_reducer, {:cont, halt_state}, acc, on_head) do
     case ET.reduce_elements([elem], signal, inner_reducer) do
       {:done, state} ->
-        apply_element(chunks, elem, inner_reducer, halt_reducer, {:cont, halt_state}, [{:cont, state} | acc])
+        apply_element(chunks, elem, inner_reducer, halt_reducer, {:cont, halt_state}, [{:cont, state} | acc], false)
       {:halt, state} ->
-        h_elem = ET.finish_reduce(state, inner_reducer)
-        apply_element(chunks, elem, inner_reducer, halt_reducer, halt_reducer.({:cont, h_elem, halt_state}), acc) 
+        halt_signal =
+          if on_head do
+            h_elem = ET.finish_reduce(state, inner_reducer)
+            halt_reducer.({:cont, h_elem, halt_state})
+          else
+            {:cont, halt_state}
+          end
+        apply_element(chunks, elem, inner_reducer, halt_reducer, halt_signal, acc, on_head)
     end
   end
 
