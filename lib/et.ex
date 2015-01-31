@@ -49,7 +49,7 @@ defmodule ET do
 
   @spec reduce(Transducible.t, reducer) :: term
   def reduce(coll, reducer) do
-    {_signal, state} = reduce_elements(coll, reducer.(:init), reducer)
+    {_signal, state, _coll} = reduce_elements(coll, reducer.(:init), reducer)
     finish_reduce(state, reducer)
   end
 
@@ -65,7 +65,8 @@ defmodule ET do
     {signal, collection} = reduce_step(coll, state, reducer)
     reduce_elements(collection, signal, reducer)
   end
-  def reduce_elements(_coll, signal, _reducer), do: signal
+  def reduce_elements(coll, {:halt, state}, _reducer), do: {:halt, state, coll}
+  def reduce_elements(coll, {:done, state}, _reducer), do: {:done, state, coll}
 
 
   @doc """

@@ -154,7 +154,7 @@ defmodule ET.Transducers do
   end
 
   defp apply_padding(:done, chunks, inner_reducer, outer_reducer, r_signal) do
-    {_signal, r_state} = ET.reduce_elements(finish_chunks(chunks, inner_reducer), r_signal, outer_reducer)
+    {_signal, r_state, _} = ET.reduce_elements(finish_chunks(chunks, inner_reducer), r_signal, outer_reducer)
     r_state
   end
   defp apply_padding({elem, cont}, chunks, inner_reducer, outer_reducer, r_signal) do
@@ -261,8 +261,8 @@ defmodule ET.Transducers do
       fn :init -> reducer.(:init)
          {:cont, elem, r_state} ->
            case ET.reduce_elements(elem, {:cont, r_state}, reducer) do
-             {:halt, state} -> {:halt, state}
-             {:done, state} -> {:cont, state}
+             {:halt, state, _} -> {:halt, state}
+             {:done, state, _} -> {:cont, state}
            end
          {:fin, r_state} -> reducer.({:fin, r_state})
       end
