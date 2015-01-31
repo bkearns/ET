@@ -93,7 +93,7 @@ defmodule ETTransducersTest do
     assert ET.reduce(1..4, chunker) == [2,1,1]    
   end
 
-  test "ET.Transducers.ensure" do
+  test "ET.Transducers.ensure(n)" do
     ensure_list = ET.Transducers.ensure(2)
                   |> ET.Transducers.take(1)
                   |> ET.Reducers.list
@@ -102,7 +102,17 @@ defmodule ETTransducersTest do
     assert {{:cont, state},  coll} = ET.reduce_step(coll, state, ensure_list)
     assert {{:halt, state}, _coll} = ET.reduce_step(coll, state, ensure_list)
     assert {:fin, [1]} = ensure_list.({:fin, state})
-  end
+
+    ensure_list = identity_trans
+                  |> ET.Transducers.ensure(2)
+                  |> ET.Transducers.take(1)
+                  |> ET.Reducers.list
+    coll = [1,2,3]
+    {:cont, state} = ensure_list.(:init)
+    assert {{:cont, state},  coll} = ET.reduce_step(coll, state, ensure_list)
+    assert {{:halt, state}, _coll} = ET.reduce_step(coll, state, ensure_list)
+    assert {:fin, [1]} = ensure_list.({:fin, state})    
+end
   
   test "ET.Transducers.map" do
     inc_list =
