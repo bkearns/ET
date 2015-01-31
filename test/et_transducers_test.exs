@@ -141,6 +141,13 @@ defmodule ETTransducersTest do
       |> ET.Reducers.list()
     assert ET.reduce([1..4, [8, 9]], zip_reducer) ==
            [1, 8, 2, 9, 3, 4]
+
+    zip_reducer =
+      identity_trans
+      |> ET.Transducers.zip
+      |> ET.Reducers.list()
+    assert ET.reduce([1..4, [8, 9]], zip_reducer) ==
+           [1, 8, 2, 9, 3, 4]
   end
   
   test "ET.Transducers.zip properly terminates early" do
