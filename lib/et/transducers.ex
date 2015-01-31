@@ -243,51 +243,6 @@ defmodule ET.Transducers do
     end]}
   end
 
-  @doc """
-  A transducer which caches a number of elements before sending them to be processed.
-  Discard to true will discard cache on :fin signal.
-
-    iex> three_cache = ET.Transducers.cache(3, true) |> ET.Reducers.list()
-    iex> ET.reduce(1..2, three_cache)
-    []
-    iex> ET.reduce(1..3, three_cache)
-    [1,2,3]
-
-    iex> three_cache = ET.Transducers.cache(3) |> ET.Reducers.list()
-    iex> ET.reduce(1..2, three_cache)
-    [1,2]
-    iex> ET.reduce(1..3, three_cache)
-    [1,2,3]
-
-  """
-
-  @spec cache(ET.Transducer.t, non_neg_integer) :: ET.Transducer.t
-  @spec cache(non_neg_integer) :: ET.Transducer.t
-  @spec cache(ET.Transducer.t, non_neg_integer, boolean) :: ET.Transducer.t
-  @spec cache(non_neg_integer, boolean) :: ET.Transducer.t
-  def cache(size), do: cache(size, false)
-  def cache(%ET.Transducer{} = trans, size), do: compose(trans, cache(size))
-  def cache(size, discard) do
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state({size, []})
-         {:cont, elem, [{1, elems} | rem_state]} ->
-           case ET.reduce_elements(:lists.reverse([elem | elems]), {:cont, rem_state}, reducer) do
-             {:halt, state} -> {:halt, state}
-             {:done, state} -> {:cont, state}
-           end
-           |> prepend_state({size, []})
-         {:cont, elem, [{n, elems} | rem_state]} -> {:cont, [{n-1,[elem | elems]} | rem_state]}
-         {:fin, [{_n, elems} | rem_state]} ->
-           unless discard do
-             {_signal, rem_state} = ET.reduce_elements(:lists.reverse(elems), {:cont, rem_state}, reducer)
-           end
-           reducer.({:fin, rem_state})
-      end
-    end]}
-  end
-  def cache(%ET.Transducer{} = trans, size, discard) do
-    compose(trans, cache(size, discard))
-  end
   
   @doc """
   A transducer which will not relay :halt signals until it has recieved a specified

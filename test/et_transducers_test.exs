@@ -93,15 +93,6 @@ defmodule ETTransducersTest do
     assert ET.reduce(1..4, chunker) == [2,1,1]    
   end
 
-  test "ET.Transducers.cache" do
-    three_cache = ET.Transducers.cache(3) |> ET.Reducers.list()
-    assert ET.reduce(1..2, three_cache) == [1,2]
-    assert ET.reduce(1..3, three_cache) == [1,2,3]
-
-    three_cache = ET.Transducers.cache(3, true) |> ET.Reducers.list()
-    assert ET.reduce(1..2, three_cache) == []
-  end
-  
   test "ET.Transducers.ensure" do
     ensure_list = ET.Transducers.ensure(2)
                   |> ET.Transducers.take(1)
