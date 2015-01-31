@@ -107,10 +107,10 @@ defmodule ET.Transducers do
   end
   
 
-  defp do_chunk({_, false} = elem, chunks, inner_reducer, outer_reducer, r_signal) do
+  defp do_chunk({_, bool} = elem, chunks, inner_reducer, outer_reducer, r_signal) when bool == false or bool == nil do
     apply_element(elem, chunks, inner_reducer, outer_reducer, r_signal)
   end
-  defp do_chunk({_, true} = elem, chunks, inner_reducer, outer_reducer, r_signal) do
+  defp do_chunk(elem, chunks, inner_reducer, outer_reducer, r_signal) do
     apply_element(elem, [inner_reducer.(:init) | chunks], inner_reducer, outer_reducer, r_signal)
   end
   
@@ -182,9 +182,6 @@ defmodule ET.Transducers do
     end]}
   end
 
-  defp destructure() do
-    map(fn {elem, _} -> elem end)
-  end
 
   @doc """
   A transducer which makes a new input whenever the chunking function returns a new value.
@@ -270,8 +267,54 @@ defmodule ET.Transducers do
   end
 
 
+  @doc """
+  A transducer which transforms {elem, _} into elem. Used with various
+  generic transducers which take elements in this form.
+
+    iex> reducer = ET.Transducers.destructure |> ET.Reducers.list
+    iex> ET.reduce([{1, false}, {2, true}], reducer)
+    [1, 2]
+
+  """
+
+  @spec destructure(ET.Transducer.t) :: ET.Transducer.t
+  @spec destructure() :: ET.Transducer.t
+  def destructure(%ET.Transducer{} = trans), do: compose(trans, destructure)
+  def destructure() do
+    map(fn {elem, _} -> elem end)
+  end
   
   
+  @doc """
+  A transducer which does not reduce elements until fun stops returning true.
+
+    iex> reducer = ET.Transducers.drop_while(&(rem(&1, 3) != 0)) |> ET.Reducers.list
+    iex> ET.reduce(1..4, reducer)
+    [3, 4]
+
+  """
+
+  @spec drop_while(ET.Transducer.t, (term -> boolean)) :: ET.Transducer.t
+  @spec drop_while((term -> boolean)) :: ET.Transducer.t
+  def drop_while(%ET.Transducer{} = trans, fun) do
+    compose(trans, drop_while(fun))
+  end
+  def drop_while(fun) do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init) |> prepend_state(true)
+         {:cont, [true | r_state], elem} ->
+           result = fun.(elem)
+           reducer.({:cont, r_state, {elem, !result}})
+           |> prepend_state(result)
+         {:cont, [false | r_state], elem} ->
+           reducer.({:cont, r_state, {elem, true}})
+           |> prepend_state(false)
+         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
+       end              
+    end]}
+    |> filter
+    |> destructure
+  end
 
   @doc """
   A transducer which reduces elements of form {_, true} and does not reduce
@@ -279,21 +322,23 @@ defmodule ET.Transducers do
 
   """
 
+  @spec filter(ET.Transducer.t) :: ET.Transducer.t
+  @spec filter() :: ET.Transducer.t
   def filter(%ET.Transducer{} = trans), do: compose(trans, filter)
   def filter() do
     %ET.Transducer{elements: [fn reducer ->
       fn :init -> reducer.(:init)
-         {:cont, r_state, {:true, _}} = signal ->
-           reducer.(signal)
-         {:cont, r_state, {:false, _}} ->
+         {:cont, r_state, {_, bool}} when bool == false or bool == nil ->
            {:cont, r_state}
+         {:cont, r_state, _} = signal ->
+           reducer.(signal)
          {:fin, r_state} -> reducer.({:fin, r_state})
       end
     end]}
   end
 
 
-  
+
   @doc """
   A transducer which will not relay :halt signals until it has recieved a specified
   number of elements. Elements received after a :halt signal is recieved are not

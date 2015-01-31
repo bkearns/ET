@@ -198,8 +198,26 @@ defmodule ETTransducersTest do
     assert ET.reduce([1..2, 3..5, 6..7], reducer) == [1,2,3,4,5,6,7]
   end
 
+  test "ET.Transducers.destructure()" do
+    ET.Transducers.destructure
+    |> ET.Reducers.list()
+    |> destructure_test
+  end
+
+  test "ET.Transducers.destructure(transducer)" do
+    identity_trans
+    |> ET.Transducers.destructure
+    |> ET.Reducers.list()
+    |> destructure_test
+  end
+
+  defp destructure_test(reducer) do
+    assert ET.reduce([{1, true}, {2, false}, {3, true}], reducer) ==
+           [1,2,3]
+  end
+  
   test "ET.Transducers.drop_while(fun)" do
-    ET.Transducers.drop_while(&(&1<3))
+    ET.Transducers.drop_while(&(rem(&1, 3) != 0))
     |> ET.Reducers.list
     |> drop_while_fun_test
   end
@@ -252,8 +270,8 @@ defmodule ETTransducersTest do
   end
 
   defp filter_test(reducer) do
-    assert ET.reduce([false: 1, false: 2, true: 3, false: 4], reducer) ==
-           [true: 3]
+    assert ET.reduce([{1, false}, {2, false}, {3, true}, {4, false}], reducer) ==
+           [{3, true}]
   end
 
   test "ET.Transducers.map(map_fun)" do
