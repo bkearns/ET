@@ -107,10 +107,10 @@ defmodule ET.Transducers do
   end
   
 
-  defp do_chunk({false, _} = elem, chunks, inner_reducer, outer_reducer, r_signal) do
+  defp do_chunk({_, false} = elem, chunks, inner_reducer, outer_reducer, r_signal) do
     apply_element(elem, chunks, inner_reducer, outer_reducer, r_signal)
   end
-  defp do_chunk({true, _} = elem, chunks, inner_reducer, outer_reducer, r_signal) do
+  defp do_chunk({_, true} = elem, chunks, inner_reducer, outer_reducer, r_signal) do
     apply_element(elem, [inner_reducer.(:init) | chunks], inner_reducer, outer_reducer, r_signal)
   end
   
@@ -158,7 +158,7 @@ defmodule ET.Transducers do
     r_state
   end
   defp apply_padding({elem, cont}, chunks, inner_reducer, outer_reducer, r_signal) do
-    case apply_element({nil, elem}, chunks, inner_reducer, outer_reducer, r_signal) do
+    case apply_element({elem, nil}, chunks, inner_reducer, outer_reducer, r_signal) do
       {_, [{_, []} | r_state]}     -> r_state
       {:halt,  [{_, chunks} | r_state]} ->
         finish_chunks(chunks, inner_reducer)
@@ -172,10 +172,10 @@ defmodule ET.Transducers do
     %ET.Transducer{elements: [fn reducer ->
       fn :init -> reducer.(:init) |> prepend_state(1)
          {:cont, [1 | r_state], elem} ->
-           reducer.({:cont, r_state, {true, elem}})
+           reducer.({:cont, r_state, {elem, true}})
            |> prepend_state(n)
          {:cont, [countdown | r_state], elem} ->
-           reducer.({:cont, r_state, {false, elem}})
+           reducer.({:cont, r_state, {elem, false}})
            |> prepend_state(countdown - 1)
          {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
       end
@@ -183,7 +183,7 @@ defmodule ET.Transducers do
   end
 
   defp destructure() do
-    map(fn {_, elem} -> elem end)
+    map(fn {elem, _} -> elem end)
   end
 
   @doc """
@@ -219,7 +219,7 @@ defmodule ET.Transducers do
       fn :init -> reducer.(:init) |> prepend_state(ref)
          {:cont, [prev | r_state], elem} ->
            curr = change_fun.(elem)
-           reducer.({:cont, r_state, {curr != prev, elem}})
+           reducer.({:cont, r_state, {elem, curr != prev}})
            |> prepend_state(curr)
          {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
        end
@@ -230,13 +230,13 @@ defmodule ET.Transducers do
   defp change_halter do
     %ET.Transducer{elements: [fn reducer ->
       fn :init -> reducer.(:init) |> prepend_state(true)
-         {:cont, [true | r_state], {true, elem}} ->
+         {:cont, [true | r_state], {elem, true}} ->
            reducer.({:cont, r_state, elem})
            |> prepend_state(false)
-         {:cont, [false | r_state], {false, elem}} ->
+         {:cont, [false | r_state], {elem, false}} ->
            reducer.({:cont, r_state, elem})
            |> prepend_state(false)
-         {:cont, [false | r_state], {true, _elem}} ->
+         {:cont, [false | r_state], {_elem, true}} ->
            {:halt, [false | r_state]}
          {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
        end
@@ -268,6 +268,30 @@ defmodule ET.Transducers do
       end
     end]}
   end
+
+
+  
+  
+
+  @doc """
+  A transducer which reduces elements of form {_, true} and does not reduce
+  elements of form {_, false}.
+
+  """
+
+  def filter(%ET.Transducer{} = trans), do: compose(trans, filter)
+  def filter() do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init)
+         {:cont, r_state, {:true, _}} = signal ->
+           reducer.(signal)
+         {:cont, r_state, {:false, _}} ->
+           {:cont, r_state}
+         {:fin, r_state} -> reducer.({:fin, r_state})
+      end
+    end]}
+  end
+
 
   
   @doc """

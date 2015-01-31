@@ -198,6 +198,23 @@ defmodule ETTransducersTest do
     assert ET.reduce([1..2, 3..5, 6..7], reducer) == [1,2,3,4,5,6,7]
   end
 
+  test "ET.Transducers.drop_while(fun)" do
+    ET.Transducers.drop_while(&(&1<3))
+    |> ET.Reducers.list
+    |> drop_while_fun_test
+  end
+
+  test "ET.Transducers.drop_while(transducer, fun)" do
+    identity_trans
+    |> ET.Transducers.drop_while(&(&1<3))
+    |> ET.Reducers.list
+    |> drop_while_fun_test    
+  end
+
+  defp drop_while_fun_test(reducer) do
+    ET.reduce(1..4, reducer) == [3,4]
+  end
+  
   test "ET.Transducers.ensure(n)" do
     ET.Transducers.ensure(2)
     |> ET.Transducers.take(1)
@@ -220,7 +237,25 @@ defmodule ETTransducersTest do
     assert {{:halt, state}, _coll} = ET.reduce_step(coll, state, reducer)
     assert {:fin, [1]} = reducer.({:fin, state})
   end
-  
+
+  test "ET.Transducers.filter()" do
+    ET.Transducers.filter
+    |> ET.Reducers.list
+    |> filter_test
+  end
+
+  test "ET.Transducers.filter(transducer)" do
+    identity_trans
+    |> ET.Transducers.filter
+    |> ET.Reducers.list
+    |> filter_test
+  end
+
+  defp filter_test(reducer) do
+    assert ET.reduce([false: 1, false: 2, true: 3, false: 4], reducer) ==
+           [true: 3]
+  end
+
   test "ET.Transducers.map(map_fun)" do
     ET.Transducers.map(&(&1+1))
     |> ET.Reducers.list()
