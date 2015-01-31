@@ -9,7 +9,6 @@ defmodule ETTransducersTest do
 
     chunker = identity_trans |> ET.Transducers.chunk(2) |> ET.Reducers.list()
     assert ET.reduce(1..5, chunker) == [[1,2], [3,4]]
-
   end
 
   test "ET.Transducers.chunk(size, step)" do
@@ -67,17 +66,30 @@ defmodule ETTransducersTest do
     chunker = identity_trans |> ET.Transducers.chunk(2, 1, [:a], ET.Reducers.count()) |> ET.Reducers.list()
     assert ET.reduce(1..3, chunker) == [2, 2, 2]
   end
-    #TODO test early :halt timing and order for inner reducer
+  #TODO test early :halt timing and order for inner reducer
+  #TODO test generic chunk  
 
-
-  test "ET.Transducers.chunk_by" do
+  test "ET.Transducers.chunk_by()" do
     chunker = ET.Transducers.chunk_by() |> ET.Reducers.list()
     assert ET.reduce([1,2,2,3,2], chunker) == [[1],[2,2],[3],[2]]
 
+    chunker = identity_trans |> ET.Transducers.chunk_by() |> ET.Reducers.list()
+    assert ET.reduce([1,2,2,3,2], chunker) == [[1],[2,2],[3],[2]]
+  end
+
+  test "ET.Transducers.chunk_by(map_fun)" do
     chunker = ET.Transducers.chunk_by(&(rem(&1,3)==0)) |> ET.Reducers.list()
     assert ET.reduce(1..4, chunker) == [[1,2],[3],[4]]
 
+    chunker = identity_trans |> ET.Transducers.chunk_by(&(rem(&1,3)==0)) |> ET.Reducers.list()
+    assert ET.reduce(1..4, chunker) == [[1,2],[3],[4]]
+  end
+
+  test "ET.Transducers.chunk_by(map_fun, inner_reducer)" do
     chunker = ET.Transducers.chunk_by(&(rem(&1,3)==0), ET.Reducers.count()) |> ET.Reducers.list()
+    assert ET.reduce(1..4, chunker) == [2,1,1]    
+
+    chunker = identity_trans |> ET.Transducers.chunk_by(&(rem(&1,3)==0), ET.Reducers.count()) |> ET.Reducers.list()
     assert ET.reduce(1..4, chunker) == [2,1,1]    
   end
 
