@@ -243,6 +243,32 @@ defmodule ET.Transducers do
     end]}
   end
 
+
+  @doc """
+  A transducer which takes transducibles and reduces them.
+
+    iex> reducer = ET.Transducers.concat |> ET.Reducers.list
+    iex> ET.reduce([1..3, [4, 5]], reducer)
+    [1,2,3,4,5]
+
+  """
+
+  @spec concat(ET.Transducer.t) :: ET.Transducer.t
+  @spec concat() :: ET.Transducer.t
+  def concat(%ET.Transducer{} = trans), do: compose(trans, concat)
+  def concat() do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init)
+         {:cont, elem, r_state} ->
+           case ET.reduce_elements(elem, {:cont, r_state}, reducer) do
+             {:halt, state} -> {:halt, state}
+             {:done, state} -> {:cont, state}
+           end
+         {:fin, r_state} -> reducer.({:fin, r_state})
+      end
+    end]}
+  end
+
   
   @doc """
   A transducer which will not relay :halt signals until it has recieved a specified

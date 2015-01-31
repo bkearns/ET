@@ -1,5 +1,5 @@
 defmodule TransducibleTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   test "transducible lists" do
     assert Transducible.next([1,2,3]) == {1, [2,3]}

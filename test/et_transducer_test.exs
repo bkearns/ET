@@ -1,5 +1,5 @@
 defmodule ETTransducerTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   test "compose transducer with reducer" do
     take_two_list = ET.Transducer.compose(ET.Transducers.take(2), ET.Reducers.list())

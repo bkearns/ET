@@ -1,5 +1,5 @@
 defmodule ETTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   test "ET.reduce" do
     inc_reducer = ET.Transducers.map(&(&1+1))

@@ -1,5 +1,5 @@
 defmodule ETReducersTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   defp identity_trans, do: ET.Transducers.map(&(&1))
 

@@ -1,5 +1,5 @@
 defmodule ETTransducersTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   defp identity_trans, do: ET.Transducers.map(&(&1))
   
@@ -179,7 +179,25 @@ defmodule ETTransducersTest do
   defp chunk_by_map_fun_inner_reducer_test(reducer) do
     assert ET.reduce(1..4, reducer) == [2,1,1]
   end
-  
+
+
+  test "ET.Transducers.concat()" do
+    ET.Transducers.concat
+    |> ET.Reducers.list
+    |> concat_test
+  end
+
+  test "ET.Transducers.concat(transducer)" do
+    identity_trans
+    |> ET.Transducers.concat
+    |> ET.Reducers.list
+    |> concat_test
+  end
+
+  defp concat_test(reducer) do
+    assert ET.reduce([1..2, 3..5, 6..7], reducer) == [1,2,3,4,5,6,7]
+  end
+
   test "ET.Transducers.ensure(n)" do
     ET.Transducers.ensure(2)
     |> ET.Transducers.take(1)
