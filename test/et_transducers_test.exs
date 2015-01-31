@@ -112,11 +112,17 @@ defmodule ETTransducersTest do
     assert {{:cont, state},  coll} = ET.reduce_step(coll, state, ensure_list)
     assert {{:halt, state}, _coll} = ET.reduce_step(coll, state, ensure_list)
     assert {:fin, [1]} = ensure_list.({:fin, state})    
-end
+  end
   
-  test "ET.Transducers.map" do
+  test "ET.Transducers.map(map_fun)" do
     inc_list =
-      ET.Transducers.map(fn input -> input + 1 end)
+      ET.Transducers.map(&(&1+1))
+      |> ET.Reducers.list()
+    assert ET.reduce([1,2,3], inc_list) == [2,3,4]
+
+    inc_list =
+      identity_trans
+      |> ET.Transducers.map(&(&1+1))
       |> ET.Reducers.list()
     assert ET.reduce([1,2,3], inc_list) == [2,3,4]
   end
