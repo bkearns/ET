@@ -8,12 +8,12 @@ defmodule ET do
   A message to be sent to a reducer.
 
   :init is always called before any elements are passed.
-  {:cont, element, state} is called for every element while the reduction continues.
+  {:cont, state, element} is called for every element while the reduction continues.
   {:fin, state} is called to finalize anything and get the value to return.
 
   """
 
-  @type signal_message :: :init | {:cont, term, list} | {:fin, list}
+  @type signal_message :: :init | {:cont, list, term} | {:fin, list}
 
   @typedoc """
   A message received from a reducer.
@@ -95,7 +95,7 @@ defmodule ET do
   @spec reduce_step(Transducible.t, list, reducer) :: return_message | {:done, list}
   def reduce_step(collection, state, reducer) do
     case Transducible.next(collection) do
-      {elem, rem} -> {reducer.({:cont, elem, state}), rem}
+      {elem, rem} -> {reducer.({:cont, state, elem}), rem}
       :done       -> {{:done, state}, collection}
     end
   end

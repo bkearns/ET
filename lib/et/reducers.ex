@@ -7,7 +7,7 @@ defmodule ET.Reducers do
 
     :init -> Sent once before other signals, this is a good opportunity to set
              initial state.
-    {:cont, input, state} -> This message is sent for each element as long as the
+    {:cont, state, element} -> This message is sent for each element as long as the
                              reduction is continuing.
     {:fin, state} -> Called as long as there is not an exception. This is an
                      opportunity to close anything that needs closing and indicates
@@ -59,8 +59,8 @@ defmodule ET.Reducers do
   def all?(fun) do
     fn
       :init -> {:cont, [true]}
-      {:cont, input, [_]} ->
-        if fun.(input) do
+      {:cont, [_], elem} ->
+        if fun.(elem) do
           {:cont, [true]}
         else
           {:halt, [false]}
@@ -91,8 +91,8 @@ defmodule ET.Reducers do
   def any?(fun) do
     fn
       :init -> {:cont, [false]}
-      {:cont, input, [_]} ->
-        if fun.(input) do
+      {:cont, [_], elem} ->
+        if fun.(elem) do
           {:halt, [true]}
         else
           {:cont, [false]}
@@ -116,7 +116,7 @@ defmodule ET.Reducers do
   def count(%ET.Transducer{} = trans), do: compose(trans, count())
   def count() do
     fn :init                 -> {:cont, [0]}
-       {:cont, _input, [acc]} -> {:cont, [acc+1]}
+       {:cont, [acc], _elem} -> {:cont, [acc+1]}
        {:fin, [acc]}         -> {:fin, acc}
     end
   end
@@ -135,7 +135,7 @@ defmodule ET.Reducers do
   def list do
     fn
       :init                            -> { :cont, [[]] }
-      {:cont, input, [acc]}            -> { :cont, [[input | acc]] }
+      {:cont, [acc], elem}             -> { :cont, [[elem | acc]] }
       {:fin, [acc]}                    -> { :fin, :lists.reverse(acc) }
     end
   end
