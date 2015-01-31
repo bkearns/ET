@@ -118,28 +118,28 @@ defmodule ETTransducersTest do
     inc_list =
       ET.Transducers.map(&(&1+1))
       |> ET.Reducers.list()
-    assert ET.reduce([1,2,3], inc_list) == [2,3,4]
+    assert ET.reduce(1..3, inc_list) == [2,3,4]
 
     inc_list =
       identity_trans
       |> ET.Transducers.map(&(&1+1))
       |> ET.Reducers.list()
-    assert ET.reduce([1,2,3], inc_list) == [2,3,4]
+    assert ET.reduce(1..3, inc_list) == [2,3,4]
   end
 
   test "ET.Transducers.take(n)" do
     take_three = ET.Transducers.take(3) |> ET.Reducers.list()
-    assert ET.reduce([1,2,3,4], take_three) == [1,2,3]
+    assert ET.reduce(1..4, take_three) == [1,2,3]
 
     take_three = identity_trans |> ET.Transducers.take(3) |> ET.Reducers.list()
-    assert ET.reduce([1,2,3,4], take_three) == [1,2,3]
+    assert ET.reduce(1..4, take_three) == [1,2,3]
   end
   
   test "ET.Transducers.zip" do
     zip_reducer =
       ET.Transducers.zip
       |> ET.Reducers.list()
-    assert ET.reduce([[1,2,3,4], [8, 9]], zip_reducer) ==
+    assert ET.reduce([1..4, [8, 9]], zip_reducer) ==
            [1, 8, 2, 9, 3, 4]
   end
   
