@@ -127,8 +127,11 @@ defmodule ETTransducersTest do
     assert ET.reduce([1,2,3], inc_list) == [2,3,4]
   end
 
-  test "ET.Transducers.take" do
+  test "ET.Transducers.take(n)" do
     take_three = ET.Transducers.take(3) |> ET.Reducers.list()
+    assert ET.reduce([1,2,3,4], take_three) == [1,2,3]
+
+    take_three = identity_trans |> ET.Transducers.take(3) |> ET.Reducers.list()
     assert ET.reduce([1,2,3,4], take_three) == [1,2,3]
   end
   
