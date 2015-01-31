@@ -30,12 +30,31 @@ defmodule ETReducersTest do
     assert ET.reduce([1,2,3,4], reducer) == false
   end
 
-  test "any?" do
-    lt_two = ET.Reducers.any?(&(&1<2))
-    assert ET.reduce([1,2,3], lt_two) == true
-    assert ET.reduce([2,3,4], lt_two) == false
-    assert ET.reduce([false, true], ET.Reducers.any?) == true
-    assert ET.reduce([false, false], ET.Reducers.any?) == false
+  test "any?()" do
+    any_0_test(ET.Reducers.any?())
+  end
+
+  test "any?(transducer)" do
+    any_0_test(identity_trans |> ET.Reducers.any?())
+  end
+
+  defp any_0_test(reducer) do
+    assert ET.reduce([false, true], reducer) == true
+    assert ET.reduce([false, 1], reducer) == true
+    assert ET.reduce([false, nil], reducer) == false
+  end
+
+  test "any?(check_fun)" do
+    any_1_test(ET.Reducers.any?(&(&1<2)))
+  end
+
+  test "any?(transducer, check_fun)" do
+    any_1_test(identity_trans |> ET.Reducers.any?(&(&1<2)))
+  end
+
+  defp any_1_test(reducer) do
+    assert ET.reduce([1,2,3], reducer) == true
+    assert ET.reduce([2,3,4], reducer) == false
   end
 
   test "count" do
