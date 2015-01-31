@@ -291,8 +291,8 @@ defmodule ET.Transducers do
   end
   defp do_ensure({:cont, [{:cont, n} | rem_state], elem}, reducer, _n) do
     case reducer.({:cont, rem_state, elem}) do
-      {:halt, state} -> {:cont, [{:halt, n-1} | state]}
-      {:cont, state} -> {:cont, [{:cont, n-1} | state]}
+      {:halt, state} -> {:cont, state} |> prepend_state({:halt, n-1})
+      {:cont, state} -> {:cont, state} |> prepend_state({:cont, n-1})
     end
   end
    defp do_ensure({:cont, [{:halt, n} | rem_state], _elem}, _reducer, _n) when n < 2 do
