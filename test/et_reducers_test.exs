@@ -71,8 +71,15 @@ defmodule ETReducersTest do
     assert ET.reduce(1..4, reducer) == 4
   end
   
-  test "list reducer" do
-    assert ET.reduce([1,2,3,4], ET.Reducers.list) == [1,2,3,4]
-    assert ET.reduce([1,2,3,4], (ET.Transducers.take(2) |> ET.Reducers.list)) == [1,2]
+  test "list()" do
+    list_test(ET.Reducers.list)
+  end
+
+  test "list(transducer)" do
+    list_test(identity_trans |> ET.Reducers.list)
+  end
+
+  defp list_test(reducer) do
+    assert ET.reduce([1,2,3,4], reducer) == [1,2,3,4]
   end
 end
