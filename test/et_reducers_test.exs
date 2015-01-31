@@ -57,10 +57,18 @@ defmodule ETReducersTest do
     assert ET.reduce([2,3,4], reducer) == false
   end
 
-  test "count" do
-    assert ET.reduce([], ET.Reducers.count) == 0
-    assert ET.reduce(1..3, ET.Reducers.count) == 3
-    assert ET.reduce(1..4, ET.Reducers.count) == 4
+  test "count()" do
+    count_test(ET.Reducers.count)
+  end
+
+  test "count(transducer)" do
+    count_test(identity_trans |> ET.Reducers.count)
+  end
+
+  defp count_test(reducer) do
+    assert ET.reduce([], reducer) == 0
+    assert ET.reduce(1..3, reducer) == 3
+    assert ET.reduce(1..4, reducer) == 4
   end
   
   test "list reducer" do
