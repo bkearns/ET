@@ -102,6 +102,24 @@ defmodule ETLogicTest do
     [{1, false}, {2, false}, {3, true}]
   end
 
+  test "ET.Logic.halt_on()" do
+    ET.Logic.halt_on
+    |> ET.Reducers.list
+    |> halt_on_test
+  end
+
+  test "ET.Logic.halt_on(transducer)" do
+    identity_trans
+    |> ET.Logic.halt_on
+    |> ET.Reducers.list
+    |> halt_on_test
+  end
+
+  defp halt_on_test(reducer) do
+    assert ET.reduce([{1, false}, {2, false}, {3, true}, {4, false}], reducer) ==
+    [{1, false}, {2, false}]
+  end
+  
   test "ET.Logic.true_every(n)" do
     ET.Logic.true_every(2)
     |> ET.Reducers.list

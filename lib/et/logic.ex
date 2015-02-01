@@ -177,7 +177,28 @@ defmodule ET.Logic do
     end]}
   end
 
+  @doc """
+  A transducer which sends elements to the reducer, but when it receives
+  {_, true}, it immediately sends :halt without reducing the current element.
 
+  """
+
+  @spec halt_on() :: ET.Transducer.t
+  @spec halt_on(ET.Transducer.t) :: ET.Transducer.t
+  def halt_on(%ET.Transducer{} = trans), do: compose(trans, halt_on)
+  def halt_on() do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init)
+         {:cont, _, {_, bool}} = signal when bool == false or bool == nil ->
+           reducer.(signal)
+         {:cont, state, _} ->
+           {:halt, state}
+         {:fin, state} -> reducer.({:fin, state})
+      end
+    end]}
+  end
+
+  
   @doc """
   A transducer which sends {true, element} every n elements received.
   If first: true is also sent, the transducer will start with a true.
