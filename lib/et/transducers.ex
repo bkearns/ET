@@ -144,7 +144,7 @@ defmodule ET.Transducers do
     end]}
   end
 
-  defp change_halter(%ET.Transducer{} = trans), do: compose(trans, change_reducer())
+  defp change_halter(%ET.Transducer{} = trans), do: compose(trans, change_halter)
   defp change_halter do
     %ET.Transducer{elements: [fn reducer ->
       fn :init -> reducer.(:init) |> prepend_state(true)
@@ -222,14 +222,14 @@ defmodule ET.Transducers do
   end
   def drop_while(fun) do
     %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state(true)
-         {:cont, [true | r_state], elem} ->
+      fn :init -> reducer.(:init) |> prepend_state(false)
+         {:cont, [bool | r_state], elem} when bool == false or bool == nil ->
            result = fun.(elem)
-           reducer.({:cont, r_state, {elem, !result}})
-           |> prepend_state(result)
-         {:cont, [false | r_state], elem} ->
-           reducer.({:cont, r_state, {elem, true}})
-           |> prepend_state(false)
+           reducer.({:cont, r_state, {elem, result}})
+           |> prepend_state(!result)
+         {:cont, [bool | r_state], elem} ->
+           reducer.({:cont, r_state, {elem, !bool}})
+           |> prepend_state(true)
          {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
        end              
     end]}

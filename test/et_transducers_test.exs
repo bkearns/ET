@@ -230,7 +230,7 @@ defmodule ETTransducersTest do
   end
 
   defp drop_while_fun_test(reducer) do
-    ET.reduce(1..4, reducer) == [3,4]
+    assert ET.reduce(1..4, reducer) == [3,4]
   end
   
   test "ET.Transducers.ensure(n)" do
