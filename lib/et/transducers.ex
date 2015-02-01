@@ -107,8 +107,14 @@ defmodule ET.Transducers do
   def chunk_by(change_fun), do: chunk_by(change_fun, ET.Reducers.list())
   def chunk_by(%ET.Transducer{} = trans, change_fun), do: compose(trans, chunk_by(change_fun))
   def chunk_by(change_fun, inner_reducer) do
-    compose(change_trans(change_fun),
-            ET.Logic.chunk(compose(change_halter, inner_reducer), []))
+    inner_reducer =
+      ignore_first
+      |> ET.Logic.halt_on
+      |> ET.Logic.destructure
+      |> compose(inner_reducer)
+      
+    change_trans(change_fun)
+    |> ET.Logic.chunk(inner_reducer, [])
   end
   def chunk_by(%ET.Transducer{} = trans, change_fun, inner_reducer) do
     compose(trans, chunk_by(change_fun, inner_reducer))
@@ -130,24 +136,20 @@ defmodule ET.Transducers do
     end]}
   end
 
-  defp change_halter(%ET.Transducer{} = trans), do: compose(trans, change_halter)
-  defp change_halter do
+  defp ignore_first() do
     %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state(true)
-         {:cont, [true | r_state], {elem, true}} ->
+      fn :init -> reducer.(:init) |> prepend_state(false)
+         {:cont, [false | r_state], {elem, _}} ->
+           reducer.({:cont, r_state, {elem, false}})
+           |> prepend_state(true)
+         {:cont, [bool | r_state], elem} ->
            reducer.({:cont, r_state, elem})
-           |> prepend_state(false)
-         {:cont, [false | r_state], {elem, false}} ->
-           reducer.({:cont, r_state, elem})
-           |> prepend_state(false)
-         {:cont, [false | r_state], {_elem, true}} ->
-           {:halt, [false | r_state]}
+           |> prepend_state(bool)
          {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
-       end
+      end
     end]}
   end
-
-
+  
   @doc """
   A transducer which takes transducibles and reduces them.
 
