@@ -78,7 +78,7 @@ defmodule ET.Transducers do
   end
   def chunk(size, step, padding, reducer) do
     inner_reducer =
-      destructure
+      ET.Logic.destructure
       |> take(size)
       |> compose(reducer)
 
@@ -189,24 +189,6 @@ defmodule ET.Transducers do
 
 
   @doc """
-  A transducer which transforms {elem, _} into elem. Used with various
-  generic transducers which take elements in this form.
-
-    iex> reducer = ET.Transducers.destructure |> ET.Reducers.list
-    iex> ET.reduce([{1, false}, {2, true}], reducer)
-    [1, 2]
-
-  """
-
-  @spec destructure(ET.Transducer.t) :: ET.Transducer.t
-  @spec destructure() :: ET.Transducer.t
-  def destructure(%ET.Transducer{} = trans), do: compose(trans, destructure)
-  def destructure() do
-    map(fn {elem, _} -> elem end)
-  end
-  
-  
-  @doc """
   A transducer which does not reduce elements until fun stops returning true.
 
     iex> reducer = ET.Transducers.drop_while(&(rem(&1, 3) != 0)) |> ET.Reducers.list
@@ -234,7 +216,7 @@ defmodule ET.Transducers do
        end              
     end]}
     |> ET.Logic.filter
-    |> destructure
+    |> ET.Logic.destructure
   end
 
 

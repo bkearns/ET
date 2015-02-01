@@ -48,6 +48,24 @@ defmodule ETLogicTest do
     [[{2, true}, {3, false}], [{4, true}, {5, nil}]]    
   end
   
+  test "ET.Transducers.destructure()" do
+    ET.Logic.destructure
+    |> ET.Reducers.list
+    |> destructure_test
+  end
+
+  test "ET.Transducers.destructure(transducer)" do
+    identity_trans
+    |> ET.Logic.destructure
+    |> ET.Reducers.list
+    |> destructure_test
+  end
+
+  defp destructure_test(reducer) do
+    assert ET.reduce([{1, true}, {2, false}, {3, true}], reducer) ==
+           [1,2,3]
+  end
+
   test "ET.Logic.filter()" do
     ET.Logic.filter
     |> ET.Reducers.list

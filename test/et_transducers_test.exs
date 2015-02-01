@@ -197,24 +197,6 @@ defmodule ETTransducersTest do
   defp concat_test(reducer) do
     assert ET.reduce([1..2, 3..5, 6..7], reducer) == [1,2,3,4,5,6,7]
   end
-
-  test "ET.Transducers.destructure()" do
-    ET.Transducers.destructure
-    |> ET.Reducers.list()
-    |> destructure_test
-  end
-
-  test "ET.Transducers.destructure(transducer)" do
-    identity_trans
-    |> ET.Transducers.destructure
-    |> ET.Reducers.list()
-    |> destructure_test
-  end
-
-  defp destructure_test(reducer) do
-    assert ET.reduce([{1, true}, {2, false}, {3, true}], reducer) ==
-           [1,2,3]
-  end
   
   test "ET.Transducers.drop_while(fun)" do
     ET.Transducers.drop_while(&(rem(&1, 3) != 0))
