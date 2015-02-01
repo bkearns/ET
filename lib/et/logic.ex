@@ -154,6 +154,15 @@ defmodule ET.Logic do
     end]}
   end
 
+
+  @doc """
+  A transducer which sends elements to the reducer, but when it receives
+  {_, true}, it sends that element and forces a :halt signal on the return.
+
+  """
+
+  @spec halt_after() :: ET.Transducer.t
+  @spec halt_after(ET.Transducer.t) :: ET.Transducer.t
   def halt_after(%ET.Transducer{} = trans), do: compose(trans, halt_after)
   def halt_after() do
     %ET.Transducer{elements: [fn reducer ->
