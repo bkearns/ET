@@ -3,6 +3,78 @@ defmodule ETLogicTest do
 
   defp identity_trans, do: ET.Transducers.map(&(&1))
 
+  test "ET.Logic.change?()" do
+    ET.Logic.change?
+    |> ET.Reducers.list
+    |> change_test
+  end
+
+  test "ET.Logic.change?(transducer)" do
+    identity_trans
+    |> ET.Logic.change?
+    |> ET.Reducers.list
+    |> change_test
+  end
+
+  defp change_test(reducer) do
+    assert ET.reduce([1,1,1,2,3], reducer) ==
+           [{1, false}, {1, false}, {1, false}, {2, true}, {3, true}]
+  end
+
+  test "ET.Logic.change?(first: true)" do
+    ET.Logic.change?(first: true)
+    |> ET.Reducers.list
+    |> change_first_true_test
+  end
+
+  test "ET.Logic.change?(transducer, first: true)" do
+    identity_trans
+    |> ET.Logic.change?(first: true)
+    |> ET.Reducers.list
+    |> change_first_true_test
+  end
+
+  defp change_first_true_test(reducer) do
+    assert ET.reduce([1,1,1,2,3], reducer) ==
+           [{1, true}, {1, false}, {1, false}, {2, true}, {3, true}]
+  end
+
+  test "ET.Logic.change?(change_check)" do
+    ET.Logic.change?(&(rem(&1, 2)))
+    |> ET.Reducers.list
+    |> change_change_check_test
+  end
+
+  test "ET.Logic.change?(transducer, change_check)" do
+    identity_trans
+    |> ET.Logic.change?(&(rem(&1, 2)))
+    |> ET.Reducers.list
+    |> change_change_check_test
+  end
+
+  defp change_change_check_test(reducer) do
+    assert ET.reduce([1,3,1,2,3], reducer) ==
+           [{1, false}, {3, false}, {1, false}, {2, true}, {3, true}]
+  end
+
+  test "ET.Logic.change?(change_check, first: true)" do
+    ET.Logic.change?(&(rem(&1, 2)), first: true)
+    |> ET.Reducers.list
+    |> change_change_check_first_true_test
+  end
+
+  test "ET.Logic.change?(transducer, change_check, first: true)" do
+    identity_trans
+    |> ET.Logic.change?(&(rem(&1, 2)), first: true)
+    |> ET.Reducers.list
+    |> change_change_check_first_true_test
+  end
+
+  defp change_change_check_first_true_test(reducer) do
+    assert ET.reduce([1,3,1,2,3], reducer) ==
+           [{1, true}, {3, false}, {1, false}, {2, true}, {3, true}]
+  end
+
   test "ET.Logic.chunk(inner_reducer)" do
     ET.Logic.chunk(ET.Transducers.take(2) |> ET.Reducers.list)
     |> ET.Reducers.list

@@ -113,27 +113,11 @@ defmodule ET.Transducers do
       |> ET.Logic.destructure
       |> compose(inner_reducer)
       
-    change_trans(change_fun)
+      ET.Logic.change?(change_fun, first: true)
     |> ET.Logic.chunk(inner_reducer, [])
   end
   def chunk_by(%ET.Transducer{} = trans, change_fun, inner_reducer) do
     compose(trans, chunk_by(change_fun, inner_reducer))
-  end
-
-  defp change_trans(%ET.Transducer{} = trans, change_fun) do
-    compose(trans, change_trans(change_fun))
-  end
-  defp change_trans(change_fun) do
-    ref = :erlang.make_ref
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state(ref)
-         {:cont, [prev | r_state], elem} ->
-           curr = change_fun.(elem)
-           reducer.({:cont, r_state, {elem, curr != prev}})
-           |> prepend_state(curr)
-         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
-       end
-    end]}
   end
 
   defp ignore_first() do

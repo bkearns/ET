@@ -16,7 +16,42 @@ defmodule ET.Logic do
 
   import ET.Transducer
 
+  @doc """
 
+
+  """
+
+  def change?(), do: change?(&(&1), first: false)
+  def change?(%ET.Transducer{} = trans) do
+    trans |> compose(change?)
+  end
+  def change?([first: first]) do
+    change?(&(&1), first: first)
+  end
+  def change?(change_check) do
+    change?(change_check, first: false)
+  end
+  def change?(%ET.Transducer{} = trans, one) do
+    compose(trans, change?(one))
+  end
+  def change?(change_check, [first: first]) do
+    ref = :erlang.make_ref
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init) |> prepend_state(ref)
+         {:cont, [prev | r_state], elem} ->
+           curr = change_check.(elem)
+           same = curr == prev or (!first and (prev == ref))
+           reducer.({:cont, r_state, {elem, !same}})
+           |> prepend_state(curr)
+         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
+       end
+    end]}
+  end
+  def change?(%ET.Transducer{} = trans, change_check, first) do
+    compose(trans, change?(change_check, first))
+  end
+
+  
   @doc """
   A transducer which applies each element to an arbitrary number of 
   inner reducers. New inner reducers are generated on a {_, true} element.
