@@ -291,16 +291,9 @@ defmodule ET.Transducers do
   @spec take(non_neg_integer) :: ET.Transducer.t
   def take(%ET.Transducer{} = trans, num), do: compose(trans, take(num))
   def take(num) do
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state(num)
-         {:cont, [1 | r_state], elem} ->
-           {_signal, state} = reducer.({:cont, r_state, elem})
-           {:halt, [0 | state]}
-         {:cont, [my_state | state], elem} ->
-           reducer.({:cont, state, elem}) |> prepend_state(my_state-1)
-         {:fin, [_|state]} -> reducer.({:fin, state})
-      end
-    end]}
+    ET.Logic.true_every(num)
+    |> ET.Logic.halt_after
+    |> ET.Logic.destructure
   end
 
   @doc """

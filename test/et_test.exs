@@ -10,7 +10,7 @@ defmodule ETTest do
 
   test "ET.reduce_elements" do
     assert {:done, [[2,1]], []} = ET.reduce_elements([1,2], {:cont, [[]]}, ET.Reducers.list())
-    assert {:halt, [0,[1]], [2]} = ET.reduce_elements([1,2], {:cont, [1,[]]}, (ET.Transducers.take(1) |> ET.Reducers.list()))
+    assert {:halt, [0,[1]], [2]} = ET.reduce_elements([1,2], {:cont, [0,[]]}, (ET.Transducers.take(1) |> ET.Reducers.list))
   end
 
   test "ET.finish_reduce" do

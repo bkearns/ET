@@ -269,6 +269,7 @@ defmodule ETTransducersTest do
   end
 
   defp take_n_test(reducer) do
+    assert ET.reduce([1], reducer) == [1]
     assert ET.reduce(1..4, reducer) == [1,2,3]
   end
   
