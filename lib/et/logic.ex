@@ -126,10 +126,10 @@ defmodule ET.Logic do
   def filter() do
     %ET.Transducer{elements: [fn reducer ->
       fn :init -> reducer.(:init)
-         {:cont, r_state, {_, bool}} when bool == false or bool == nil ->
-           {:cont, r_state}
-         {:cont, _, _} = signal ->
+         {:cont, _, {_, bool}} = signal when bool == false or bool == nil ->
            reducer.(signal)
+         {:cont, r_state, _} ->
+           {:cont, r_state}
          {:fin, r_state} -> reducer.({:fin, r_state})
       end
     end]}

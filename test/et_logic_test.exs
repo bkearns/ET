@@ -62,8 +62,8 @@ defmodule ETLogicTest do
   end
 
   defp filter_test(reducer) do
-    assert ET.reduce([{1, false}, {2, false}, {3, true}, {4, false}], reducer) ==
-           [{3, true}]
+    assert ET.reduce([{1, true}, {2, true}, {3, false}, {4, true}], reducer) ==
+           [{3, false}]
   end
 
   
