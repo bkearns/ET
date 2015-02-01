@@ -236,23 +236,23 @@ defmodule ET.Transducers do
   end
 
   defp do_ensure(:init, reducer, n), do: reducer.(:init) |> prepend_state({:cont, n})
-  defp do_ensure({:cont, [{:cont, n} | rem_state], elem}, reducer, _n) when n < 2 do
-    reducer.({:cont, rem_state, elem}) |> prepend_state({:cont, n})
+  defp do_ensure({:cont, [{:cont, n} | r_state], elem}, reducer, _n) when n < 2 do
+    reducer.({:cont, r_state, elem}) |> prepend_state({:cont, n})
   end
-  defp do_ensure({:cont, [{:cont, n} | rem_state], elem}, reducer, _n) do
-    case reducer.({:cont, rem_state, elem}) do
+  defp do_ensure({:cont, [{:cont, n} | r_state], elem}, reducer, _n) do
+    case reducer.({:cont, r_state, elem}) do
       {:halt, state} -> {:cont, state} |> prepend_state({:halt, n-1})
       {:cont, state} -> {:cont, state} |> prepend_state({:cont, n-1})
     end
   end
-   defp do_ensure({:cont, [{:halt, n} | rem_state], _elem}, _reducer, _n) when n < 2 do
-     {:halt, [{:halt, n} | rem_state]}
+   defp do_ensure({:cont, [{:halt, n} | r_state], _elem}, _reducer, _n) when n < 2 do
+     {:halt, [{:halt, n} | r_state]}
   end
-  defp do_ensure({:cont, [{:halt, n} | rem_state], _elem}, _reducer, _n) do
-    {:cont, [{:halt, n-1} | rem_state]}
+  defp do_ensure({:cont, [{:halt, n} | r_state], _elem}, _reducer, _n) do
+    {:cont, [{:halt, n-1} | r_state]}
   end
-  defp do_ensure({:fin, [_my_state | rem_state]}, reducer, _n) do
-    reducer.({:fin, rem_state})
+  defp do_ensure({:fin, [_my_state | r_state]}, reducer, _n) do
+    reducer.({:fin, r_state})
   end
   
   @doc """
@@ -293,8 +293,8 @@ defmodule ET.Transducers do
   def take(num) do
     %ET.Transducer{elements: [fn reducer ->
       fn :init -> reducer.(:init) |> prepend_state(num)
-         {:cont, [1 | rem_state], elem} ->
-           {_signal, state} = reducer.({:cont, rem_state, elem})
+         {:cont, [1 | r_state], elem} ->
+           {_signal, state} = reducer.({:cont, r_state, elem})
            {:halt, [0 | state]}
          {:cont, [my_state | state], elem} ->
            reducer.({:cont, state, elem}) |> prepend_state(my_state-1)
@@ -329,10 +329,10 @@ defmodule ET.Transducers do
       [fn reducer ->
         fn
           :init -> reducer.(:init) |> prepend_state([])
-          {:cont, [transducibles | rem_state], elem} ->
-            do_first_zip(ET.reduce_step(elem, rem_state, reducer), transducibles)
-          {:fin, [transducibles | rem_state]} ->
-            do_final_zip([], transducibles, {:cont, rem_state}, reducer)
+          {:cont, [transducibles | r_state], elem} ->
+            do_first_zip(ET.reduce_step(elem, r_state, reducer), transducibles)
+          {:fin, [transducibles | r_state]} ->
+            do_final_zip([], transducibles, {:cont, r_state}, reducer)
         end
       end]}
   end
