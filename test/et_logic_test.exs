@@ -101,4 +101,41 @@ defmodule ETLogicTest do
     assert ET.reduce([{1, false}, {2, false}, {3, true}, {4, false}], reducer) ==
     [{1, false}, {2, false}, {3, true}]
   end
+
+  test "ET.Logic.true_every(n)" do
+    ET.Logic.true_every(2)
+    |> ET.Reducers.list
+    |> true_every_n_test
+  end
+
+  test "ET.Logic.true_every(n, transducer)" do
+    identity_trans
+    |> ET.Logic.true_every(2)
+    |> ET.Reducers.list
+    |> true_every_n_test
+  end
+
+  defp true_every_n_test(reducer) do
+    assert ET.reduce(1..4, reducer) ==
+           [{1, false}, {2, true}, {3, false}, {4, true}]
+  end
+
+  test "ET.Logic.true_every(n, first: true)" do
+    ET.Logic.true_every(2, first: true)
+    |> ET.Reducers.list
+    |> true_every_n_first_true_test
+  end
+
+  test "ET.Logic.true_every(transducer, n, first: true)" do
+    identity_trans
+    |> ET.Logic.true_every(2, first: true)
+    |> ET.Reducers.list
+    |> true_every_n_first_true_test
+  end
+
+  defp true_every_n_first_true_test(reducer) do
+    assert ET.reduce(1..4, reducer) ==
+           [{1, true}, {2, false}, {3, true}, {4, false}]
+  end
+
 end

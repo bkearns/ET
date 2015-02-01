@@ -176,4 +176,37 @@ defmodule ET.Logic do
       end
     end]}
   end
+
+
+  @doc """
+  A transducer which sends {true, element} every n elements received.
+  If first: true is also sent, the transducer will start with a true.
+
+  """
+
+  @spec true_every(non_neg_integer) :: ET.Transducer.t
+  @spec true_every(ET.Transducer.t, non_neg_integer) :: ET.Transducer.t
+  @spec true_every(non_neg_integer, [{:first, bool}]) :: ET.Transducer.t
+  @spec true_every(ET.Transducer.t, non_neg_integer, [{:first, bool}]) :: ET.Transducer.t
+  def true_every(n), do: true_every(n, first: false)
+  def true_every(%ET.Transducer{} = trans, n) do
+    compose(trans, true_every(n))
+  end
+  def true_every(n, [first: first]) do
+    start = if first, do: 0, else: n-1
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init) |> prepend_state(start)
+         {:cont, [0 | r_state], elem} ->
+           reducer.({:cont, r_state, {elem, true}})
+           |> prepend_state(n-1)
+         {:cont, [count | r_state], elem} ->
+           reducer.({:cont, r_state, {elem, false}})
+           |> prepend_state(count-1)
+         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
+      end
+    end]}
+  end
+  def true_every(%ET.Transducer{} = trans, n, first) do
+    compose(trans, true_every(n, first))
+  end
 end
