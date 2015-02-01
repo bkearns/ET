@@ -84,5 +84,21 @@ defmodule ETLogicTest do
            [{3, false}]
   end
 
-  
+  test "ET.Logic.halt_after()" do
+    ET.Logic.halt_after
+    |> ET.Reducers.list
+    |> halt_after_test
+  end
+
+  test "ET.Logic.halt_after(transducer)" do
+    identity_trans
+    |> ET.Logic.halt_after
+    |> ET.Reducers.list
+    |> halt_after_test
+  end
+
+  defp halt_after_test(reducer) do
+    assert ET.reduce([{1, false}, {2, false}, {3, true}, {4, false}], reducer) ==
+    [{1, false}, {2, false}, {3, true}]
+  end
 end

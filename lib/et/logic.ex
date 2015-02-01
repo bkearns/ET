@@ -154,5 +154,17 @@ defmodule ET.Logic do
     end]}
   end
 
-
+  def halt_after(%ET.Transducer{} = trans), do: compose(trans, halt_after)
+  def halt_after() do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init)
+         {:cont, _, {elem, bool}} = signal when bool == false or bool == nil ->
+           reducer.(signal)
+         {:cont, _, _} = signal ->
+           {_, state} = reducer.(signal)
+           {:halt, state}
+         {:fin, state} -> reducer.({:fin, state})
+      end
+    end]}
+  end
 end
