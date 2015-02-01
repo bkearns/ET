@@ -82,25 +82,11 @@ defmodule ET.Transducers do
       |> take(size)
       |> compose(reducer)
 
-    step_trans(step)
+    ET.Logic.true_every(step, first: true)
     |> ET.Logic.chunk(inner_reducer, padding)
   end
   def chunk(%ET.Transducer{} = trans, two, three, four, five) do
     compose(trans, chunk(two, three, four, five))
-  end
-
-  defp step_trans(n) when is_integer(n) do
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state(1)
-         {:cont, [1 | r_state], elem} ->
-           reducer.({:cont, r_state, {elem, true}})
-           |> prepend_state(n)
-         {:cont, [countdown | r_state], elem} ->
-           reducer.({:cont, r_state, {elem, false}})
-           |> prepend_state(countdown - 1)
-         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
-      end
-    end]}
   end
 
 

@@ -167,7 +167,7 @@ defmodule ET.Logic do
   def halt_after() do
     %ET.Transducer{elements: [fn reducer ->
       fn :init -> reducer.(:init)
-         {:cont, _, {elem, bool}} = signal when bool == false or bool == nil ->
+         {:cont, _, {_, bool}} = signal when bool == false or bool == nil ->
            reducer.(signal)
          {:cont, _, _} = signal ->
            {_, state} = reducer.(signal)
@@ -186,8 +186,8 @@ defmodule ET.Logic do
 
   @spec true_every(non_neg_integer) :: ET.Transducer.t
   @spec true_every(ET.Transducer.t, non_neg_integer) :: ET.Transducer.t
-  @spec true_every(non_neg_integer, [{:first, bool}]) :: ET.Transducer.t
-  @spec true_every(ET.Transducer.t, non_neg_integer, [{:first, bool}]) :: ET.Transducer.t
+  @spec true_every(non_neg_integer, [{:first, boolean}]) :: ET.Transducer.t
+  @spec true_every(ET.Transducer.t, non_neg_integer, [{:first, boolean}]) :: ET.Transducer.t
   def true_every(n), do: true_every(n, first: false)
   def true_every(%ET.Transducer{} = trans, n) do
     compose(trans, true_every(n))
