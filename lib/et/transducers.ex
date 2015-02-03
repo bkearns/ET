@@ -159,7 +159,28 @@ defmodule ET.Transducers do
     end]}
   end
 
+  @doc """
+  A transducer which drops a number of elements before continuing.
+  Can take a negative value which caches all elements until :fin is received
+  at which point the last values are dropped and the remaining (if any) are
+  fed in the order received.
 
+  """
+
+  def drop(%ET.Transducer{} = trans, n), do: compose(trans, drop(n))
+  def drop(n) when n >= 0 do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init) |> prepend_state(n)
+         {:cont, [0 | r_state], elem} ->
+           reducer.({:cont, r_state, elem})
+           |> prepend_state(0)
+         {:cont, [n | r_state], _elem} ->
+           {:cont, [n-1 | r_state]}
+         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
+      end
+    end]}
+  end
+  
   @doc """
   A transducer which does not reduce elements until fun stops returning true.
 

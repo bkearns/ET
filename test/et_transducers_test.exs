@@ -197,6 +197,23 @@ defmodule ETTransducersTest do
   defp concat_test(reducer) do
     assert ET.reduce([1..2, 3..5, 6..7], reducer) == [1,2,3,4,5,6,7]
   end
+
+  test "ET.Transducers.drop(n)" do
+    ET.Transducers.drop(3)
+    |> ET.Reducers.list
+    |> drop_n_test
+  end
+
+  test "ET.Transducers.drop(transducer,n)" do
+    identity_trans
+    |> ET.Transducers.drop(3)
+    |> ET.Reducers.list
+    |> drop_n_test
+  end
+
+  defp drop_n_test(reducer) do
+    assert ET.reduce(1..5, reducer) == [4,5]
+  end
   
   test "ET.Transducers.drop_while(fun)" do
     ET.Transducers.drop_while(&(rem(&1, 3) != 0))
