@@ -180,6 +180,20 @@ defmodule ET.Transducers do
       end
     end]}
   end
+  def drop(n) do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init) |> prepend_state([])
+         {:cont, [acc | r_state], elem} ->
+           {:cont, [[elem | acc] | r_state]}
+         {:fin, [acc | r_state]} ->
+           {_signal, state, _coll} =
+             :lists.nthtail(abs(n), acc)
+             |> :lists.reverse
+             |> ET.reduce_elements({:cont, r_state}, reducer)
+           reducer.({:fin, state})
+      end
+    end]}
+  end
   
   @doc """
   A transducer which does not reduce elements until fun stops returning true.

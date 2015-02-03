@@ -214,6 +214,14 @@ defmodule ETTransducersTest do
   defp drop_n_test(reducer) do
     assert ET.reduce(1..5, reducer) == [4,5]
   end
+
+  test "ET.Transducers.drop(-n)" do
+    reducer =
+      ET.Transducers.drop(-3)
+      |> ET.Reducers.list
+
+    assert ET.reduce(1..5, reducer) == [1,2]
+  end
   
   test "ET.Transducers.drop_while(fun)" do
     ET.Transducers.drop_while(&(rem(&1, 3) != 0))
