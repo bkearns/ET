@@ -100,4 +100,34 @@ defmodule ETReducersTest do
   defp list_test(reducer) do
     assert ET.reduce([1,2,3,4], reducer) == [1,2,3,4]
   end
+
+  test "ET.Reducers.ok()" do
+    ET.Reducers.ok
+    |> ok_test
+  end
+
+  test "ET.Reducers.ok(transducer)" do
+    identity_trans
+    |> ET.Reducers.ok
+    |> ok_test
+  end
+
+  defp ok_test(reducer) do
+    assert ET.reduce(1..5, reducer) == :ok
+  end
+
+  test "ET.Reducers.ok(t)" do
+    ET.Reducers.ok(:error)
+    |> ok_t_test
+  end
+
+  test "ET.Reducers.ok(transducer, t)" do
+    identity_trans
+    |> ET.Reducers.ok(:error)
+    |> ok_t_test
+  end
+
+  defp ok_t_test(reducer) do
+    assert ET.reduce(1..5, reducer) == :error
+  end
 end

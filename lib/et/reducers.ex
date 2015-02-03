@@ -139,4 +139,20 @@ defmodule ET.Reducers do
       {:fin, [acc]}                    -> { :fin, :lists.reverse(acc) }
     end
   end
+
+  @doc """
+  A reducer which returns a fixed value regardless of what it receives.
+  The default is :ok.
+
+  """
+
+  def ok(), do: ok(:ok)
+  def ok(%ET.Transducer{} = trans), do: compose(trans, ok)
+  def ok(t) do
+    fn :init              -> {:cont, []}
+       {:cont, [], _elem} -> {:cont, []}
+       {:fin, []}         -> {:fin, t}
+    end
+  end
+  def ok(%ET.Transducer{} = trans, t), do: compose(trans, ok(t))
 end
