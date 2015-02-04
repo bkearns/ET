@@ -161,9 +161,8 @@ defmodule ET.Transducers do
 
   @doc """
   A transducer which drops a number of elements before continuing.
-  Can take a negative value which caches all elements until :fin is received
-  at which point the last values are dropped and the remaining (if any) are
-  fed in the order received.
+  Can take a negative value which caches n elements which get dropped
+  on :fin.
 
   """
 
@@ -182,15 +181,14 @@ defmodule ET.Transducers do
   end
   def drop(n) do
     %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state([])
-         {:cont, [acc | r_state], elem} ->
-           {:cont, [[elem | acc] | r_state]}
-         {:fin, [acc | r_state]} ->
-           {_signal, state, _coll} =
-             :lists.nthtail(abs(n), acc)
-             |> :lists.reverse
-             |> ET.reduce_elements({:cont, r_state}, reducer)
-           reducer.({:fin, state})
+      fn :init -> reducer.(:init) |> prepend_state({:queue.new, -n})
+         {:cont, [{queue, 0} | r_state], elem} ->
+           {{:value, val}, queue} = :queue.out(queue)
+           reducer.({:cont, r_state, val})
+           |> prepend_state({:queue.in(elem, queue), 0})
+         {:cont, [{queue, n} | r_state], elem} ->
+           {:cont, [{:queue.in(elem, queue), n-1} | r_state]}
+         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
       end
     end]}
   end
