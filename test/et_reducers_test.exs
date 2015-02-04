@@ -3,12 +3,12 @@ defmodule ETReducersTest do
 
   defp identity_trans, do: ET.Transducers.map(&(&1))
 
-  test "all?()" do
+  test "ET.Reducers.all?()" do
     ET.Reducers.all?
     |> all_test
   end
 
-  test "all?(transducer)" do
+  test "ET.Reducers.all?(transducer)" do
     identity_trans
     |> ET.Reducers.all?
     |> all_test
@@ -20,12 +20,12 @@ defmodule ETReducersTest do
     assert ET.reduce([true, nil, true], reducer) == false
   end
 
-  test "all?(check_fun)" do
+  test "ET.Reducers.all?(check_fun)" do
     ET.Reducers.all?(&(&1<4))
     |> all_check_fun_test
   end
 
-  test "all?(transducer, check_fun)" do
+  test "ET.Reducers.all?(transducer, check_fun)" do
     identity_trans
     |> ET.Reducers.all?(&(&1<4))
     |> all_check_fun_test
@@ -36,12 +36,12 @@ defmodule ETReducersTest do
     assert ET.reduce([1,2,3,4], reducer) == false
   end
 
-  test "any?()" do
+  test "ET.Reducers.any?()" do
     ET.Reducers.any?
     |> any_test
   end
 
-  test "any?(transducer)" do
+  test "ET.Reducers.any?(transducer)" do
     identity_trans
     |> ET.Reducers.any?()
     |> any_test
@@ -53,12 +53,12 @@ defmodule ETReducersTest do
     assert ET.reduce([false, nil], reducer) == false
   end
 
-  test "any?(check_fun)" do
+  test "ET.Reducers.any?(check_fun)" do
     ET.Reducers.any?(&(&1<2))
     |> any_check_fun_test
   end
 
-  test "any?(transducer, check_fun)" do
+  test "ET.Reducers.any?(transducer, check_fun)" do
     identity_trans
     |> ET.Reducers.any?(&(&1<2))
     |> any_check_fun_test
@@ -69,12 +69,12 @@ defmodule ETReducersTest do
     assert ET.reduce([2,3,4], reducer) == false
   end
 
-  test "count()" do
+  test "ET.Reducers.count()" do
     ET.Reducers.count
     |> count_test
   end
 
-  test "count(transducer)" do
+  test "ET.Reducers.count(transducer)" do
     identity_trans
     |> ET.Reducers.count
     |> count_test
@@ -86,12 +86,12 @@ defmodule ETReducersTest do
     assert ET.reduce(1..4, reducer) == 4
   end
   
-  test "list()" do
+  test "ET.Reducers.list()" do
     ET.Reducers.list
     |> list_test
   end
 
-  test "list(transducer)" do
+  test "ET.Reducers.list(transducer)" do
     identity_trans
     |> ET.Reducers.list
     |> list_test

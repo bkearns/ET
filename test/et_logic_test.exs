@@ -120,13 +120,13 @@ defmodule ETLogicTest do
     [[{2, true}, {3, false}], [{4, true}, {5, nil}]]    
   end
   
-  test "ET.Transducers.destructure()" do
+  test "ET.Logic.destructure()" do
     ET.Logic.destructure
     |> ET.Reducers.list
     |> destructure_test
   end
 
-  test "ET.Transducers.destructure(transducer)" do
+  test "ET.Logic.destructure(transducer)" do
     identity_trans
     |> ET.Logic.destructure
     |> ET.Reducers.list
