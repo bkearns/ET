@@ -228,4 +228,21 @@ defmodule ETLogicTest do
            [{1, true}, {2, false}, {3, true}, {4, false}]
   end
 
+  test "ET.Logic.with_index" do
+    ET.Logic.with_index
+    |> ET.Reducers.list
+    |> logic_test
+  end
+
+  test "ET.Logic.with_index" do
+    identity_trans
+    |> ET.Logic.with_index
+    |> ET.Reducers.list
+    |> logic_test
+  end
+
+  defp logic_test(reducer) do
+    assert ET.reduce(1..3, reducer) == [{1,0},{2,1},{3,2}]
+  end
+
 end

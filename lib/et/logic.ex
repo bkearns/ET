@@ -265,4 +265,21 @@ defmodule ET.Logic do
   def true_every(%ET.Transducer{} = trans, n, first) do
     compose(trans, true_every(n, first))
   end
+
+  @doc """
+  A transducer which takes elements and wraps them in their 0-based index.
+
+  """
+
+  def with_index(%ET.Transducer{} = trans), do: compose(trans, with_index)
+  def with_index() do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init) |> prepend_state(0)
+         {:cont, [index | r_state], elem} ->
+           reducer.({:cont, r_state, {elem, index}})
+           |> prepend_state(index + 1)
+         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
+      end
+    end]}
+  end
 end
