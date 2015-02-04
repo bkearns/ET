@@ -209,7 +209,43 @@ defmodule ETLogicTest do
     assert ET.reduce([{1, false}, {2, false}, {3, true}, {4, false}], reducer) ==
     [{1, false}, {2, false}]
   end
-  
+
+  test "ET.Logic.in_collection(transducible)" do
+    ET.Logic.in_collection([2, 1, 5])
+    |> ET.Reducers.list
+    |> logic_in_collection_transducible_test
+  end
+
+  test "ET.Logic.in_collection(transducer, transducible)" do
+    identity_trans
+    |> ET.Logic.in_collection([2, 1, 5])
+    |> ET.Reducers.list
+    |> logic_in_collection_transducible_test
+  end
+
+  defp logic_in_collection_transducible_test(reducer) do
+    assert ET.reduce([{true, 3}, {false, 4}, {true, 1}], reducer) ==
+           [{{true,3},false}, {{false,4},false}, {{true, 1},true}]
+  end
+
+  test "ET.Logic.negate()" do
+    ET.Logic.negate
+    |> ET.Reducers.list
+    |> negate_test
+  end
+
+  test "ET.Logic.negate(transducer)" do
+    identity_trans
+    |> ET.Logic.negate
+    |> ET.Reducers.list
+    |> negate_test
+  end
+
+  defp negate_test(reducer) do
+    assert ET.reduce([{1, true}, {2, 2}, {3, false}, {4, nil}], reducer) ==
+           [{1, false}, {2, false}, {3, true}, {4, true}]
+  end
+
   test "ET.Logic.true_every(n)" do
     ET.Logic.true_every(2)
     |> ET.Reducers.list

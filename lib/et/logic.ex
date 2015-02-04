@@ -240,6 +240,73 @@ defmodule ET.Logic do
     end]}
   end
 
+
+  @doc """
+  A transducer which takes elements of the form {_, test} and produces
+  elements in the form {{_, test}, boolean} where boolean is true if
+  the element is contained within the transducible collection. The
+  transducible will be fully traversed the first time a non-contained
+  element is found.
+
+  """
+
+  @spec in_collection(ET.Transducer.t, ET.Transducible.t) :: ET.Transducer.t
+  @spec in_collection(ET.Transducible.t) :: ET.Transducer.t
+  def in_collection(%ET.Transducer{} = trans, transducible) do
+    compose(trans, in_collection(transducible))
+  end
+  def in_collection(transducible) do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init) |> prepend_state({transducible, HashSet.new})
+         {:cont, [{:done, set} | r_state], {_, test} = elem} ->
+           reducer.({:cont, r_state, {elem, Set.member?(set, test)}})
+           |> prepend_state({:done, set})
+         {:cont, [{t, set} | r_state], {_, test} = elem} ->
+           {result, t, set} = in_collection_test(test, t, set)
+           reducer.({:cont, r_state, {elem,result}})
+           |> prepend_state({t, set})
+         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
+       end
+    end]}
+  end
+
+  defp in_collection_test(test, t, set) do
+    if Set.member?(set, test) do
+      {true, t, set}
+    else
+      in_collection_find_element(test, Transducible.next(t), set)
+    end
+  end
+
+  defp in_collection_find_element(_test, :done, set) do
+    {false, :done, set}
+  end
+  defp in_collection_find_element(test, {test, t}, set) do
+    {true, t, Set.put(set, test)}
+  end
+  defp in_collection_find_element(test, {elem, t}, set) do
+    in_collection_find_element(test, Transducible.next(t), Set.put(set, elem))
+  end
+
+
+  @doc """
+  A transducer which takes elements in the form {_, t} and outputs in the form
+  {_, !t}.
+
+  """
+
+  @spec negate(ET.Transducer.t) :: ET.Transducer.t
+  @spec negate() :: ET.Transducer.t
+  def negate(%ET.Transducer{} = trans), do: compose(trans, negate)
+  def negate() do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init)
+         {:cont, r_state, {elem, bool}} -> reducer.({:cont, r_state, {elem, !bool}})
+         {:fin, r_state} -> reducer.({:fin, r_state})
+      end
+    end]}
+  end
+
   
   @doc """
   A transducer which sends {true, element} every n elements received.
