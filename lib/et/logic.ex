@@ -152,7 +152,8 @@ defmodule ET.Logic do
 
   @doc """
   A transducer which transforms {elem, _} into elem. Used with various
-  generic transducers which take elements in this form.
+  generic transducers which take elements in this form. If an integer is
+  provided, it destructures that many times
 
     iex> reducer = ET.Transducers.destructure |> ET.Reducers.list
     iex> ET.reduce([{1, false}, {2, true}], reducer)
@@ -160,13 +161,19 @@ defmodule ET.Logic do
 
   """
 
-  @spec destructure(ET.Transducer.t) :: ET.Transducer.t
   @spec destructure() :: ET.Transducer.t
+  @spec destructure(ET.Transducer.t) :: ET.Transducer.t
+  @spec destructure(integer) :: ET.Transducer.t
+  @spec destructure(ET.Transducer.t, integer) :: ET.Transducer.t
+  def destructure(), do: destructure(1)
   def destructure(%ET.Transducer{} = trans), do: compose(trans, destructure)
-  def destructure() do
+  def destructure(1) do
     ET.Transducers.map(fn {elem, _} -> elem end)
   end
-  
+  def destructure(n) do
+    compose(destructure(n-1), destructure(1))
+  end
+  def destructure(%ET.Transducer{} = trans, n), do: compose(trans, destructure(n))
   
   @doc """
   A transducer which reduces elements of form {_, false} and does not reduce

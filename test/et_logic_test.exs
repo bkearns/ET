@@ -138,6 +138,24 @@ defmodule ETLogicTest do
            [1,2,3]
   end
 
+  test "ET.Logic.destructure(n)" do
+    ET.Logic.destructure(2)
+    |> ET.Reducers.list
+    |> destructure_n_test
+  end
+
+  test "ET.Logic.destructure(transducer, n)" do
+    identity_trans
+    |> ET.Logic.destructure(2)
+    |> ET.Reducers.list
+    |> destructure_n_test
+  end
+
+  defp destructure_n_test(reducer) do
+    assert ET.reduce([{{1, true}, false}, {{2, false}, false}, {{3, true}, true}], reducer) ==
+           [1,2,3]
+  end
+
   test "ET.Logic.filter()" do
     ET.Logic.filter
     |> ET.Reducers.list
@@ -228,13 +246,13 @@ defmodule ETLogicTest do
            [{1, true}, {2, false}, {3, true}, {4, false}]
   end
 
-  test "ET.Logic.with_index" do
+  test "ET.Logic.with_index()" do
     ET.Logic.with_index
     |> ET.Reducers.list
     |> logic_test
   end
 
-  test "ET.Logic.with_index" do
+  test "ET.Logic.with_index(transducer)" do
     identity_trans
     |> ET.Logic.with_index
     |> ET.Reducers.list
