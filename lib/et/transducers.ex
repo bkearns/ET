@@ -18,7 +18,66 @@ defmodule ET.Transducers do
   
   import ET.Transducer
 
+  @doc """
+  A transducer which takes only the items from indices taken from the transducible. Automatically
+  halts if all indices are taken.
 
+  """
+
+  @spec at_indices(ET.Transducer.t, ET.Transducible.t) :: ET.Transducer.t
+  @spec at_indices(ET.Transducible.t) :: ET.Transducer.t
+  def at_indices(%ET.Transducer{} = trans, indices) do
+    compose(trans, at_indices(indices))
+  end
+  def at_indices(indices) do
+    ET.Logic.with_index
+    |> compose(%ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init) |> prepend_state({indices, HashSet.new})
+         {:cont, [{indices, set} | r_state], {elem, index}} ->
+           case at_indices_set_test(index, indices, set) do
+             {true, indices, set} ->
+               {signal, state} = reducer.({:cont, r_state, elem})
+               if Transducible.next(set) == :done do
+                 {:halt, state} |> prepend_state({indices, set})
+               else
+                 {signal, state} |> prepend_state({indices, set})
+               end
+             {false, indices, set} ->
+               {:cont, r_state}
+               |> prepend_state({indices, set})
+           end
+         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
+      end
+    end]})
+  end
+
+  defp at_indices_set_test(index, indices, set) do
+    if Set.member?(set, index) do
+      {true, indices, Set.delete(set, index)}
+    else
+      {result, indices, keys} = at_indices_find_element(indices, index)
+      put_greater = fn n, set when n > index -> Set.put(set, n)
+                       _, set -> set end
+      {result, indices, :lists.foldl(put_greater, set, keys)}
+    end
+  end
+
+  defp at_indices_find_element(:done, _index) do
+    {false, :done, []}
+  end
+  defp at_indices_find_element(indices, index) do
+    at_indices_find_element(Transducible.next(indices), index, [])
+  end
+  defp at_indices_find_element(:done, _index, acc) do
+    {false, :done, acc}
+  end
+  defp at_indices_find_element({index, indices}, index, acc) do
+    {true, indices, [index | acc]}
+  end
+  defp at_indices_find_element({elem, indices}, index, acc) do
+    at_indices_find_element(Transducible.next(indices), index, [elem | acc])
+  end
+  
   @doc """
   A transducer which takes elements and emits chunks of size elements. These chunks default
   to ET.Reducers.list(), but an alternate reducer may be substituted. Elements in each chunk

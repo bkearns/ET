@@ -2,7 +2,35 @@ defmodule ETTransducersTest do
   use ExUnit.Case, async: true
 
   defp identity_trans, do: ET.Transducers.map(&(&1))
-  
+
+  test "ET.Transducers.at_indices(transducible)" do
+    ET.Transducers.at_indices([1,3])
+    |> ET.Reducers.list
+    |> at_indices_transducible_test
+  end
+
+  test "ET.Transducers.at_indices(transducer, transducible)" do
+    identity_trans
+    |> ET.Transducers.at_indices([1,3])
+    |> ET.Reducers.list
+    |> at_indices_transducible_test
+  end
+
+  defp at_indices_transducible_test(reducer) do
+    assert ET.reduce(2..6, reducer) == [3,5]
+  end
+
+  test "ET.Transducers.at_indices(transducible) early termination" do
+    reducer =
+      ET.Transducers.at_indices([1])
+      |> ET.Reducers.count
+    {_, state} = reducer.(:init)
+
+    assert {{:cont, state}, cont} = ET.reduce_step(1..3, state, reducer)
+    assert {{:halt, state}, _cont} = ET.reduce_step(cont, state, reducer)
+    assert 1 == ET.finish_reduce(state, reducer)
+  end
+
   test "ET.Transducers.chunk(size)" do
     ET.Transducers.chunk(2)
     |> ET.Reducers.list()
