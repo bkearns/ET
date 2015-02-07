@@ -359,7 +359,7 @@ defmodule ET.Logic do
 
   @doc """
   A transducer which takes elements in the form {_, t} and outputs in the form
-  {_, !t}.
+  {{_, t}, !t}.
 
   """
 
@@ -369,7 +369,7 @@ defmodule ET.Logic do
   def negate() do
     %ET.Transducer{elements: [fn reducer ->
       fn :init -> reducer.(:init)
-         {:cont, r_state, {elem, bool}} -> reducer.({:cont, r_state, {elem, !bool}})
+         {:cont, r_state, {_, bool} = elem} -> reducer.({:cont, r_state, {elem, !bool}})
          {:fin, r_state} -> reducer.({:fin, r_state})
       end
     end]}

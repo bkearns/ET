@@ -43,7 +43,7 @@ defmodule ET.Transducers do
     end]})
     |> ET.Logic.negate
     |> ET.Logic.filter
-    |> ET.Logic.destructure
+    |> ET.Logic.destructure(2)
     |> ET.Logic.halt_after
     |> ET.Logic.destructure
   end

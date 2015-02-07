@@ -270,7 +270,7 @@ defmodule ETLogicTest do
 
   defp negate_test(reducer) do
     assert ET.reduce([{1, true}, {2, 2}, {3, false}, {4, nil}], reducer) ==
-           [{1, false}, {2, false}, {3, true}, {4, true}]
+           [{{1,true},false}, {{2,2},false}, {{3,false},true}, {{4,nil},true}]
   end
 
   test "ET.Logic.structure(fun)" do
