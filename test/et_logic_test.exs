@@ -273,6 +273,25 @@ defmodule ETLogicTest do
            [{1, false}, {2, false}, {3, true}, {4, true}]
   end
 
+  test "ET.Logic.structure(fun)" do
+    ET.Logic.structure(&(rem(&1,3)))
+    |> ET.Reducers.list
+    |> structure_test
+  end
+  
+  test "ET.Logic.structure(transducer, fun)" do
+    identity_trans
+    |> ET.Logic.structure(&(rem(&1,3)))
+    |> ET.Reducers.list
+    |> structure_test
+  end
+
+  defp structure_test(reducer) do
+    assert ET.reduce(1..4, reducer) ==
+           [{1,1},{2,2},{3,0},{4,1}] 
+  end
+  
+  
   test "ET.Logic.true_every(n)" do
     ET.Logic.true_every(2)
     |> ET.Reducers.list

@@ -337,8 +337,26 @@ defmodule ET.Logic do
   defp in_collection_find_element({elem, t}, test, acc) do
     in_collection_find_element(Transducible.next(t), test, [elem | acc])
   end
-  
-  
+
+
+  @doc """
+  A transducer which takes element and outputs {element, fun.(element)}.
+
+  """
+
+  @spec structure(ET.Transducer.t, (term -> term)) :: ET.Transducer.t
+  @spec structure((term -> term)) :: ET.Transducer.t  
+  def structure(%ET.Transducer{} = trans, fun), do: compose(trans, structure(fun))
+  def structure(fun) do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init)
+         {:cont, r_state, elem} -> reducer.({:cont, r_state, {elem, fun.(elem)}})
+         {:fin, r_state} -> reducer.({:fin, r_state})
+      end
+    end]}
+  end
+
+
   @doc """
   A transducer which takes elements in the form {_, t} and outputs in the form
   {_, !t}.
