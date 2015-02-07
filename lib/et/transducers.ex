@@ -226,14 +226,14 @@ defmodule ET.Transducers do
   def drop(n) when n >= 0 do
     %ET.Transducer{elements: [fn reducer ->
       fn :init -> reducer.(:init) |> prepend_state(n)
-         {:cont, [0 | r_state], elem} ->
-           reducer.({:cont, r_state, elem})
-           |> prepend_state(0)
-         {:cont, [n | r_state], _elem} ->
-           {:cont, [n-1 | r_state]}
+         {:cont, [n | r_state], elem} ->
+           reducer.({:cont, r_state, {elem, n > 0}})
+           |> prepend_state(n-1)
          {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
       end
     end]}
+    |> ET.Logic.filter
+    |> ET.Logic.destructure
   end
   def drop(n) do
     %ET.Transducer{elements: [fn reducer ->
