@@ -31,6 +31,14 @@ defmodule ETTransducersTest do
     assert 1 == ET.finish_reduce(state, reducer)
   end
 
+  test "ET.Transducers.at_indices(transducible) early termination taking first element" do
+    reducer =
+      ET.Transducers.at_indices([0,2])
+      |> ET.Reducers.count
+
+    assert ET.reduce(1..3, reducer) == 2
+  end
+
   test "ET.Transducers.chunk(size)" do
     ET.Transducers.chunk(2)
     |> ET.Reducers.list()

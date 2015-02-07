@@ -37,7 +37,7 @@ defmodule ET.Transducers do
            case at_indices_set_test(index, indices, set) do
              {true, indices, set} ->
                {signal, state} = reducer.({:cont, r_state, elem})
-               if Transducible.next(set) == :done do
+               if indices == :done and Transducible.next(set) == :done do
                  {:halt, state} |> prepend_state({indices, set})
                else
                  {signal, state} |> prepend_state({indices, set})
