@@ -224,8 +224,35 @@ defmodule ETLogicTest do
   end
 
   defp logic_in_collection_transducible_test(reducer) do
-    assert ET.reduce([{true, 3}, {false, 4}, {true, 1}], reducer) ==
-           [{{true,3},false}, {{false,4},false}, {{true, 1},true}]
+    assert ET.reduce([{false, 1}, {true, 3}, {false, 4}, {true, 1}], reducer) ==
+           [{{false, 1},true}, {{true,3},false}, {{false,4},false}, {{true, 1},true}]
+  end
+
+  test "ET.Logic.in_collection(transducible, one_for_one: true)" do
+    ET.Logic.in_collection([2, 1, 5], one_for_one: true)
+    |> ET.Reducers.list
+    |> logic_in_collection_transducible_one_for_one_test
+  end
+
+  test "ET.Logic.in_collection(transducer, transducible, one_for_one: true)" do
+    identity_trans
+    |> ET.Logic.in_collection([2, 1, 5], one_for_one: true)
+    |> ET.Reducers.list
+    |> logic_in_collection_transducible_one_for_one_test
+  end
+
+  defp logic_in_collection_transducible_one_for_one_test(reducer) do
+    assert ET.reduce([{false, 1}, {true, 3}, {false, 4}, {true, 1}], reducer) ==
+           [{{false, 1},true}, {{true,3},false}, {{false,4},false}, {{true, 1},false}]
+  end
+
+  test "ET.Logic.in_collection(transducible, one_for_one: true) when transducible is empty" do
+    reducer =
+      ET.Logic.in_collection([1], one_for_one: true)
+      |> ET.Reducers.list
+
+    assert ET.reduce([{false, 1}, {true, 1}], reducer) ==
+           [{{false, 1}, true}, {{true, 1}, nil}]
   end
 
   test "ET.Logic.negate()" do

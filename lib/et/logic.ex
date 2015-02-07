@@ -248,47 +248,97 @@ defmodule ET.Logic do
   transducible will be fully traversed the first time a non-contained
   element is found.
 
+  Optionally takes one_for_one: true which will only produces true once for each
+  element in transducible. Duplicate items produce true one for each duplicate item.
+
   """
 
   @spec in_collection(ET.Transducer.t, ET.Transducible.t) :: ET.Transducer.t
   @spec in_collection(ET.Transducible.t) :: ET.Transducer.t
+  @spec in_collection(ET.Transducible.t, list({:one_for_one, boolean})) :: ET.Transducer.t
+  @spec in_collection(ET.Transducer.t, ET.Transducible.t, list({:one_for_one, boolean})) :: ET.Transducer.t
+  def in_collection(transducible), do: in_collection(transducible, one_for_one: false)
   def in_collection(%ET.Transducer{} = trans, transducible) do
     compose(trans, in_collection(transducible))
   end
-  def in_collection(transducible) do
+  def in_collection(transducible, [one_for_one: false]) do
     %ET.Transducer{elements: [fn reducer ->
       fn :init -> reducer.(:init) |> prepend_state({transducible, HashSet.new})
          {:cont, [{:done, set} | r_state], {_, test} = elem} ->
            reducer.({:cont, r_state, {elem, Set.member?(set, test)}})
            |> prepend_state({:done, set})
          {:cont, [{t, set} | r_state], {_, test} = elem} ->
-           {result, t, set} = in_collection_test(test, t, set)
+           {result, t, set} = in_collection_set_test(test, t, set)
            reducer.({:cont, r_state, {elem,result}})
            |> prepend_state({t, set})
          {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
        end
     end]}
   end
+  def in_collection(transducible, [one_for_one: true]) do
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init) |> prepend_state({transducible, HashDict.new})
+         {:cont, [{:done, dict} | r_state], {_, test} = elem} ->
+           {result, dict, _} = in_collection_dict_test(test, dict, [])
+           reducer.({:cont, r_state, {elem, result}})
+           |> prepend_state({:done, dict})
+         {:cont, [{transducible, dict} | r_state], {_, test} = elem} ->
+           {result, dict, transducible} =
+             in_collection_dict_test(test, dict, transducible)
+           reducer.({:cont, r_state, {elem, result}})
+           |> prepend_state({transducible, dict})
+         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
+      end
+    end]}
+  end
+  def in_collection(%ET.Transducer{} = trans, transducible, keywords) do
+    compose(trans, in_collection(transducible, keywords))
+  end
+  
 
-  defp in_collection_test(test, t, set) do
+  defp in_collection_set_test(test, t, set) do
     if Set.member?(set, test) do
       {true, t, set}
     else
-      in_collection_find_element(test, Transducible.next(t), set)
+      {result, t, keys} = in_collection_find_element(t, test)
+      {result, t, :lists.foldl(&(Set.put(&2,&1)), set, keys)}
     end
   end
 
-  defp in_collection_find_element(_test, :done, set) do
-    {false, :done, set}
-  end
-  defp in_collection_find_element(test, {test, t}, set) do
-    {true, t, Set.put(set, test)}
-  end
-  defp in_collection_find_element(test, {elem, t}, set) do
-    in_collection_find_element(test, Transducible.next(t), Set.put(set, elem))
+  defp in_collection_dict_test(test, dict, transducible) do
+    case Dict.fetch(dict, test) do
+      {:ok, 1} ->
+        {true, Dict.delete(dict, test), transducible}
+      {:ok, n} -> {true, Dict.put(dict, test, n-1), transducible}
+      :error   ->
+        {result, transducible, keys} =
+          case in_collection_find_element(transducible, test) do
+            {true, t, [_ | keys]} -> {true, t, keys}
+            {false, :done, keys}  -> {false, :done, keys}
+          end
+        dict = :lists.foldl(&(Dict.update(&2,&1,1,fn x->x+1 end)), dict, keys)
+        cond do
+          result                -> {true,  dict, transducible}
+          Dict.keys(dict) == [] -> {nil,   dict, transducible}
+          true                  -> {false, dict, transducible}
+        end
+    end     
   end
 
-
+  defp in_collection_find_element(t, test) do
+    in_collection_find_element(Transducible.next(t), test, [])
+  end
+  defp in_collection_find_element(:done, _test, acc) do
+    {false, :done, acc}
+  end
+  defp in_collection_find_element({test, t}, test, acc) do
+    {true, t, [test | acc]}
+  end
+  defp in_collection_find_element({elem, t}, test, acc) do
+    in_collection_find_element(Transducible.next(t), test, [elem | acc])
+  end
+  
+  
   @doc """
   A transducer which takes elements in the form {_, t} and outputs in the form
   {_, !t}.
