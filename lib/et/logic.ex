@@ -101,8 +101,8 @@ defmodule ET.Logic do
   defp apply_element(_, [], _, _, {signal, _} = r_signal, acc) do
     r_signal |> prepend_state({signal, acc})
   end
-  defp apply_element(elem, [chunk | chunks], inner_reducer, outer_reducer, {:halt, _} = r_signal, acc) do
-    apply_element(elem, chunks, inner_reducer, outer_reducer, r_signal, [chunk | acc])
+  defp apply_element(elem, chunks, inner_reducer, outer_reducer, {:halt, _} = r_signal, acc) do
+    apply_element(elem, [], inner_reducer, outer_reducer, r_signal, :lists.reverse(chunks, acc))
   end
   defp apply_element(elem, [chunk | chunks], inner_reducer, outer_reducer, {:cont, r_state}, acc) do
     c_signal =
