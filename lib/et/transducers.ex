@@ -18,6 +18,18 @@ defmodule ET.Transducers do
   
   import ET.Transducer
 
+
+  @doc """
+  A shortcut for at_indices with only a single element.
+
+  """
+
+  @spec at_index(non_neg_integer) :: ET.Transducer.t
+  @spec at_index(ET.Transducer.t, non_neg_integer) :: ET.Transducer.t
+  def at_index(n), do: at_indices([n])
+  def at_index(t, n), do: at_indices(t, [n])
+  
+
   @doc """
   A transducer which takes only the items from indices taken from the transducible. Automatically
   halts if all indices are taken.

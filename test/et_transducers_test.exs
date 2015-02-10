@@ -3,6 +3,23 @@ defmodule ETTransducersTest do
 
   defp identity_trans, do: ET.Transducers.map(&(&1))
 
+  test "ET.Transducers.at_index(n)" do
+    ET.Transducers.at_index(2)
+    |> ET.Reducers.list
+    |> at_index_n_test
+  end
+
+  test "ET.Transducers.at_index(transducer, n)" do
+    identity_trans
+    |> ET.Transducers.at_index(2)
+    |> ET.Reducers.list
+    |> at_index_n_test
+  end
+
+  defp at_index_n_test(reducer) do
+    assert ET.reduce(1..4, reducer) == [3]
+  end
+  
   test "ET.Transducers.at_indices(transducible)" do
     ET.Transducers.at_indices([1,3])
     |> ET.Reducers.list
