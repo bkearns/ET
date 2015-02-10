@@ -328,14 +328,12 @@ defmodule ET.Transducers do
   @spec map((term -> term)) :: ET.Transducer.t
   def map(%ET.Transducer{} = trans, fun), do: compose(trans, map(fun))
   def map(fun) do
-    %ET.Transducer{elements:
-      [fn reducer ->
-         fn
-           :init                 -> reducer.(:init)
-           {:cont, state, elem}  -> reducer.({:cont, state, fun.(elem)})
-           {:fin, state}         -> reducer.({:fin, state})
-         end
-       end]}
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init                 -> reducer.(:init)
+         {:cont, state, elem}  -> reducer.({:cont, state, fun.(elem)})
+         {:fin, state}         -> reducer.({:fin, state})
+      end
+    end]}
   end
 
   @doc """
@@ -378,16 +376,14 @@ defmodule ET.Transducers do
   @spec zip() :: ET.Transducer.t
   def zip(%ET.Transducer{} = trans), do: compose(trans, zip())
   def zip() do
-    %ET.Transducer{elements:
-      [fn reducer ->
-        fn
-          :init -> reducer.(:init) |> prepend_state([])
-          {:cont, [transducibles | r_state], elem} ->
-            do_first_zip(ET.reduce_step(elem, r_state, reducer), transducibles)
-          {:fin, [transducibles | r_state]} ->
-            do_final_zip([], transducibles, {:cont, r_state}, reducer)
-        end
-      end]}
+    %ET.Transducer{elements: [fn reducer ->
+      fn :init -> reducer.(:init) |> prepend_state([])
+         {:cont, [transducibles | r_state], elem} ->
+           do_first_zip(ET.reduce_step(elem, r_state, reducer), transducibles)
+         {:fin, [transducibles | r_state]} ->
+           do_final_zip([], transducibles, {:cont, r_state}, reducer)
+      end
+    end]}
   end
 
   defp do_first_zip({{:done, state}, _cont}, continuations) do
