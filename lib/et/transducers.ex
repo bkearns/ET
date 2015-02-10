@@ -35,15 +35,14 @@ defmodule ET.Transducers do
       fn :init -> reducer.(:init) |> prepend_state({indices, HashSet.new})
          {:cont, [{indices, set} | r_state], {elem, index}} ->
            {result, indices, set} = at_indices_set_test(index, indices, set)
-           next_elem = {{elem, (indices == :done and Transducible.next(set) == :done)}, result}
+           next_elem = {{elem, (indices == :done and Transducible.next(set) == :done)}, !result}
            reducer.({:cont, r_state, next_elem})
            |> prepend_state({indices, set})
          {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
       end
     end]})
-    |> ET.Logic.negate
     |> ET.Logic.filter
-    |> ET.Logic.destructure(2)
+    |> ET.Logic.destructure
     |> ET.Logic.halt_after
     |> ET.Logic.destructure
   end
