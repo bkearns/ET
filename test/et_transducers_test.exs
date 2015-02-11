@@ -316,6 +316,23 @@ defmodule ETTransducersTest do
     assert {:fin, [1]} = reducer.({:fin, state})
   end
 
+  test "ET.Transducers.filter(function)" do
+    ET.Transducers.filter(&(rem(&1,3)==0))
+    |> ET.Reducers.list
+    |> filter_function_test
+  end
+
+  test "ET.Transducers.filter(transducer, function)" do
+    identity_trans
+    |> ET.Transducers.filter(&(rem(&1,3)==0))
+    |> ET.Reducers.list
+    |> filter_function_test
+  end
+
+  defp filter_function_test(reducer) do
+    assert ET.reduce(1..7, reducer) == [3,6]
+  end
+
   test "ET.Transducers.map(map_fun)" do
     ET.Transducers.map(&(&1+1))
     |> ET.Reducers.list()

@@ -326,6 +326,22 @@ defmodule ET.Transducers do
   defp do_ensure({:fin, [_my_state | r_state]}, reducer, _n) do
     reducer.({:fin, r_state})
   end
+
+
+  @doc """
+  A transducer which only passes elements for which fun(element) is truthy.
+
+  """
+
+  @spec filter(ET.Transducer.t, (term -> term)) :: ET.Transducer.t
+  @spec filter((term -> term)) :: ET.Transducer.t
+  def filter(%ET.Transducer{} = trans, fun), do: compose(trans, filter(fun))
+  def filter(fun) do
+    ET.Logic.structure(fun)
+    |> ET.Logic.negate
+    |> ET.Logic.filter
+    |> ET.Logic.destructure(2)
+  end
   
   @doc """
   A transducer which applies the supplied function and passes the result to the reducer.
