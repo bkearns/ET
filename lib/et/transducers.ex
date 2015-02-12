@@ -188,17 +188,20 @@ defmodule ET.Transducers do
   end
 
   defp ignore_first() do
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state(false)
-         {:cont, [false | r_state], {elem, _}} ->
-           reducer.({:cont, r_state, {elem, false}})
-           |> prepend_state(true)
-         {:cont, [bool | r_state], elem} ->
-           reducer.({:cont, r_state, elem})
-           |> prepend_state(bool)
-         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
-      end
-    end]}
+    new_transducer(
+      fn reducer -> reducer |> init |> cont(false) end,
+      fn
+        {elem, _}, false, reducer ->
+          {elem, false}
+          |> reduce(reducer)
+          |> cont(true)
+        elem, bool, reducer ->
+          elem
+          |> reduce(reducer)
+          |> cont(bool)
+      end,
+      fn _, reducer -> finish(reducer) end
+    )
   end
   
   @doc """
