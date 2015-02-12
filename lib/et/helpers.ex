@@ -131,7 +131,21 @@ defmodule ET.Helpers do
   """
 
   def reduce(elem, reducer)
-  def reduce(elem, {reducer, {:cont, r_state}}) do
-    {reducer, reducer.({:cont, r_state, elem})}
+  def reduce(elem, {r_fun, {:cont, r_state}}) do
+    {r_fun, r_fun.({:cont, r_state, elem})}
+  end
+
+
+  @doc """
+  Reduces all elements in transducer until it finishes or reducer returns :halt.
+
+  """
+
+  def reduce_many(transducible, reducer)
+  def reduce_many(transducible, {r_fun, {:cont, _} = r_signal}) do
+    case ET.reduce_elements(transducible, r_signal, r_fun) do
+      {:halt, r_state, _} -> {r_fun, {:halt, r_state}}
+      {:done, r_state, _} -> {r_fun, {:cont, r_state}}
+    end
   end
 end

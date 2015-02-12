@@ -123,4 +123,9 @@ defmodule ETHelpersTest do
     assert_raise FunctionClauseError, fn -> ET.Helpers.reduce(:foo, reducer_tuple) end
   end
 
+  test "ET.Helpers.reduce_many(transducible, reducer)" do
+    list_reducer = ET.Reducers.list
+    assert ET.Helpers.reduce_many(1..4, {list_reducer, {:cont, [[]]}}) ==
+           {list_reducer, {:cont, [[4,3,2,1]]}}
+  end
 end
