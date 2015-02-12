@@ -189,15 +189,14 @@ defmodule ET.Logic do
   @spec filter() :: ET.Transducer.t
   def filter(%ET.Transducer{} = trans), do: compose(trans, filter)
   def filter() do
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init)
-         {:cont, _, {_, bool}} = signal when bool == false or bool == nil ->
-           reducer.(signal)
-         {:cont, r_state, _} ->
-           {:cont, r_state}
-         {:fin, r_state} -> reducer.({:fin, r_state})
+    new(
+      fn
+        {_,bool} = elem, reducer when bool == false or bool == nil ->
+          elem |> reduce(reducer) |> cont
+        _, reducer ->
+          cont(reducer)
       end
-    end]}
+    )
   end
 
 
