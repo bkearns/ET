@@ -217,16 +217,12 @@ defmodule ET.Transducers do
   @spec concat() :: ET.Transducer.t
   def concat(%ET.Transducer{} = trans), do: compose(trans, concat)
   def concat() do
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init)
-         {:cont, r_state, elem} ->
-           case ET.reduce_elements(elem, {:cont, r_state}, reducer) do
-             {:halt, state, _} -> {:halt, state}
-             {:done, state, _} -> {:cont, state}
-           end
-         {:fin, r_state} -> reducer.({:fin, r_state})
+    new_transducer(
+      fn transducible, reducer ->
+        reduce_many(transducible, reducer)
+        |> cont
       end
-    end]}
+    )
   end
 
   @doc """
