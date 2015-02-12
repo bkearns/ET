@@ -44,14 +44,14 @@ defmodule ET.Transducers do
   def at_indices(indices) do
     ET.Logic.with_index
     |> new_transducer(
-      fn reducer -> reducer |> init |> cont({indices, HashSet.new}) end,
-      fn {elem, index}, {indices, set}, reducer ->
+      fn r_fun -> r_fun |> init |> cont({indices, HashSet.new}) end,
+      fn {elem, index}, reducer, {indices, set} ->
         {result, indices, set} = at_indices_set_test(index, indices, set)
         {{elem, (indices == :done and Transducible.next(set) == :done)}, !result}
         |> reduce(reducer)
         |> cont({indices, set})
       end,
-      fn _, reducer -> finish(reducer) end
+      fn reducer, _ -> finish(reducer) end
     )
     |> ET.Logic.filter
     |> ET.Logic.destructure
@@ -189,18 +189,18 @@ defmodule ET.Transducers do
 
   defp ignore_first() do
     new_transducer(
-      fn reducer -> reducer |> init |> cont(false) end,
+      fn r_fun -> r_fun |> init |> cont(false) end,
       fn
-        {elem, _}, false, reducer ->
+        {elem, _}, reducer, false ->
           {elem, false}
           |> reduce(reducer)
           |> cont(true)
-        elem, bool, reducer ->
+        elem, reducer, bool ->
           elem
           |> reduce(reducer)
           |> cont(bool)
       end,
-      fn _, reducer -> finish(reducer) end
+      fn reducer, _ -> finish(reducer) end
     )
   end
   
@@ -235,35 +235,35 @@ defmodule ET.Transducers do
   def drop(%ET.Transducer{} = trans, n), do: compose(trans, drop(n))
   def drop(n) when n >= 0 do
     new_transducer(
-      fn reducer -> reducer |> init |> cont(n) end,
+      fn r_fun -> r_fun |> init |> cont(n) end,
       fn
-        elem, 0, reducer ->
+        elem, reducer, 0 ->
           {elem, false}
           |> reduce(reducer)
           |> cont(0)
-        elem, n, reducer ->
+        elem, reducer, n ->
           {elem, true}
           |> reduce(reducer)
           |> cont(n-1)
       end,
-      fn _, reducer -> finish(reducer) end
+      fn reducer, _ -> finish(reducer) end
     )
     |> ET.Logic.filter
     |> ET.Logic.destructure
   end
   def drop(n) do
     new_transducer(
-      fn reducer -> reducer |> init |> cont({:queue.new, -n}) end,
+      fn r_fun -> r_fun |> init |> cont({:queue.new, -n}) end,
       fn
-        elem, {queue, 0}, reducer ->
+        elem, reducer, {queue, 0} ->
           {{:value, val}, queue} = :queue.out(queue)
           val
           |> reduce(reducer)
           |> cont({:queue.in(elem, queue), 0})
-        elem, {queue, n}, reducer ->
+        elem, reducer, {queue, n} ->
           cont(reducer, {:queue.in(elem, queue), n-1})
       end,
-      fn _, reducer -> finish(reducer) end
+      fn reducer, _ -> finish(reducer) end
     )
   end
   
@@ -285,17 +285,17 @@ defmodule ET.Transducers do
     new_transducer(
       fn r_fun -> r_fun |> init |> cont(false) end,
       fn
-        elem, bool, reducer when bool == false or bool == nil ->
+        elem, reducer, bool when bool == false or bool == nil ->
           result = fun.(elem)
           {elem, result}
           |> reduce(reducer)
           |> cont(!result)
-        elem, bool, reducer ->
+        elem, reducer, bool ->
           {elem, !bool}
           |> reduce(reducer)
           |> cont(true)
       end,
-      fn _, reducer -> finish(reducer) end
+      fn reducer, _ -> finish(reducer) end
     )
     |> ET.Logic.filter
     |> ET.Logic.destructure
@@ -317,12 +317,12 @@ defmodule ET.Transducers do
     new_transducer(
       fn r_fun -> r_fun |> init |> cont({:cont, n-1}) end,
       fn
-        elem, {:cont, 0}, reducer ->
+        elem, reducer, {:cont, 0} ->
           elem
           |> reduce(reducer)
           |> cont({:cont, 0})
         
-        elem, {:cont, n}, reducer ->
+        elem, reducer, {:cont, n} ->
           reducer = reduce(elem, reducer)
           if halted?(reducer) do
             cont_nohalt(reducer, {:halt, n-1})
@@ -330,13 +330,13 @@ defmodule ET.Transducers do
             cont(reducer, {:cont, n-1})
           end
         
-        _, {:halt, 0}, reducer ->
+        _, reducer, {:halt, 0} ->
           halt(reducer, {:halt, 0})
         
-        _, {:halt, n}, reducer ->
+        _, reducer, {:halt, n} ->
           cont(reducer, {:halt, n-1})
       end,
-      fn _, reducer -> finish(reducer) end
+      fn reducer, _ -> finish(reducer) end
     )
   end
   
@@ -422,11 +422,11 @@ defmodule ET.Transducers do
   def zip() do
     new_transducer(
       fn r_fun -> r_fun |> init |> cont([]) end,
-      fn collection, transducibles, reducer ->
+      fn collection, reducer, transducibles ->
         reduce_one(collection, reducer)
         |> do_first_zip(transducibles)
       end,
-      fn transducibles, reducer ->
+      fn reducer, transducibles ->
         finish_zip([], transducibles, reducer)
       end
     )

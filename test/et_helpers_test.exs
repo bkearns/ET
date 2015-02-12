@@ -87,16 +87,16 @@ defmodule ETHelpersTest do
     ET.Helpers.new_transducer(
       fn reducer -> reducer |> init |> cont(2) end,
       fn
-        elem, 0, reducer ->
+        elem, reducer, 0 ->
           elem
           |> reduce(reducer)
           |> halt(0)
-        elem, count, reducer ->
+        elem, reducer, count ->
           elem
           |> reduce(reducer)
           |> cont(count-1)
       end,
-      fn _, reducer -> finish(reducer) end
+      fn reducer, _ -> finish(reducer) end
     )
     |> ET.Reducers.list
     |> new_transducer_fun_fun_fun_test
@@ -105,19 +105,19 @@ defmodule ETHelpersTest do
   test "ET.Helpers.new_transducer(transducer, fun, fun, fun)" do
     identity_trans
     |> ET.Helpers.new_transducer(
-         fn reducer -> reducer |> init |> cont(2) end,
-         fn
-           elem, 0, reducer ->
-             elem
-             |> reduce(reducer)
-             |> halt(0)
-           elem, count, reducer ->
-             elem
-             |> reduce(reducer)
-             |> cont(count-1)
-         end,
-         fn _, reducer -> finish(reducer) end
-       )
+      fn reducer -> reducer |> init |> cont(2) end,
+      fn
+        elem, reducer, 0 ->
+          elem
+          |> reduce(reducer)
+          |> halt(0)
+        elem, reducer, count ->
+          elem
+          |> reduce(reducer)
+          |> cont(count-1)
+      end,
+      fn reducer, _ -> finish(reducer) end
+    )
     |> ET.Reducers.list
     |> new_transducer_fun_fun_fun_test
   end

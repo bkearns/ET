@@ -145,9 +145,9 @@ defmodule ET.Helpers do
       fn :init ->
            init_fun.(reducer)
          {:cont, [state | r_state], elem} ->
-           cont_fun.(elem, state, {reducer, {:cont, r_state}})
+           cont_fun.(elem, {reducer, {:cont, r_state}}, state)
          {:fin, [state | r_state]} ->
-           fin_fun.(state, {reducer, {:cont, r_state}})
+           fin_fun.({reducer, {:cont, r_state}}, state)
       end
     end]}
   end
