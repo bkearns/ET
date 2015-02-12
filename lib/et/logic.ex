@@ -403,17 +403,20 @@ defmodule ET.Logic do
   end
   def true_every(n, [first: first]) do
     start = if first, do: 0, else: n-1
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state(start)
-         {:cont, [0 | r_state], elem} ->
-           reducer.({:cont, r_state, {elem, true}})
-           |> prepend_state(n-1)
-         {:cont, [count | r_state], elem} ->
-           reducer.({:cont, r_state, {elem, false}})
-           |> prepend_state(count-1)
-         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
-      end
-    end]}
+    new(
+      fn r_fun -> r_fun |> init |> cont(start) end,
+      fn
+        elem, reducer, 0 ->
+          {elem, true}
+          |> reduce(reducer)
+          |> cont(n-1)
+        elem, reducer, count ->
+          {elem, false}
+          |> reduce(reducer)
+          |> cont(count-1)
+      end,
+      fn reducer, _ -> finish(reducer) end
+    )
   end
   def true_every(%ET.Transducer{} = trans, n, first) do
     compose(trans, true_every(n, first))
@@ -426,13 +429,14 @@ defmodule ET.Logic do
 
   def with_index(%ET.Transducer{} = trans), do: compose(trans, with_index)
   def with_index() do
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state(0)
-         {:cont, [index | r_state], elem} ->
-           reducer.({:cont, r_state, {elem, index}})
-           |> prepend_state(index + 1)
-         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
-      end
-    end]}
+    new(
+      fn r_fun -> r_fun |> init |> cont(0) end,
+      fn elem, reducer, index ->
+        {elem, index}
+        |> reduce(reducer)
+        |> cont(index+1)
+      end,
+      fn reducer, _ -> finish(reducer) end
+    )
   end
 end
