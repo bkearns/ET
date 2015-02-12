@@ -357,12 +357,13 @@ defmodule ET.Logic do
   @spec structure((term -> term)) :: ET.Transducer.t  
   def structure(%ET.Transducer{} = trans, fun), do: compose(trans, structure(fun))
   def structure(fun) do
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init)
-         {:cont, r_state, elem} -> reducer.({:cont, r_state, {elem, fun.(elem)}})
-         {:fin, r_state} -> reducer.({:fin, r_state})
+    new(
+      fn elem, reducer ->
+        {elem, fun.(elem)}
+        |> reduce(reducer)
+        |> cont
       end
-    end]}
+    )
   end
 
 
