@@ -262,19 +262,24 @@ defmodule ET.Logic do
     compose(trans, in_collection(transducible))
   end
   def in_collection(transducible, [one_for_one: false]) do
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state({transducible, HashSet.new})
-         {:cont, [{:done, set} | r_state], {_, test} = elem} ->
-           reducer.({:cont, r_state, {elem, Set.member?(set, test)}})
-           |> prepend_state({:done, set})
-         {:cont, [{t, set} | r_state], {_, test} = elem} ->
-           {result, t, set} = in_collection_set_test(test, t, set)
-           reducer.({:cont, r_state, {elem,result}})
-           |> prepend_state({t, set})
-         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
-       end
-    end]}
+    new(
+      fn r_fun -> r_fun |> init |> cont({transducible, HashSet.new}) end,
+      fn
+        {_,test} = elem, reducer, {:done, set} = state ->
+          {elem, Set.member?(set, test)}
+          |> reduce(reducer)
+          |> cont(state)
+
+        {_,test} = elem, reducer, {t, set} ->
+          {result, t, set} = in_collection_set_test(test, t, set)
+          {elem, result}
+          |> reduce(reducer)
+          |> cont({t, set})
+      end,
+      fn reducer, _ -> finish(reducer) end
+    )
   end
+  
   def in_collection(transducible, [one_for_one: true]) do
     %ET.Transducer{elements: [fn reducer ->
       fn :init -> reducer.(:init) |> prepend_state({transducible, HashDict.new})
