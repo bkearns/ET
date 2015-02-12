@@ -234,29 +234,37 @@ defmodule ET.Transducers do
 
   def drop(%ET.Transducer{} = trans, n), do: compose(trans, drop(n))
   def drop(n) when n >= 0 do
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state(n)
-         {:cont, [n | r_state], elem} ->
-           reducer.({:cont, r_state, {elem, n > 0}})
-           |> prepend_state(n-1)
-         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
-      end
-    end]}
+    new_transducer(
+      fn reducer -> reducer |> init |> cont(n) end,
+      fn
+        elem, 0, reducer ->
+          {elem, false}
+          |> reduce(reducer)
+          |> cont(0)
+        elem, n, reducer ->
+          {elem, true}
+          |> reduce(reducer)
+          |> cont(n-1)
+      end,
+      fn _, reducer -> finish(reducer) end
+    )
     |> ET.Logic.filter
     |> ET.Logic.destructure
   end
   def drop(n) do
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state({:queue.new, -n})
-         {:cont, [{queue, 0} | r_state], elem} ->
-           {{:value, val}, queue} = :queue.out(queue)
-           reducer.({:cont, r_state, val})
-           |> prepend_state({:queue.in(elem, queue), 0})
-         {:cont, [{queue, n} | r_state], elem} ->
-           {:cont, [{:queue.in(elem, queue), n-1} | r_state]}
-         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
-      end
-    end]}
+    new_transducer(
+      fn reducer -> reducer |> init |> cont({:queue.new, -n}) end,
+      fn
+        elem, {queue, 0}, reducer ->
+          {{:value, val}, queue} = :queue.out(queue)
+          val
+          |> reduce(reducer)
+          |> cont({:queue.in(elem, queue), 0})
+        elem, {queue, n}, reducer ->
+          cont(reducer, {:queue.in(elem, queue), n-1})
+      end,
+      fn _, reducer -> finish(reducer) end
+    )
   end
   
   @doc """
