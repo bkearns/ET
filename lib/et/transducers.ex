@@ -314,10 +314,32 @@ defmodule ET.Transducers do
   @spec ensure(non_neg_integer) :: ET.Transducer.t
   def ensure(%ET.Transducer{} = trans, n), do: compose(trans, ensure(n))
   def ensure(n) do
-    %ET.Transducer{elements: [fn reducer -> &(do_ensure(&1, reducer, n)) end]}
+    new_transducer(
+      fn r_fun -> r_fun |> init |> cont({:cont, n-1}) end,
+      fn
+        elem, {:cont, 0}, reducer ->
+          elem
+          |> reduce(reducer)
+          |> cont({:cont, 0})
+        
+        elem, {:cont, n}, reducer ->
+          reducer = reduce(elem, reducer)
+          if halted?(reducer) do
+            cont_nohalt(reducer, {:halt, n-1})
+          else
+            cont(reducer, {:cont, n-1})
+          end
+        
+        elem, {:halt, 0}, reducer ->
+          halt(reducer, {:halt, 0})
+        
+        elem, {:halt, n}, reducer ->
+          cont(reducer, {:halt, n-1})
+      end,
+      fn _, reducer -> finish(reducer) end
+    )
   end
 
-  defp do_ensure(:init, reducer, n), do: reducer.(:init) |> prepend_state({:cont, n})
   defp do_ensure({:cont, [{:cont, n} | r_state], elem}, reducer, _n) when n < 2 do
     reducer.({:cont, r_state, elem}) |> prepend_state({:cont, n})
   end
