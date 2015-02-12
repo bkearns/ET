@@ -230,15 +230,14 @@ defmodule ET.Logic do
   @spec halt_on(ET.Transducer.t) :: ET.Transducer.t
   def halt_on(%ET.Transducer{} = trans), do: compose(trans, halt_on)
   def halt_on() do
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init)
-         {:cont, _, {_, bool}} = signal when bool == false or bool == nil ->
-           reducer.(signal)
-         {:cont, state, _} ->
-           {:halt, state}
-         {:fin, state} -> reducer.({:fin, state})
+    new(
+      fn
+        {_, bool} = elem, reducer when bool == false or bool == nil ->
+          elem |> reduce(reducer) |> cont
+        _, reducer ->
+          reducer |> halt
       end
-    end]}
+    )
   end
 
 
