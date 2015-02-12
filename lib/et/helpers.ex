@@ -41,6 +41,16 @@ defmodule ET.Helpers do
 
 
   @doc """
+  Returns true if the reducer's signal is :halt and false if it is :cont.
+
+  """
+
+  def halted?(reducer)
+  def halted?({_, {:halt, _}}), do: true
+  def halted?({_, {:cont, _}}), do: false
+
+
+  @doc """
   Creates a :halt signal with state prepended to it.
 
   """

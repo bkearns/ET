@@ -35,6 +35,11 @@ defmodule ETHelpersTest do
            {:halt, [:foo, []]}
   end
 
+  test "ET.Helpers.halted?(reducer)" do
+    assert ET.Helpers.halted?({ET.Reducers.list, {:cont, [[]]}}) == false
+    assert ET.Helpers.halted?({ET.Reducers.list, {:halt, [[]]}}) == true
+  end
+
   test "ET.Helpers.init(reducer)" do
     list_reducer = ET.Reducers.list
     assert ET.Helpers.init(list_reducer) ==
