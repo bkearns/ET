@@ -240,7 +240,7 @@ defmodule ET.Transducer do
   def reduce_one(transducible, reducer)
   def reduce_one(transducible, {r_fun, {:cont, r_state}}) do
     case ET.reduce_step(transducible, r_state, r_fun) do
-      {{:done, r_state}, continuation} -> {:done, {r_fun, {:cont, r_state}}}
+      {{:done, r_state}, _} -> {:done, {r_fun, {:cont, r_state}}}
       {{sig, r_state}, continuation} -> {continuation, {r_fun, {sig, r_state}}}
     end
   end
