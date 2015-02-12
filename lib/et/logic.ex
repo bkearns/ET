@@ -34,18 +34,19 @@ defmodule ET.Logic do
   def change?(%ET.Transducer{} = trans, one) do
     compose(trans, change?(one))
   end
-  def change?(change_check, [first: first]) do
+  def change?(change_check, first: first) do
     ref = :erlang.make_ref
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state(ref)
-         {:cont, [prev | r_state], elem} ->
-           curr = change_check.(elem)
-           same = curr == prev or (!first and (prev == ref))
-           reducer.({:cont, r_state, {elem, !same}})
-           |> prepend_state(curr)
-         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
-       end
-    end]}
+    new(
+      fn r_fun -> r_fun |> init |> cont(ref) end,
+      fn elem, reducer, prev ->
+        curr = change_check.(elem)
+        same = curr == prev or (!first and (prev == ref))
+        {elem, !same}
+        |> reduce(reducer)
+        |> cont(curr)
+      end,
+      fn reducer, _ -> finish(reducer) end
+    )
   end
   def change?(%ET.Transducer{} = trans, change_check, first) do
     compose(trans, change?(change_check, first))
