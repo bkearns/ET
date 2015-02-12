@@ -330,35 +330,16 @@ defmodule ET.Transducers do
             cont(reducer, {:cont, n-1})
           end
         
-        elem, {:halt, 0}, reducer ->
+        _, {:halt, 0}, reducer ->
           halt(reducer, {:halt, 0})
         
-        elem, {:halt, n}, reducer ->
+        _, {:halt, n}, reducer ->
           cont(reducer, {:halt, n-1})
       end,
       fn _, reducer -> finish(reducer) end
     )
   end
-
-  defp do_ensure({:cont, [{:cont, n} | r_state], elem}, reducer, _n) when n < 2 do
-    reducer.({:cont, r_state, elem}) |> prepend_state({:cont, n})
-  end
-  defp do_ensure({:cont, [{:cont, n} | r_state], elem}, reducer, _n) do
-    case reducer.({:cont, r_state, elem}) do
-      {:halt, state} -> {:cont, state} |> prepend_state({:halt, n-1})
-      {:cont, state} -> {:cont, state} |> prepend_state({:cont, n-1})
-    end
-  end
-   defp do_ensure({:cont, [{:halt, n} | r_state], _elem}, _reducer, _n) when n < 2 do
-     {:halt, [{:halt, n} | r_state]}
-  end
-  defp do_ensure({:cont, [{:halt, n} | r_state], _elem}, _reducer, _n) do
-    {:cont, [{:halt, n-1} | r_state]}
-  end
-  defp do_ensure({:fin, [_my_state | r_state]}, reducer, _n) do
-    reducer.({:fin, r_state})
-  end
-
+  
 
   @doc """
   A transducer which only passes elements for which fun(element) is truthy.
