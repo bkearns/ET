@@ -282,18 +282,21 @@ defmodule ET.Transducers do
     compose(trans, drop_while(fun))
   end
   def drop_while(fun) do
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state(false)
-         {:cont, [bool | r_state], elem} when bool == false or bool == nil ->
-           result = fun.(elem)
-           reducer.({:cont, r_state, {elem, result}})
-           |> prepend_state(!result)
-         {:cont, [bool | r_state], elem} ->
-           reducer.({:cont, r_state, {elem, !bool}})
-           |> prepend_state(true)
-         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
-       end              
-    end]}
+    new_transducer(
+      fn r_fun -> r_fun |> init |> cont(false) end,
+      fn
+        elem, bool, reducer when bool == false or bool == nil ->
+          result = fun.(elem)
+          {elem, result}
+          |> reduce(reducer)
+          |> cont(!result)
+        elem, bool, reducer ->
+          {elem, !bool}
+          |> reduce(reducer)
+          |> cont(true)
+      end,
+      fn _, reducer -> finish(reducer) end
+    )
     |> ET.Logic.filter
     |> ET.Logic.destructure
   end
