@@ -369,13 +369,16 @@ defmodule ET.Transducers do
   @spec map((term -> term)) :: ET.Transducer.t
   def map(%ET.Transducer{} = trans, fun), do: compose(trans, map(fun))
   def map(fun) do
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init                 -> reducer.(:init)
-         {:cont, state, elem}  -> reducer.({:cont, state, fun.(elem)})
-         {:fin, state}         -> reducer.({:fin, state})
+    new_transducer(
+      fn
+        elem, reducer ->
+          fun.(elem)
+          |> reduce(reducer)
+          |> cont
       end
-    end]}
+    )
   end
+
 
   @doc """
   A transducer which limits the number of elements processed.
