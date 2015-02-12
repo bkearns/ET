@@ -17,7 +17,7 @@ defmodule ET.Transducers do
   """
   
   import ET.Transducer
-
+  import ET.Helpers
 
   @doc """
   A shortcut for at_indices with only a single element.
@@ -43,16 +43,16 @@ defmodule ET.Transducers do
   end
   def at_indices(indices) do
     ET.Logic.with_index
-    |> compose(%ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init) |> prepend_state({indices, HashSet.new})
-         {:cont, [{indices, set} | r_state], {elem, index}} ->
-           {result, indices, set} = at_indices_set_test(index, indices, set)
-           next_elem = {{elem, (indices == :done and Transducible.next(set) == :done)}, !result}
-           reducer.({:cont, r_state, next_elem})
-           |> prepend_state({indices, set})
-         {:fin, [_ | r_state]} -> reducer.({:fin, r_state})
-      end
-    end]})
+    |> new_transducer(
+      fn reducer -> reducer |> init |> cont({indices, HashSet.new}) end,
+      fn {elem, index}, {indices, set}, reducer ->
+        {result, indices, set} = at_indices_set_test(index, indices, set)
+        {{elem, (indices == :done and Transducible.next(set) == :done)}, !result}
+        |> reduce(reducer)
+        |> cont({indices, set})
+      end,
+      fn _, reducer -> finish(reducer) end
+    )
     |> ET.Logic.filter
     |> ET.Logic.destructure
     |> ET.Logic.halt_after
