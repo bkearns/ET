@@ -377,12 +377,13 @@ defmodule ET.Logic do
   @spec negate() :: ET.Transducer.t
   def negate(%ET.Transducer{} = trans), do: compose(trans, negate)
   def negate() do
-    %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init)
-         {:cont, r_state, {_, bool} = elem} -> reducer.({:cont, r_state, {elem, !bool}})
-         {:fin, r_state} -> reducer.({:fin, r_state})
+    new(
+      fn {_,bool} = elem, reducer ->
+        {elem, !bool}
+        |> reduce(reducer)
+        |> cont
       end
-    end]}
+    )
   end
 
   
