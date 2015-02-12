@@ -128,4 +128,11 @@ defmodule ETHelpersTest do
     assert ET.Helpers.reduce_many(1..4, {list_reducer, {:cont, [[]]}}) ==
            {list_reducer, {:cont, [[4,3,2,1]]}}
   end
+
+  test "ET.Helpers.reduce_many(transducible, reducer) early termination" do
+    take_two_list_reducer = ET.Transducers.take(2) |> ET.Reducers.list
+    assert ET.Helpers.reduce_many(1..4, {take_two_list_reducer, {:cont, [1, []]}}) ==
+           {take_two_list_reducer, {:halt, [1, [2,1]]}}
+  end
+
 end
