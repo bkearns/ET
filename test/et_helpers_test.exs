@@ -152,4 +152,11 @@ defmodule ETHelpersTest do
            {take_two_list_reducer, {:halt, [1, [2,1]]}}
   end
 
+  test "ET.Helpers.reduce_one(transducible, reducer)" do
+    list_reducer = ET.Reducers.list
+    assert ET.Helpers.reduce_one([1,2,3], {list_reducer, {:cont, [[]]}}) ==
+           {[2,3], {list_reducer, {:cont, [[1]]}}}
+    assert ET.Helpers.reduce_one([], {list_reducer, {:cont, [[]]}}) ==
+           {:done, {list_reducer, {:cont, [[]]}}}
+  end
 end

@@ -179,4 +179,19 @@ defmodule ET.Helpers do
       {:done, r_state, _} -> {r_fun, {:cont, r_state}}
     end
   end
+
+
+  @doc """
+  Reduces the transducible collection into the reducer just once returning
+  a continuation and a new reducer.
+
+  """
+
+  def reduce_one(transducible, reducer)
+  def reduce_one(transducible, {r_fun, {:cont, r_state}}) do
+    case ET.reduce_step(transducible, r_state, r_fun) do
+      {{:done, r_state}, continuation} -> {:done, {r_fun, {:cont, r_state}}}
+      {{sig, r_state}, continuation} -> {continuation, {r_fun, {sig, r_state}}}
+    end
+  end
 end
