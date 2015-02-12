@@ -17,7 +17,6 @@ defmodule ET.Transducers do
   """
   
   import ET.Transducer
-  import ET.Helpers
 
   @doc """
   A shortcut for at_indices with only a single element.
@@ -43,7 +42,7 @@ defmodule ET.Transducers do
   end
   def at_indices(indices) do
     ET.Logic.with_index
-    |> new_transducer(
+    |> new(
       fn r_fun -> r_fun |> init |> cont({indices, HashSet.new}) end,
       fn {elem, index}, reducer, {indices, set} ->
         {result, indices, set} = at_indices_set_test(index, indices, set)
@@ -188,7 +187,7 @@ defmodule ET.Transducers do
   end
 
   defp ignore_first() do
-    new_transducer(
+    new(
       fn r_fun -> r_fun |> init |> cont(false) end,
       fn
         {elem, _}, reducer, false ->
@@ -217,7 +216,7 @@ defmodule ET.Transducers do
   @spec concat() :: ET.Transducer.t
   def concat(%ET.Transducer{} = trans), do: compose(trans, concat)
   def concat() do
-    new_transducer(
+    new(
       fn transducible, reducer ->
         reduce_many(transducible, reducer)
         |> cont
@@ -234,7 +233,7 @@ defmodule ET.Transducers do
 
   def drop(%ET.Transducer{} = trans, n), do: compose(trans, drop(n))
   def drop(n) when n >= 0 do
-    new_transducer(
+    new(
       fn r_fun -> r_fun |> init |> cont(n) end,
       fn
         elem, reducer, 0 ->
@@ -252,7 +251,7 @@ defmodule ET.Transducers do
     |> ET.Logic.destructure
   end
   def drop(n) do
-    new_transducer(
+    new(
       fn r_fun -> r_fun |> init |> cont({:queue.new, -n}) end,
       fn
         elem, reducer, {queue, 0} ->
@@ -282,7 +281,7 @@ defmodule ET.Transducers do
     compose(trans, drop_while(fun))
   end
   def drop_while(fun) do
-    new_transducer(
+    new(
       fn r_fun -> r_fun |> init |> cont(false) end,
       fn
         elem, reducer, bool when bool == false or bool == nil ->
@@ -314,7 +313,7 @@ defmodule ET.Transducers do
   @spec ensure(non_neg_integer) :: ET.Transducer.t
   def ensure(%ET.Transducer{} = trans, n), do: compose(trans, ensure(n))
   def ensure(n) do
-    new_transducer(
+    new(
       fn r_fun -> r_fun |> init |> cont({:cont, n-1}) end,
       fn
         elem, reducer, {:cont, 0} ->
@@ -369,7 +368,7 @@ defmodule ET.Transducers do
   @spec map((term -> term)) :: ET.Transducer.t
   def map(%ET.Transducer{} = trans, fun), do: compose(trans, map(fun))
   def map(fun) do
-    new_transducer(
+    new(
       fn
         elem, reducer ->
           fun.(elem)
@@ -420,7 +419,7 @@ defmodule ET.Transducers do
   @spec zip() :: ET.Transducer.t
   def zip(%ET.Transducer{} = trans), do: compose(trans, zip())
   def zip() do
-    new_transducer(
+    new(
       fn r_fun -> r_fun |> init |> cont([]) end,
       fn collection, reducer, transducibles ->
         reduce_one(collection, reducer)
