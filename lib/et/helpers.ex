@@ -18,9 +18,30 @@ defmodule ET.Helpers do
 
   """
     
-  def cont(reducer)
+  def cont(reducer, state)
   def cont({_, {signal, r_state}}, state), do: {signal, [state | r_state]}
 
+
+  @doc """
+  Creates a continue signal regardless of the signal below it.
+
+  Used to intercept halt signals.
+
+  """
+
+  def cont_nohalt(reducer)
+  def cont_nohalt({_, {_, r_state}}), do: {:cont, r_state}
+
+
+  @doc """
+  Creates a continue signal regardless of the signal below it.
+
+  Used to intercept halt signals.
+
+  """
+
+  def cont_nohalt(reducer, state)
+  def cont_nohalt({_, {_, r_state}}, state), do: {:cont, [state | r_state]}
 
   @doc """
   Finishes the reducer.

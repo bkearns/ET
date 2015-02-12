@@ -19,6 +19,18 @@ defmodule ETHelpersTest do
            {:halt, [:foo, []]}
   end
 
+  test "ET.Helpers.cont_nohalt(reducer)" do
+    list_reducer = ET.Reducers.list
+    assert ET.Helpers.cont_nohalt({list_reducer, {:halt, [[]]}}) ==
+           {:cont, [[]]}
+  end
+
+  test "ET.Helpers.cont_nohalt(reducer, state)" do
+    list_reducer = ET.Reducers.list
+    assert ET.Helpers.cont_nohalt({list_reducer, {:halt, [[]]}}, :foo) ==
+           {:cont, [:foo, []]}
+  end
+
   test "ET.Helpers.finish(reducer_tuple)" do
     list_reducer = ET.Reducers.list
     reducer_tuple = {list_reducer, {:cont, [[2,1]]}}
