@@ -354,6 +354,27 @@ defmodule ET.Transducers do
     |> ET.Logic.filter
     |> ET.Logic.destructure(2)
   end
+
+
+  @doc """
+  A transducer which filters out when fun.(elem) is falsey and outputs the zero-based
+  pre-filter index.
+
+  """
+
+  @spec find_indices((term -> term)) :: ET.Transducer.t
+  @spec find_indices(ET.Transducer.t, (term -> term)) :: ET.Transducer.t
+  def find_indices(fun) do
+    ET.Logic.with_index
+    |> ET.Logic.structure(fn {elem, _} -> !fun.(elem) end)
+    |> ET.Logic.filter
+    |> ET.Logic.destructure
+    |> ET.Logic.reverse_destructure
+  end
+  def find_indices(%ET.Transducer{} = trans, fun) do
+    compose(trans, find_indices(fun))
+  end
+
   
   @doc """
   A transducer which applies the supplied function and passes the result to the reducer.

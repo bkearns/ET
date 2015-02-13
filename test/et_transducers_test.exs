@@ -333,6 +333,24 @@ defmodule ETTransducersTest do
     assert ET.reduce(1..7, reducer) == [3,6]
   end
 
+  test "ET.Transducers.find_indices(fun)" do
+    ET.Transducers.find_indices(&(rem(&1,3)==0))
+    |> ET.Reducers.list
+    |> find_indices_fun_test
+  end
+
+  test "ET.Transducers.find_indices(transducer, fun)" do
+    identity_trans
+    |> ET.Transducers.find_indices(&(rem(&1,3)==0))
+    |> ET.Reducers.list
+    |> find_indices_fun_test
+  end
+
+  defp find_indices_fun_test(div_by_three) do
+    assert ET.reduce(2..7, div_by_three) ==
+           [1, 4]
+  end
+
   test "ET.Transducers.map(map_fun)" do
     ET.Transducers.map(&(&1+1))
     |> ET.Reducers.list()
