@@ -242,6 +242,56 @@ defmodule ET.Logic do
 
 
   @doc """
+  A transducer which takes elements of {elem, value} and manages different reducers
+  for each unique value. By default this reducer is ET.Reducers.list, but may be
+  overridden. Additionally, a Dict of reducer functions can be included where keys are
+  values and those elements will be reduced separately.
+
+  Once an inner reducer :halts, it will be immediately reduced as {value, result} and no 
+  more elements of that value will be processed. If there are remaining reducers on a :fin
+  signal, they will be reduced in the same method at that time.
+
+  """
+
+  def group_by(r_fun, r_funs) do
+    new(
+      fn r_fun -> r_fun |> init |> cont(HashDict.new) end,
+      fn {_,value} = elem, reducer, groups ->
+        Dict.get(groups, value,
+          Dict.get(r_funs, value, r_fun) |> init)
+        |> do_group_by(elem, reducer, groups)
+      end,
+      fn reducer, groups -> finish_group_by(reducer, groups) end
+    )
+  end
+  def group_by(%ET.Transducer{} = trans, r_fun, r_funs) do
+    compose(trans, group_by(r_fun, r_funs))
+  end
+
+  defp do_group_by(:done, _, reducer, groups), do: cont(reducer, groups)
+  defp do_group_by(v_reducer, {_,value} = elem, reducer, groups) do
+    v_reducer = elem |> reduce(v_reducer)
+    if halted?(v_reducer) do
+      result = finish(v_reducer)
+      {value, result} |> reduce(reducer)    
+      |> cont(Dict.put(groups, value, :done))
+    else
+      reducer
+      |> cont(Dict.put(groups, value, v_reducer))
+    end
+  end
+
+  defp finish_group_by(reducer, groups) do
+    for {value, v_reducer} <- Dict.to_list(groups) do
+      {:fin, result} = finish(v_reducer)
+      {value, result}
+    end
+    |> reduce_many(reducer)
+    |> finish
+  end
+
+
+  @doc """
   A transducer which takes elements of the form {_, test} and produces
   elements in the form {{_, test}, boolean} where boolean is true if
   the element is contained within the transducible collection. The

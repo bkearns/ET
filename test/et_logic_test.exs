@@ -174,6 +174,24 @@ defmodule ETLogicTest do
            [{3, false}]
   end
 
+  test "ET.Logic.group_by(reducer, reducers)" do
+    ET.Logic.group_by(ET.Reducers.count, %{2 => ET.Logic.destructure |> ET.Reducers.list})
+    |> ET.Reducers.map
+    |> group_by_reducer_reducers_test
+  end
+
+  test "ET.Logic.group_by(transducer, reducer, reducers)" do
+    identity_trans
+    |> ET.Logic.group_by(ET.Reducers.count, %{2 => ET.Logic.destructure |> ET.Reducers.list})
+    |> ET.Reducers.map
+    |> group_by_reducer_reducers_test
+  end
+
+  defp group_by_reducer_reducers_test(count_except_two) do
+    assert ET.reduce([{false, 1}, {false, 3}, {:foo, 2}, {false, 1}, {:bar, 2}], count_except_two) ==
+           %{1 => 2, 2 => [:foo, :bar], 3 => 1}
+  end
+
   test "ET.Logic.halt_after()" do
     ET.Logic.halt_after
     |> ET.Reducers.list
