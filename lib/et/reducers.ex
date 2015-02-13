@@ -104,6 +104,21 @@ defmodule ET.Reducers do
 
 
   @doc """
+  A reducer which takes inputs and concats them into a single binary.
+
+  """
+
+  def binary() do
+    fn
+      :init -> {:cont, [""]}
+      {:cont, [acc], elem} -> {:cont, [acc <> to_string(elem)]}
+      {:fin, [acc]} -> {:fin, acc}
+    end
+  end
+  def binary(%ET.Transducer{} = trans), do: compose(trans, binary)
+
+
+  @doc """
   A reducer which counts the number of items recieved.
 
     iex> ET.reduce(1..3, ET.Reducers.count)

@@ -69,6 +69,22 @@ defmodule ETReducersTest do
     assert ET.reduce([2,3,4], reducer) == false
   end
 
+  test "ET.Reducers.binary()" do
+    ET.Reducers.binary
+    |> binary_test
+  end
+
+  test "ET.Reducers.binary(transducer)" do
+    identity_trans
+    |> ET.Reducers.binary
+    |> binary_test
+  end
+
+  defp binary_test(reducer) do
+    assert ET.reduce(["h", "e", "ll", 0], reducer) ==
+           "hell0"
+  end
+
   test "ET.Reducers.count()" do
     ET.Reducers.count
     |> count_test
@@ -85,7 +101,7 @@ defmodule ETReducersTest do
     assert ET.reduce(1..3, reducer) == 3
     assert ET.reduce(1..4, reducer) == 4
   end
-  
+
   test "ET.Reducers.list()" do
     ET.Reducers.list
     |> list_test
