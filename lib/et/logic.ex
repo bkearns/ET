@@ -300,8 +300,28 @@ defmodule ET.Logic do
                 {:fin, result} = finish(v_reducer)
                 {value, result}
               end)
-    |> ET.Reducers.list    
+    |> ET.Reducers.list   
   end
+
+
+  @doc """
+  A transducer which negates the first n truthy values it receives.
+
+  """
+
+  def ignore(n) do
+    new(
+      fn r_fun -> r_fun |> init |> cont(n) end,
+      fn
+        {_,bool} = elem, reducer, n when n == 0 or bool == false or bool == nil ->
+          {elem, bool} |> reduce(reducer) |> cont(n)
+        elem, reducer, n ->
+          {elem, false} |> reduce(reducer) |> cont(n-1)
+      end,
+      fn reducer, _ -> finish(reducer) end
+    )
+  end
+  def ignore(%ET.Transducer{} = trans, n), do: compose(trans, ignore(n))
 
   @doc """
   A transducer which takes elements of the form {_, test} and produces

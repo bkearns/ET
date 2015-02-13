@@ -259,6 +259,24 @@ defmodule ETLogicTest do
     [{1, false}, {2, false}]
   end
 
+  test "ET.Logic.ignore(n)" do
+    ET.Logic.ignore(2)
+    |> ET.Reducers.list
+    |> ignore_n_test
+  end
+
+  test "ET.Logic.ignore(transducer, n)" do
+    identity_trans
+    |> ET.Logic.ignore(2)
+    |> ET.Reducers.list
+    |> ignore_n_test
+  end
+
+  def ignore_n_test(ignore_two) do
+    assert ET.reduce([a: true, b: false, c: true, d: true] ,ignore_two) ==
+           [{{:a, true}, false}, {{:b, false}, false}, {{:c, true}, false}, {{:d, true}, true}]
+  end
+
   test "ET.Logic.in_collection(transducible)" do
     ET.Logic.in_collection([2, 1, 5])
     |> ET.Reducers.list
