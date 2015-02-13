@@ -408,8 +408,10 @@ defmodule ET.Transducers do
   defp destructure_r_funs(r_funs) do
     reducer =
       ET.Transducers.map(fn {v,v_fun} -> {v, compose(ET.Logic.destructure, v_fun)} end)
-      |> ET.Reducers.map
+    |> ET.Reducers.list
+    
     ET.reduce(r_funs, reducer)
+    |> :maps.from_list
   end
 
   @doc """
