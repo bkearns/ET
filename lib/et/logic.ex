@@ -265,7 +265,11 @@ defmodule ET.Logic do
           Dict.get(r_funs, value, r_fun) |> init)
         |> do_group_by(elem, reducer, groups)
       end,
-      fn reducer, groups -> finish_group_by(reducer, groups) end
+      fn reducer, groups ->
+        ET.reduce(groups, finish_group_reducer)
+        |> reduce_many(reducer)
+        |> finish
+      end
     )
   end
   def group_by(%ET.Transducer{} = trans, r_fun, r_funs) do
@@ -276,24 +280,28 @@ defmodule ET.Logic do
   defp do_group_by(v_reducer, {_,value} = elem, reducer, groups) do
     v_reducer = elem |> reduce(v_reducer)
     if halted?(v_reducer) do
-      result = finish(v_reducer)
-      {value, result} |> reduce(reducer)    
-      |> cont(Dict.put(groups, value, :done))
+      {:fin, result} = finish(v_reducer)
+      reducer = {value, result} |> reduce(reducer)
+      if halted?(reducer) do
+        ET.reduce(groups, finish_group_reducer)
+        halt(reducer, %{})
+      else
+        cont(Dict.put(groups, value, :done))
+      end
     else
       reducer
       |> cont(Dict.put(groups, value, v_reducer))
     end
   end
 
-  defp finish_group_by(reducer, groups) do
-    for {value, v_reducer} <- Dict.to_list(groups) do
-      {:fin, result} = finish(v_reducer)
-      {value, result}
-    end
-    |> reduce_many(reducer)
-    |> finish
+  defp finish_group_reducer do
+       ET.Transducers.filter(&( elem(&1,1) != :done ))
+    |> ET.Transducers.map(fn {value, v_reducer} ->
+                {:fin, result} = finish(v_reducer)
+                {value, result}
+              end)
+    |> ET.Reducers.list    
   end
-
 
   @doc """
   A transducer which takes elements of the form {_, test} and produces

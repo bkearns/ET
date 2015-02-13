@@ -210,6 +210,19 @@ defmodule ETLogicTest do
     %{1 => [1,3], 2 => [2,4]}
   end
 
+  test "ET.Logic.group_by doesn't send items to halted reducer" do
+    r_fun =
+      ET.Logic.structure(&(&1))
+      |> ET.Logic.group_by(ET.Transducers.take(1)
+                           |> ET.Logic.destructure
+                           |> ET.Reducers.list)
+      |> ET.Transducers.take(1)
+      |> ET.Logic.destructure
+      |> ET.Reducers.list
+
+    assert ET.reduce(1..6, r_fun) == [1]
+  end
+
   test "ET.Logic.halt_after()" do
     ET.Logic.halt_after
     |> ET.Reducers.list
