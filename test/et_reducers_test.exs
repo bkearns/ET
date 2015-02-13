@@ -101,6 +101,38 @@ defmodule ETReducersTest do
     assert ET.reduce([1,2,3,4], reducer) == [1,2,3,4]
   end
 
+  test "ET.Reducers.map()" do
+    ET.Reducers.map
+    |> map_test
+  end
+
+  test "ET.Reducers.map(transducer)" do
+    identity_trans
+    |> ET.Reducers.map
+    |> map_test
+  end
+
+  defp map_test(reducer) do
+    assert ET.reduce([one: 1, two: 2, one: 3], reducer) ==
+    %{one: 3, two: 2}
+  end
+
+  test "ET.Reducers.map(fun)" do
+    ET.Reducers.map(&(&1+&2))
+    |> map_fun_test
+  end
+
+  test "ET.Reducers.map(transducer, fun)" do
+    identity_trans
+    |> ET.Reducers.map(&(&1+&2))
+    |> map_fun_test
+  end
+
+  defp map_fun_test(adder) do
+    assert ET.reduce([one: 1, two: 2, one: 3, two: 4], adder) ==
+           %{one: 4, two: 6}
+  end
+
   test "ET.Reducers.ok()" do
     ET.Reducers.ok
     |> ok_test

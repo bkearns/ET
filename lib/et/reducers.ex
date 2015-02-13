@@ -140,6 +140,41 @@ defmodule ET.Reducers do
     end
   end
 
+
+  @doc """
+  A reducer which accepts tuples in the form of {key, value} and returns
+  a Map.
+
+  If fun/2 is provided, it should be of the form:
+  (new_value, stored_value -> new_stored_value)
+
+  """
+
+  @spec map() :: ET.reducer
+  @spec map(fun) :: ET.reducer
+  @spec map(ET.Transducer.t) :: ET.reducer
+  @spec map(ET.Transducer.t, fun) :: ET.reducer
+  def map() do
+    fn
+      :init -> {:cont, [%{}]}
+      {:cont, [acc], {key, value}} ->
+        {:cont, [Dict.put(acc, key, value)]}
+      {:fin, [acc]} -> {:fin, acc}
+    end
+  end
+  def map(%ET.Transducer{} = trans), do: compose(trans, map)
+  def map(fun) do
+    fn
+      :init -> {:cont, [%{}]}
+      {:cont, [acc], {key, value}} ->
+        {:cont, [Dict.update(acc, key, value, &(fun.(&1,value)))]}
+      {:fin, [acc]} -> {:fin, acc}
+    end
+  end
+  def map(%ET.Transducer{} = trans, fun), do: compose(trans, map(fun))
+
+
+
   @doc """
   A reducer which returns a fixed value regardless of what it receives.
   The default is :ok.
