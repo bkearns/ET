@@ -414,6 +414,23 @@ defmodule ET.Transducers do
     |> :maps.from_list
   end
 
+
+  @doc """
+  A transducer which sends the supplied element to the reducer between each element.
+
+  """
+
+  def intersperse(term) do
+    ET.Logic.structure(fn _ -> true end)
+    |> ET.Logic.ignore(1)
+    |> ET.Logic.insert_before({{term, nil}, nil})
+    |> ET.Logic.destructure(2)
+  end
+  def intersperse(%ET.Transducer{} = trans, term) do
+    compose(trans, intersperse(term))
+  end
+
+
   @doc """
   A transducer which applies the supplied function and passes the result to the reducer.
 
@@ -455,6 +472,7 @@ defmodule ET.Transducers do
     |> ET.Logic.halt_after
     |> ET.Logic.destructure
   end
+
 
   @doc """
   A transducers which takes several transducers and interleaves their

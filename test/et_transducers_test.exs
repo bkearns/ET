@@ -404,6 +404,25 @@ defmodule ETTransducersTest do
            %{0 => [3,6], 1 => 3, 2 => 2}
   end
 
+  test "ET.Transducers.intersperse(term)" do
+    ET.Transducers.intersperse(:foo)
+    |> ET.Reducers.list
+    |> intersperse_term_test
+  end
+
+  test "ET.Transducers.intersperse(transducer, term)" do
+    identity_trans
+    |> ET.Transducers.intersperse(:foo)
+    |> ET.Reducers.list
+    |> intersperse_term_test
+  end
+
+  defp intersperse_term_test(foo_inserter) do
+    assert ET.reduce(1..3, foo_inserter) ==
+           [1, :foo, 2, :foo, 3]
+  end
+
+
   test "ET.Transducers.map(map_fun)" do
     ET.Transducers.map(&(&1+1))
     |> ET.Reducers.list()

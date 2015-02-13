@@ -277,6 +277,24 @@ defmodule ETLogicTest do
            [{{:a, true}, false}, {{:b, false}, false}, {{:c, true}, false}, {{:d, true}, true}]
   end
 
+  test "ET.Logic.insert_before(term)" do
+    ET.Logic.insert_before({:foo, :bar})
+    |> ET.Reducers.list
+    |> insert_before_term_test
+  end
+
+  test "ET.Logic.insert_before(transducer, term)" do
+    identity_trans
+    |> ET.Logic.insert_before({:foo, :bar})
+    |> ET.Reducers.list
+    |> insert_before_term_test
+  end
+
+  defp insert_before_term_test(foo_bar_inserter) do
+    assert ET.reduce([{1,true}, {2,false}, {3,true}], foo_bar_inserter) ==
+           [{:foo, :bar}, {1,true}, {2,false}, {:foo, :bar}, {3,true}]
+  end
+
   test "ET.Logic.in_collection(transducible)" do
     ET.Logic.in_collection([2, 1, 5])
     |> ET.Reducers.list

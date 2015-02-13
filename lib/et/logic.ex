@@ -323,6 +323,28 @@ defmodule ET.Logic do
   end
   def ignore(%ET.Transducer{} = trans, n), do: compose(trans, ignore(n))
 
+
+  @doc """
+  A transducer which inserts the supplied element before each {elem, truthy} element
+  it receives.
+
+  """
+
+  def insert_before(term) do
+    new(
+      fn
+        {_,bool} = elem, reducer when bool == false or bool == nil ->
+          elem |> reduce(reducer) |> cont
+        elem, reducer ->
+          reducer = term |> reduce(reducer)
+          elem |> reduce(reducer) |> cont
+      end
+    )
+  end
+  def insert_before(%ET.Transducer{} = trans, term) do
+    compose(trans, insert_before(term))
+  end
+
   @doc """
   A transducer which takes elements of the form {_, test} and produces
   elements in the form {{_, test}, boolean} where boolean is true if
