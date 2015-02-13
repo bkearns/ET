@@ -192,6 +192,24 @@ defmodule ETLogicTest do
            %{1 => 2, 2 => [:foo, :bar], 3 => 1}
   end
 
+  test "ET.Logic.group_by(reducer)" do
+    ET.Logic.group_by(ET.Logic.destructure |> ET.Reducers.list)
+    |> ET.Reducers.map
+    |> group_by_reducer_test
+  end
+
+  test "ET.Logic.group_by(transducer, reducer)" do
+    identity_trans
+    |> ET.Logic.group_by(ET.Logic.destructure |> ET.Reducers.list)
+    |> ET.Reducers.map
+    |> group_by_reducer_test
+  end
+
+  defp group_by_reducer_test(reducer) do
+    assert ET.reduce([{1,1}, {2,2}, {3,1}, {4,2}], reducer) ==
+    %{1 => [1,3], 2 => [2,4]}
+  end
+
   test "ET.Logic.halt_after()" do
     ET.Logic.halt_after
     |> ET.Reducers.list

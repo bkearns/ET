@@ -253,6 +253,10 @@ defmodule ET.Logic do
 
   """
 
+  def group_by(r_fun), do: group_by(r_fun, %{})
+  def group_by(%ET.Transducer{} = trans, r_fun) do
+    compose(trans, group_by(r_fun))
+  end
   def group_by(r_fun, r_funs) do
     new(
       fn r_fun -> r_fun |> init |> cont(HashDict.new) end,
