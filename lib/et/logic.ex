@@ -349,6 +349,25 @@ defmodule ET.Logic do
 
 
   @doc """
+  A transducer which takes {elem, value} and outputs value.
+
+  """
+
+  @spec reverse_destructure() :: ET.Transducer.t
+  @spec reverse_destructure(ET.Transducer.t) :: ET.Transducer.t
+  def reverse_destructure() do
+    new(
+      fn {_, v}, reducer ->
+        v |> reduce(reducer) |> cont
+      end
+    )
+  end
+  def reverse_destructure(%ET.Transducer{} = trans) do
+    compose(trans, reverse_destructure)
+  end
+
+
+  @doc """
   A transducer which takes element and outputs {element, fun.(element)}.
 
   """

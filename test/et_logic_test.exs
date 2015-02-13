@@ -273,6 +273,24 @@ defmodule ETLogicTest do
            [{{1,true},false}, {{2,2},false}, {{3,false},true}, {{4,nil},true}]
   end
 
+  test "ET.Logic.reverse_destructure()" do
+    ET.Logic.reverse_destructure
+    |> ET.Reducers.list
+    |> reverse_destructure_test
+  end
+
+  test "ET.Logic.reverse_destructure(transducer)" do
+    identity_trans
+    |> ET.Logic.reverse_destructure
+    |> ET.Reducers.list
+    |> reverse_destructure_test
+  end
+
+  defp reverse_destructure_test(reducer) do
+    assert ET.reduce([{1, true}, {2, 2}, {3, false}, {4, nil}], reducer) ==
+           [true, 2, false, nil]
+  end
+
   test "ET.Logic.structure(fun)" do
     ET.Logic.structure(&(rem(&1,3)))
     |> ET.Reducers.list
