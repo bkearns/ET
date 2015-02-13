@@ -174,9 +174,9 @@ defmodule ET.Transducers do
   def chunk_by(%ET.Transducer{} = trans, change_fun), do: compose(trans, chunk_by(change_fun))
   def chunk_by(change_fun, inner_reducer) do
     inner_reducer =
-      ignore_first
+      ET.Logic.ignore(1)
       |> ET.Logic.halt_on
-      |> ET.Logic.destructure
+      |> ET.Logic.destructure(2)
       |> compose(inner_reducer)
       
       ET.Logic.change?(change_fun, first: true)
@@ -186,23 +186,7 @@ defmodule ET.Transducers do
     compose(trans, chunk_by(change_fun, inner_reducer))
   end
 
-  defp ignore_first() do
-    new(
-      fn r_fun -> r_fun |> init |> cont(false) end,
-      fn
-        {elem, _}, reducer, false ->
-          {elem, false}
-          |> reduce(reducer)
-          |> cont(true)
-        elem, reducer, bool ->
-          elem
-          |> reduce(reducer)
-          |> cont(bool)
-      end,
-      fn reducer, _ -> finish(reducer) end
-    )
-  end
-  
+
   @doc """
   A transducer which takes transducibles and reduces them.
 
