@@ -351,6 +351,59 @@ defmodule ETTransducersTest do
            [1, 4]
   end
 
+  test "ET.Transducers.group_by(fun)" do
+    ET.Transducers.group_by(&(rem(&1,3)))
+    |> ET.Reducers.map
+    |> group_by_fun_test
+  end
+
+  test "ET.Transducers.group_by(transducer, fun)" do
+    identity_trans
+    |> ET.Transducers.group_by(&(rem(&1,3)))
+    |> ET.Reducers.map
+    |> group_by_fun_test
+  end
+
+  defp group_by_fun_test(rem_three) do
+    assert ET.reduce(1..4, rem_three) ==
+           %{0 => [3], 1 => [1,4], 2 => [2]}
+  end
+
+  test "ET.Transducers.group_by(fun, reducer)" do
+    ET.Transducers.group_by(&(rem(&1,3)), ET.Reducers.count)
+    |> ET.Reducers.map
+    |> group_by_fun_reducer_test
+  end
+
+  test "ET.Transducers.group_by(transducer, fun, reducer)" do
+    identity_trans
+    |> ET.Transducers.group_by(&(rem(&1,3)), ET.Reducers.count)
+    |> ET.Reducers.map
+    |> group_by_fun_reducer_test
+  end
+
+  defp group_by_fun_reducer_test(rem_three_count) do
+    assert ET.reduce(1..4, rem_three_count) == %{0 => 1, 1 => 2, 2 => 1}
+  end
+  
+  test "ET.Transducers.group_by(fun, reducer, reducers)" do
+    ET.Transducers.group_by(&(rem(&1,3)), ET.Reducers.count, %{0 => ET.Reducers.list})
+    |> ET.Reducers.map
+    |> group_by_fun_reducer_reducers_test
+  end
+
+  test "ET.Transducers.group_by(transducer, fun, reducer, reducers)" do
+    identity_trans
+    |> ET.Transducers.group_by(&(rem(&1,3)), ET.Reducers.count, %{0 => ET.Reducers.list})
+    |> ET.Reducers.map
+    |> group_by_fun_reducer_reducers_test
+  end
+
+  defp group_by_fun_reducer_reducers_test(count_except_div_three) do
+    assert ET.reduce(1..7, count_except_div_three) ==
+           %{0 => [3,6], 1 => 3, 2 => 2}
+  end
+
   test "ET.Transducers.map(map_fun)" do
     ET.Transducers.map(&(&1+1))
     |> ET.Reducers.list()

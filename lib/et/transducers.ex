@@ -377,6 +377,42 @@ defmodule ET.Transducers do
 
   
   @doc """
+  A transducer which groups by the result of fun into separate inner_reducers. These reducers
+  will be reduced as {fun_value, result} tuples first in the order in which they :halt, or
+  in some non-guaranteed order on finish.
+
+  By default, items are reduced into simple lists, but an optional reducing function can be passed
+  to override this.
+
+  Additionally, a transducible producing {value, reducing_fun} can be included to give special
+  reducers for particular values of fun.(elem).
+
+  """
+
+  #TODO spec definition for group_by
+  def group_by(fun), do: group_by(fun, ET.Reducers.list)
+  def group_by(%ET.Transducer{} = trans, fun), do: compose(trans, group_by(fun))
+  def group_by(fun, r_fun), do: group_by(fun, r_fun, %{})
+  def group_by(%ET.Transducer{} = trans, fun, r_fun), do: compose(trans, group_by(fun, r_fun))
+  def group_by(fun, r_fun, r_funs) do
+    r_fun = compose(ET.Logic.destructure, r_fun)
+    r_funs = destructure_r_funs(r_funs)
+    
+    ET.Logic.structure(fun)
+    |> ET.Logic.group_by(r_fun, r_funs)
+  end
+  def group_by(%ET.Transducer{} = trans, fun, r_fun, r_funs) do
+    compose(trans, group_by(fun, r_fun, r_funs))
+  end
+
+  defp destructure_r_funs(r_funs) do
+    reducer =
+      ET.Transducers.map(fn {v,v_fun} -> {v, compose(ET.Logic.destructure, v_fun)} end)
+      |> ET.Reducers.map
+    ET.reduce(r_funs, reducer)
+  end
+
+  @doc """
   A transducer which applies the supplied function and passes the result to the reducer.
 
     iex> add_one = ET.Transducers.map(&(&1+1) |> ET.Reducers.list()
