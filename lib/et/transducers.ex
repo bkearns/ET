@@ -277,7 +277,7 @@ defmodule ET.Transducers do
     new(
       fn r_fun -> r_fun |> init |> cont(false) end,
       fn
-        elem, reducer, bool when bool == false or bool == nil ->
+        elem, reducer, bool when bool in [false, nil] ->
           result = fun.(elem)
           {elem, result}
           |> reduce(reducer)

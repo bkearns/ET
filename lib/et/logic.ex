@@ -191,7 +191,7 @@ defmodule ET.Logic do
   def filter() do
     new(
       fn
-        {_,bool} = elem, reducer when bool == false or bool == nil ->
+        {_,bool} = elem, reducer when bool in [false, nil] ->
           elem |> reduce(reducer) |> cont
         _, reducer ->
           cont(reducer)
@@ -212,7 +212,7 @@ defmodule ET.Logic do
   def halt_after() do
     new(
       fn
-        {_, bool} = elem, reducer when bool == false or bool == nil ->
+        {_, bool} = elem, reducer when bool in [false, nil] ->
           elem |> reduce(reducer) |> cont
         elem, reducer ->
           elem |> reduce(reducer) |> halt
@@ -232,7 +232,7 @@ defmodule ET.Logic do
   def halt_on() do
     new(
       fn
-        {_, bool} = elem, reducer when bool == false or bool == nil ->
+        {_, bool} = elem, reducer when bool in [false, nil] ->
           elem |> reduce(reducer) |> cont
         _, reducer ->
           reducer |> halt
@@ -314,7 +314,7 @@ defmodule ET.Logic do
     new(
       fn r_fun -> r_fun |> init |> cont(n) end,
       fn
-        {_,bool} = elem, reducer, n when n == 0 or bool == false or bool == nil ->
+        {_,bool} = elem, reducer, n when n == 0 or bool in [false, nil] ->
           {elem, bool} |> reduce(reducer) |> cont(n)
         elem, reducer, n ->
           {elem, false} |> reduce(reducer) |> cont(n-1)
@@ -334,7 +334,7 @@ defmodule ET.Logic do
   def insert_before(term) do
     new(
       fn
-        {_,bool} = elem, reducer when bool == false or bool == nil ->
+        {_,bool} = elem, reducer when bool in [false, nil] ->
           elem |> reduce(reducer) |> cont
         elem, reducer ->
           reducer = term |> reduce(reducer)
