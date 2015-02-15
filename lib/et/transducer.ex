@@ -67,7 +67,7 @@ defmodule ET.Transducer do
   Extracts the last signal embedded within the reducer and prepends state to it.
 
   """
-    
+
   def cont(reducer, state)
   def cont({_, {signal, r_state}}, state), do: {signal, [state | r_state]}
 
@@ -174,7 +174,8 @@ defmodule ET.Transducer do
   (elem, my_state, reducer -> {:cont, state} | {:halt, state})
 
   ET.Helpers.cont/2 and ET.Helpers.halt/2 both aid in this and
-  ET.Helpers.reduce/2 transforms a reducer given a new element. this can look like:
+  ET.Helpers.reduce/2 transforms a reducer given a new element. this can look
+  like:
   elem |> ET.Helpers.reduce(reducer) |> ET.Helpers.cont(state)
 
 
@@ -244,20 +245,4 @@ defmodule ET.Transducer do
       {{sig, r_state}, continuation} -> {continuation, {r_fun, {sig, r_state}}}
     end
   end
-
-
-  @doc """
-  A helper function for managing state in custom transducers.
-
-  Transducers which use the state object have to prepend their current state every time
-  a call comes back up the transducer stack. Prepend state automates this.
-
-    reducer.({:cont, element}) |> ET.prepend_state(new_state)
-
-  """
-
-  @spec prepend_state(ET.return_message, term) :: ET.return_message
-  def prepend_state({msg, state}, new_state), do: {msg, [new_state | state]}
-
-  
 end

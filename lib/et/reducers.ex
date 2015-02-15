@@ -7,16 +7,16 @@ defmodule ET.Reducers do
 
     :init -> Sent once before other signals, this is a good opportunity to set
              initial state.
-    {:cont, state, element} -> This message is sent for each element as long as the
-                             reduction is continuing.
+    {:cont, state, element} -> This message is sent for each element as long as
+                               the reduction is continuing.
     {:fin, state} -> Called as long as there is not an exception. This is an
-                     opportunity to close anything that needs closing and indicates
-                     that the result should be returned.
+                     opportunity to close anything that needs closing and
+                     indicates that the result should be returned.
 
-  The state object is shared among any transducers and the reducer and is a list.
-  A stateful transducer or reducer is allowed one element on this list and must
-  remove it before sending a message to the reducer below it so that the next
-  stateful function's state is the new head.
+  The state object is shared among any transducers and the reducer and is a
+  list. A stateful transducer or reducer is allowed one element on this list and
+  must remove it before sending a message to the reducer below it so that the
+  next stateful function's state is the new head.
 
   Reducers may return any of the following signals.
 
@@ -81,7 +81,7 @@ defmodule ET.Reducers do
     false
 
   """
-  
+
   @spec any?(ET.Transducer.t, (term -> boolean)) :: ET.reducer
   @spec any?((term -> boolean)) :: ET.reducer
   @spec any?(ET.Transducer.t) :: ET.reducer
@@ -136,14 +136,14 @@ defmodule ET.Reducers do
     end
   end
 
-    
+
   @doc """
   A reducer which returns a list of items received in the same order.
 
     iex> ET.reduce(1..3, ET.Reducers.list)
     [1,2,3]
   """
-  
+
   @spec list(ET.Transducer.t) :: ET.reducer
   @spec list() :: ET.reducer
   def list(%ET.Transducer{} = trans), do: compose(trans, list())

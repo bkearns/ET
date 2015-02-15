@@ -1,14 +1,16 @@
 defmodule ET do
 
   @moduledoc """
-  Provides general purpose functions and types which don't really fit in other modules.
+  Provides general purpose functions and types which don't really fit in other
+  modules.
   """
 
   @typedoc """
   A message to be sent to a reducer.
 
   :init is always called before any elements are passed.
-  {:cont, state, element} is called for every element while the reduction continues.
+  {:cont, state, element} is called for every element while the reduction
+                          continues.
   {:fin, state} is called to finalize anything and get the value to return.
 
   """
@@ -23,12 +25,12 @@ defmodule ET do
   {:fin, result} indicates that the reducer has finished and here is the result.
 
   """
-  
+
   @type return_message :: {:cont, list} | {:halt, list} | {:fin, list}
 
   @typedoc """
-  A function which transforms signal_messages into return_messages. See ET.Reducers
-  for a detailed explanation.
+  A function which transforms signal_messages into return_messages. See
+  ET.Reducers for a detailed explanation.
 
   """
 
@@ -55,11 +57,11 @@ defmodule ET do
 
 
   @doc """
-  A helper function for performing the :cont recursion over a transducible into a reducer
-  with an already generated state.
+  A helper function for performing the :cont recursion over a transducible into
+  a reducer with an already generated state.
 
   """
-  
+
   @spec reduce_elements(Transducible.t, {:cont | :halt | :done, list}, reducer) :: term
   def reduce_elements(coll, {:cont, state}, reducer) do
     {signal, collection} = reduce_step(coll, state, reducer)
@@ -73,7 +75,7 @@ defmodule ET do
   A helper function for finishing a reducer with a state.
 
   """
-    
+
   @spec finish_reduce(list, reducer) :: term
   def finish_reduce(state, reducer) do
     {:fin, result} = reducer.({:fin, state})
@@ -83,15 +85,16 @@ defmodule ET do
   @doc """
   A helper function for performing a single :cont step of the reduce operation.
 
-  It returns a tuple in the form of {{signal, reducer_state}, collection} with the normal
-  reducer signals with the addition of :done, which will be returned when the collection
-  doesn't provide a new element and thus the reducer is not called.
+  It returns a tuple in the form of {{signal, reducer_state}, collection} with
+  the normal reducer signals with the addition of :done, which will be returned
+  when the collection doesn't provide a new element and thus the reducer is not
+  called.
 
-  This function is intended for functions which wish to implement their own version of
-  reduce with more complicated functionality.
+  This function is intended for functions which wish to implement their own
+  version of reduce with more complicated functionality.
 
   """
-  
+
   @spec reduce_step(Transducible.t, list, reducer) :: return_message | {:done, list}
   def reduce_step(collection, state, reducer) do
     case Transducible.next(collection) do

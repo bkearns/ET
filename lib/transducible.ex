@@ -16,9 +16,9 @@ defprotocol Transducible do
                              transducible continuation
 
   """
-  
+
   @type result :: :done | {term, Transducible.t}
-  
+
   @doc """
   Gets the next element in a collection and a transducible continuation
   or :done if there are no more elements.

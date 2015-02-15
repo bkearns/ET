@@ -2,20 +2,23 @@ defmodule ET.Transducers do
   @moduledoc """
   Provides composable transducer functions.
 
-  Transducers are anonymous functions which take a reducer and return a new reducer
-  with the new functionality wrapped around it. Transducers end up having to pass
-  signals up and down, transforming, filtering, or doing other fun stuff along the way.
+  Transducers are anonymous functions which take a reducer and return a new
+  reducer with the new functionality wrapped around it. Transducers end up
+  having to pass
+  signals up and down, transforming, filtering, or doing other fun stuff along
+  the way.
 
-  Transducers should know as little as possible about what is above and below them in
-  order to maintain composability.
+  Transducers should know as little as possible about what is above and below
+  them in order to maintain composability.
 
   ET.Transducer provides a struct to wrap your transducer functions.
 
-  Named transducer functions should optionally take an %ET.Transducer{} struct as their
-  first argument to aid in pipelining (all of the transducers in this library do so).
+  Named transducer functions should optionally take an %ET.Transducer{} struct
+  as their first argument to aid in pipelining (all of the transducers in this
+  library do so).
 
   """
-  
+
   import ET.Transducer
 
   @doc """
@@ -27,11 +30,11 @@ defmodule ET.Transducers do
   @spec at_index(ET.Transducer.t, non_neg_integer) :: ET.Transducer.t
   def at_index(n), do: at_indices([n])
   def at_index(t, n), do: at_indices(t, [n])
-  
+
 
   @doc """
-  A transducer which takes only the items from indices taken from the transducible. Automatically
-  halts if all indices are taken.
+  A transducer which takes only the items from indices taken from the
+  transducible. Automatically halts if all indices are taken.
 
   """
 
@@ -46,7 +49,7 @@ defmodule ET.Transducers do
       fn r_fun -> r_fun |> init |> cont({indices, HashSet.new}) end,
       fn {elem, index}, reducer, {indices, set} ->
         {result, indices, set} = at_indices_set_test(index, indices, set)
-        {{elem, (indices == :done and Transducible.next(set) == :done)}, !result}
+        {{elem,(indices == :done and Transducible.next(set) == :done)}, !result}
         |> reduce(reducer)
         |> cont({indices, set})
       end,
@@ -84,19 +87,21 @@ defmodule ET.Transducers do
   defp at_indices_find_element({elem, indices}, index, acc) do
     at_indices_find_element(Transducible.next(indices), index, [elem | acc])
   end
-  
+
   @doc """
-  A transducer which takes elements and emits chunks of size elements. These chunks default
-  to ET.Reducers.list(), but an alternate reducer may be substituted. Elements in each chunk
-  are cached until size elements are received and then all are resolved immediately and 
-  the result is handed to the main reducer.
+  A transducer which takes elements and emits chunks of size elements. These
+  chunks default to ET.Reducers.list(), but an alternate reducer may be
+  substituted. Elements in each chunk are cached until size elements are
+  received and then all are resolved immediately and the result is handed to the
+  main reducer.
 
-  Chunking begins with the first element and by default a new chunk is created every size
-  elements, but step can be defined to start chunks more or less frequently.
+  Chunking begins with the first element and by default a new chunk is created
+  every size elements, but step can be defined to start chunks more or less
+  frequently.
 
-  If padding is not defined, then incomplete chunks are discarded. If it is defined, then
-  elements are applied to incomplete chunks until either all chunks are complete or 
-  padding is done and incomplete chunks are processed.
+  If padding is not defined, then incomplete chunks are discarded. If it is
+  defined, then elements are applied to incomplete chunks until either all
+  chunks are complete or padding is done and incomplete chunks are processed.
 
     iex> chunker = ET.Transducers.chunk(2) |> ET.Reducers.list()
     iex> ET.reduce(1..5, chunker)
@@ -133,7 +138,8 @@ defmodule ET.Transducers do
   def chunk(%ET.Transducer{} = trans, two, three) do
     compose(trans, chunk(two, three))
   end
-  def chunk(size, step, reducer) when is_integer(size) and is_integer(step) and is_function(reducer, 1) do
+  def chunk(size, step, reducer) when
+  is_integer(size) and is_integer(step) and is_function(reducer, 1) do
     chunk(size, step, nil, reducer)
   end
   def chunk(size, step, padding) when is_integer(size) and is_integer(step) do
@@ -157,8 +163,9 @@ defmodule ET.Transducers do
 
 
   @doc """
-  A transducer which makes a new input whenever the chunking function returns a new value.
-  By default, each chunk is reduced into ET.Reducers.list(), but this can be overridden.
+  A transducer which makes a new input whenever the chunking function returns a
+  new value. By default, each chunk is reduced into ET.Reducers.list(), but this
+  can be overridden.
 
   """
 
@@ -171,14 +178,16 @@ defmodule ET.Transducers do
   def chunk_by(), do: chunk_by(&(&1))
   def chunk_by(%ET.Transducer{} = trans), do: compose(trans, chunk_by())
   def chunk_by(change_fun), do: chunk_by(change_fun, ET.Reducers.list())
-  def chunk_by(%ET.Transducer{} = trans, change_fun), do: compose(trans, chunk_by(change_fun))
+  def chunk_by(%ET.Transducer{} = trans, change_fun) do
+    compose(trans, chunk_by(change_fun))
+  end
   def chunk_by(change_fun, inner_reducer) do
     inner_reducer =
       ET.Logic.ignore(1)
       |> ET.Logic.halt_on
       |> ET.Logic.destructure(2)
       |> compose(inner_reducer)
-      
+
       ET.Logic.change?(change_fun, first: true)
     |> ET.Logic.chunk(inner_reducer, [])
   end
@@ -249,7 +258,7 @@ defmodule ET.Transducers do
       fn reducer, _ -> finish(reducer) end
     )
   end
-  
+
   @doc """
   A transducer which does not reduce elements until fun stops returning true.
 
@@ -286,13 +295,13 @@ defmodule ET.Transducers do
 
 
   @doc """
-  A transducer which will not relay :halt signals until it has recieved a specified
-  number of elements. Elements received after a :halt signal is recieved are not
-  passed to the reducer. It has no special effect if a :fin signal is received
-  before a :halt.
+  A transducer which will not relay :halt signals until it has recieved a
+  specified number of elements. Elements received after a :halt signal is
+  recieved are not passed to the reducer. It has no special effect if a :fin
+  signal is received before a :halt.
 
   """
-  
+
   @spec ensure(ET.Transducer.t, non_neg_integer) :: ET.Transducer.t
   @spec ensure(non_neg_integer) :: ET.Transducer.t
   def ensure(%ET.Transducer{} = trans, n), do: compose(trans, ensure(n))
@@ -304,7 +313,7 @@ defmodule ET.Transducers do
           elem
           |> reduce(reducer)
           |> cont({:cont, 0})
-        
+
         elem, reducer, {:cont, n} ->
           reducer = reduce(elem, reducer)
           if halted?(reducer) do
@@ -312,17 +321,17 @@ defmodule ET.Transducers do
           else
             cont(reducer, {:cont, n-1})
           end
-        
+
         _, reducer, {:halt, 0} ->
           halt(reducer, {:halt, 0})
-        
+
         _, reducer, {:halt, n} ->
           cont(reducer, {:halt, n-1})
       end,
       fn reducer, _ -> finish(reducer) end
     )
   end
-  
+
 
   @doc """
   A transducer which only passes elements for which fun(element) is truthy.
@@ -341,8 +350,8 @@ defmodule ET.Transducers do
 
 
   @doc """
-  A transducer which filters out when fun.(elem) is falsey and outputs the zero-based
-  pre-filter index.
+  A transducer which filters out when fun.(elem) is falsey and outputs the
+  zero-based pre-filter index.
 
   """
 
@@ -359,17 +368,17 @@ defmodule ET.Transducers do
     compose(trans, find_indices(fun))
   end
 
-  
+
   @doc """
-  A transducer which groups by the result of fun into separate inner_reducers. These reducers
-  will be reduced as {fun_value, result} tuples first in the order in which they :halt, or
-  in some non-guaranteed order on finish.
+  A transducer which groups by the result of fun into separate inner_reducers.
+  These reducers will be reduced as {fun_value, result} tuples first in the
+  order in which they :halt, or in some non-guaranteed order on finish.
 
-  By default, items are reduced into simple lists, but an optional reducing function can be passed
-  to override this.
+  By default, items are reduced into simple lists, but an optional reducing
+  function can be passed to override this.
 
-  Additionally, a transducible producing {value, reducing_fun} can be included to give special
-  reducers for particular values of fun.(elem).
+  Additionally, a transducible producing {value, reducing_fun} can be included
+  to give special reducers for particular values of fun.(elem).
 
   """
 
@@ -377,11 +386,13 @@ defmodule ET.Transducers do
   def group_by(fun), do: group_by(fun, ET.Reducers.list)
   def group_by(%ET.Transducer{} = trans, fun), do: compose(trans, group_by(fun))
   def group_by(fun, r_fun), do: group_by(fun, r_fun, %{})
-  def group_by(%ET.Transducer{} = trans, fun, r_fun), do: compose(trans, group_by(fun, r_fun))
+  def group_by(%ET.Transducer{} = trans, fun, r_fun) do
+    compose(trans, group_by(fun, r_fun))
+  end
   def group_by(fun, r_fun, r_funs) do
     r_fun = compose(ET.Logic.destructure, r_fun)
     r_funs = destructure_r_funs(r_funs)
-    
+
     ET.Logic.structure(fun)
     |> ET.Logic.group_by(r_fun, r_funs)
   end
@@ -391,16 +402,19 @@ defmodule ET.Transducers do
 
   defp destructure_r_funs(r_funs) do
     reducer =
-      ET.Transducers.map(fn {v,v_fun} -> {v, compose(ET.Logic.destructure, v_fun)} end)
+      ET.Transducers.map(fn {v,v_fun} ->
+        {v, compose(ET.Logic.destructure, v_fun)}
+      end)
     |> ET.Reducers.list
-    
+
     ET.reduce(r_funs, reducer)
     |> :maps.from_list
   end
 
 
   @doc """
-  A transducer which sends the supplied element to the reducer between each element.
+  A transducer which sends the supplied element to the reducer between each
+  element.
 
   """
 
@@ -416,14 +430,15 @@ defmodule ET.Transducers do
 
 
   @doc """
-  A transducer which applies the supplied function and passes the result to the reducer.
+  A transducer which applies the supplied function and passes the result to the
+  reducer.
 
     iex> add_one = ET.Transducers.map(&(&1+1) |> ET.Reducers.list()
     iex> ET.reduce(1..3, add_one)
     [2,3,4]
 
   """
-  
+
   @spec map(ET.Transducer.t, (term -> term)) :: ET.Transducer.t
   @spec map((term -> term)) :: ET.Transducer.t
   def map(%ET.Transducer{} = trans, fun), do: compose(trans, map(fun))
@@ -475,7 +490,7 @@ defmodule ET.Transducers do
     [1, "a", 2]
 
   """
-  
+
   @spec zip(ET.Transducer.t) :: ET.Transducer.t
   @spec zip() :: ET.Transducer.t
   def zip(%ET.Transducer{} = trans), do: compose(trans, zip())

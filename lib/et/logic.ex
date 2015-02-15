@@ -9,7 +9,7 @@ defmodule ET.Logic do
   These are implemented as much as possible where {_, true} is the
   active or exceptional state while {_, false} is the passive or normal
   state. For example, filter will pass elements to its reducer when it
-  receives {_, false} and eliminate them when it receives {_, true}, 
+  receives {_, false} and eliminate them when it receives {_, true},
   which might be the opposite of what might be expected.
 
   """
@@ -52,9 +52,9 @@ defmodule ET.Logic do
     compose(trans, change?(change_check, first))
   end
 
-  
+
   @doc """
-  A transducer which applies each element to an arbitrary number of 
+  A transducer which applies each element to an arbitrary number of
   inner reducers. New inner reducers are generated on a {_, true} element.
   Each chunk is started and completed in order of creation. Elements are
   cached for future chunks and applied immediately upon the completion of
@@ -117,7 +117,7 @@ defmodule ET.Logic do
       cont(reducer, {curr_chunk, add_elem_to_chunks(elem, chunks)})
     end
   end
-  
+
   defp add_elem_to_chunks(elem, chunks) do
     for chunk <- chunks, do: [elem | chunk]
   end
@@ -133,7 +133,7 @@ defmodule ET.Logic do
   defp finish_chunk(curr_chunk, chunks, inner_r_fun, {r_fun,_}=reducer, padding) do
     case Transducible.next(padding) do
       {elem, padding} ->
-        {signal, [{curr_chunk, chunks} | r_state]} = 
+        {signal, [{curr_chunk, chunks} | r_state]} =
           do_chunk({elem, nil}, curr_chunk, chunks, inner_r_fun, reducer)
           finish_chunk(curr_chunk, chunks, inner_r_fun, {r_fun,{signal,r_state}}, padding)
       :done ->
@@ -141,7 +141,7 @@ defmodule ET.Logic do
         finish_chunks(chunks, inner_r_fun, reducer)
     end
   end
-  
+
   defp finish_chunks(chunks, inner_r_fun, {_,{signal,_}} = reducer) when
   chunks == [] or signal == :halt do
     finish_chunk(nil, [], inner_r_fun, reducer, nil)
@@ -178,7 +178,7 @@ defmodule ET.Logic do
     compose(destructure(n-1), destructure(1))
   end
   def destructure(%ET.Transducer{} = trans, n), do: compose(trans, destructure(n))
-  
+
   @doc """
   A transducer which reduces elements of form {_, false} and does not reduce
   elements of form {_, true}.
@@ -242,14 +242,15 @@ defmodule ET.Logic do
 
 
   @doc """
-  A transducer which takes elements of {elem, value} and manages different reducers
-  for each unique value. By default this reducer is ET.Reducers.list, but may be
-  overridden. Additionally, a Dict of reducer functions can be included where keys are
-  values and those elements will be reduced separately.
+  A transducer which takes elements of {elem, value} and manages different
+  reducers for each unique value. By default this reducer is ET.Reducers.list,
+  but may be overridden. Additionally, a Dict of reducer functions can be
+  included where keys are values and those elements will be reduced separately.
 
-  Once an inner reducer :halts, it will be immediately reduced as {value, result} and no 
-  more elements of that value will be processed. If there are remaining reducers on a :fin
-  signal, they will be reduced in the same method at that time.
+  Once an inner reducer :halts, it will be immediately reduced as
+  {value, result} and no more elements of that value will be processed. If there
+  are remaining reducers on a :fin signal, they will be reduced in the same
+  method at that time.
 
   """
 
@@ -300,7 +301,7 @@ defmodule ET.Logic do
                 {:fin, result} = finish(v_reducer)
                 {value, result}
               end)
-    |> ET.Reducers.list   
+    |> ET.Reducers.list
   end
 
 
@@ -325,8 +326,8 @@ defmodule ET.Logic do
 
 
   @doc """
-  A transducer which inserts the supplied element before each {elem, truthy} element
-  it receives.
+  A transducer which inserts the supplied element before each {elem, truthy}
+  element it receives.
 
   """
 
@@ -353,7 +354,8 @@ defmodule ET.Logic do
   element is found.
 
   Optionally takes one_for_one: true which will only produces true once for each
-  element in transducible. Duplicate items produce true one for each duplicate item.
+  element in transducible. Duplicate items produce true one for each duplicate
+  item.
 
   """
 
@@ -383,7 +385,7 @@ defmodule ET.Logic do
       fn reducer, _ -> finish(reducer) end
     )
   end
-  
+
   def in_collection(transducible, one_for_one: true) do
     new(
       fn r_fun -> r_fun |> init |> cont({transducible, HashDict.new}) end,
@@ -407,7 +409,7 @@ defmodule ET.Logic do
   def in_collection(%ET.Transducer{} = trans, transducible, keywords) do
     compose(trans, in_collection(transducible, keywords))
   end
-  
+
 
   defp in_collection_set_test(test, t, set) do
     if Set.member?(set, test) do
@@ -435,7 +437,7 @@ defmodule ET.Logic do
           Dict.keys(dict) == [] -> {nil,   dict, transducible}
           true                  -> {false, dict, transducible}
         end
-    end     
+    end
   end
 
   defp in_collection_find_element(t, test) do
@@ -477,7 +479,7 @@ defmodule ET.Logic do
   """
 
   @spec structure(ET.Transducer.t, (term -> term)) :: ET.Transducer.t
-  @spec structure((term -> term)) :: ET.Transducer.t  
+  @spec structure((term -> term)) :: ET.Transducer.t
   def structure(%ET.Transducer{} = trans, fun), do: compose(trans, structure(fun))
   def structure(fun) do
     new(
@@ -509,7 +511,7 @@ defmodule ET.Logic do
     )
   end
 
-  
+
   @doc """
   A transducer which sends {true, element} every n elements received.
   If first: true is also sent, the transducer will start with a true.
