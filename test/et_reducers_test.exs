@@ -132,6 +132,22 @@ defmodule ETReducersTest do
     assert ET.reduce([1,2,3,4], reducer) == [1,2,3,4]
   end
 
+  test "ET.Reducers.last(term)" do
+    ET.Reducers.last(:ok)
+    |> last_test
+  end
+
+  test "ET.Reducers.last(term, transducer)" do
+    identity_trans
+    |> ET.Reducers.last(:ok)
+    |> last_test
+  end
+
+  defp last_test(ok_or_last_r_fun) do
+    assert ET.reduce(1..6, ok_or_last_r_fun) == 6
+    assert ET.reduce([], ok_or_last_r_fun) == :ok
+  end
+
   test "ET.Reducers.map()" do
     ET.Reducers.map
     |> map_test
@@ -146,6 +162,21 @@ defmodule ETReducersTest do
   defp map_test(reducer) do
     assert ET.reduce([one: 1, two: 2, one: 3], reducer) ==
     %{one: 3, two: 2}
+  end
+
+  test "ET.Reducers.max_by(fun)" do
+    ET.Reducers.max_by(&(-&1))
+    |> max_by_fun_test
+  end
+
+  test "ET.Reducers.max_by(transducer, fun)" do
+    identity_trans
+    |> ET.Reducers.max_by(&(-&1))
+    |> max_by_fun_test
+  end
+
+  defp max_by_fun_test(max_r_fun) do
+    assert ET.reduce([2,4,1,3], max_r_fun) == 1
   end
 
   test "ET.Reducers.map(fun)" do

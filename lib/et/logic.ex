@@ -440,6 +440,26 @@ defmodule ET.Logic do
 
 
   @doc """
+  A transducer which compares {elem, compare} and sends the largest on :done.
+
+  """
+
+  def max_by() do
+    new(
+      fn r_fun -> r_fun |> init |> cont({false, nil}) end,
+      fn
+        elem, reducer, {false, nil} -> reducer |> cont({true, elem})
+        {_,comp1} = elem, reducer, {_,{_,comp2}} when comp1 > comp2 ->
+          reducer |> cont({true, elem})
+        _, reducer, state -> reducer |> cont(state)
+      end,
+      fn reducer, {_, elem} -> elem |> reduce(reducer) |> finish end
+    )
+  end
+  def max_by(%ET.Transducer{} = trans), do: compose(trans, max_by)
+
+
+  @doc """
   A transducer which takes {elem, value} and outputs value.
 
   """

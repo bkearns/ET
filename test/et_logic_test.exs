@@ -346,6 +346,24 @@ defmodule ETLogicTest do
            [{{false, 1}, true}, {{true, 1}, nil}]
   end
 
+  test "ET.Logic.max_by()" do
+    ET.Logic.max_by
+    |> ET.Reducers.last
+    |> max_by_test
+  end
+
+  test "ET.Logic.max_by(transducer)" do
+    identity_trans
+    |> ET.Logic.max_by
+    |> ET.Reducers.last
+    |> max_by_test
+  end
+
+  defp max_by_test(r_fun) do
+    assert ET.reduce([two: 2, three: 3, one: 1, another_three: 3], r_fun) ==
+           {:three, 3}
+  end
+
   test "ET.Logic.negate()" do
     ET.Logic.negate
     |> ET.Reducers.list

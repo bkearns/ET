@@ -164,6 +164,23 @@ defmodule ET.Reducers do
 
 
   @doc """
+  A reducer which returns the last element received or term (default nil).
+
+  """
+
+  def last(), do: last(nil)
+  def last(%ET.Transducer{} = trans), do: compose(trans, last)
+  def last(term) do
+    fn
+      :init              -> {:cont, [term]}
+      {:cont, [_], elem} -> {:cont, [elem]}
+      {:done, [result]}  -> result
+    end
+  end
+  def last(%ET.Transducer{} = trans, term), do: compose(trans, last(term))
+
+
+  @doc """
   A reducer which accepts tuples in the form of {key, value} and returns
   a Map.
 
@@ -191,6 +208,19 @@ defmodule ET.Reducers do
   end
   def map(%ET.Transducer{} = trans, fun), do: compose(trans, map(fun))
 
+
+  @doc """
+  A reducer which returns the element for which fun.(element) is the largest.
+
+  """
+
+  def max_by(fun) do
+    ET.Logic.structure(fun)
+    |> ET.Logic.max_by
+    |> ET.Logic.destructure
+    |> ET.Reducers.last
+  end
+  def max_by(%ET.Transducer{} = trans, fun), do: compose(trans, max_by(fun))
 
 
   @doc """
