@@ -164,33 +164,33 @@ defmodule ETReducersTest do
            %{one: 4, two: 6}
   end
 
-  test "ET.Reducers.ok()" do
-    ET.Reducers.ok
-    |> ok_test
+  test "ET.Reducers.static()" do
+    ET.Reducers.static
+    |> static_test
   end
 
-  test "ET.Reducers.ok(transducer)" do
+  test "ET.Reducers.static(transducer)" do
     identity_trans
-    |> ET.Reducers.ok
-    |> ok_test
+    |> ET.Reducers.static
+    |> static_test
   end
 
-  defp ok_test(reducer) do
-    assert ET.reduce(1..5, reducer) == :ok
+  defp static_test(r_fun) do
+    assert ET.reduce(1..5, r_fun) == :ok
   end
 
-  test "ET.Reducers.ok(t)" do
-    ET.Reducers.ok(:error)
-    |> ok_t_test
+  test "ET.Reducers.static(t)" do
+    ET.Reducers.static(:error)
+    |> static_t_test
   end
 
-  test "ET.Reducers.ok(transducer, t)" do
+  test "ET.Reducers.static(transducer, t)" do
     identity_trans
-    |> ET.Reducers.ok(:error)
-    |> ok_t_test
+    |> ET.Reducers.static(:error)
+    |> static_t_test
   end
 
-  defp ok_t_test(reducer) do
-    assert ET.reduce(1..5, reducer) == :error
+  defp static_t_test(r_fun) do
+    assert ET.reduce(1..5, r_fun) == :error
   end
 end

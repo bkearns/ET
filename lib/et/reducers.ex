@@ -3,30 +3,30 @@ defmodule ET.Reducers do
   ET.Reducers are a special sort of reduction function which takes and returns
   control-flow information.
 
-  Reducers are expected to accept the following signals:
+  Reducers are expected to accept the following commands:
 
     :init -> Sent once before other signals, this is a good opportunity to set
              initial state.
     {:cont, state, element} -> This message is sent for each element as long as
                                the reduction is continuing.
-    {:fin, state} -> Called as long as there is not an exception. This is an
-                     opportunity to close anything that needs closing and
-                     indicates that the result should be returned.
+    {:done, state} -> Called as long as there is not an exception. This is an
+                      opportunity to close anything that needs closing and
+                      indicates that the result should be returned.
 
   The state object is shared among any transducers and the reducer and is a
   list. A stateful transducer or reducer is allowed one element on this list and
   must remove it before sending a message to the reducer below it so that the
   next stateful function's state is the new head.
 
-  Reducers may return any of the following signals.
+  :init and :cont can return either:
 
     {:cont, state} -> Indicates that the reducer is ready and waiting for a new
                       element.
-    {:halt, state} -> Indicates that no more elements should be sent and a :fin
+    {:done, state} -> Indicates that no more elements should be sent and a :done
                       signal should come next to finish the reduction.
-    {:fin, result} -> Only to be sent after receiving a :fin signal from above.
-                      The result is the intended return of the reduce function,
-                      although, transducers above this one may replace this.
+
+  When a reducer takes the :done command, it simply returns the result of the
+  reduction
 
   This module contains base reducers which might become wrapped with layers of
   transducers. These reducers are intended to build the final result of a
@@ -50,10 +50,6 @@ defmodule ET.Reducers do
 
   """
 
-  @spec all?(ET.Transducer.t, (term -> boolean)) :: ET.reducer
-  @spec all?((term -> boolean)) :: ET.reducer
-  @spec all?(ET.Transducer.t) :: ET.reducer
-  @spec all?() :: ET.reducer
   def all?(%ET.Transducer{} = trans, fun), do: compose(trans, all?(fun))
   def all?(%ET.Transducer{} = trans), do: all?(trans, fn x -> x end)
   def all?(fun) do
@@ -82,10 +78,6 @@ defmodule ET.Reducers do
 
   """
 
-  @spec any?(ET.Transducer.t, (term -> boolean)) :: ET.reducer
-  @spec any?((term -> boolean)) :: ET.reducer
-  @spec any?(ET.Transducer.t) :: ET.reducer
-  @spec any?() :: ET.reducer
   def any?(%ET.Transducer{} = trans, fun), do: compose(trans, any?(fun))
   def any?(%ET.Transducer{} = trans), do: any?(trans, fn x -> x end)
   def any?(fun) do
@@ -126,8 +118,6 @@ defmodule ET.Reducers do
 
   """
 
-  @spec count(ET.Transducer.t) :: ET.reducer
-  @spec count() :: ET.reducer
   def count(%ET.Transducer{} = trans), do: compose(trans, count())
   def count() do
     fn :init                 -> {:cont, [0]}
@@ -163,8 +153,6 @@ defmodule ET.Reducers do
     [1,2,3]
   """
 
-  @spec list(ET.Transducer.t) :: ET.reducer
-  @spec list() :: ET.reducer
   def list(%ET.Transducer{} = trans), do: compose(trans, list())
   def list do
     fn
@@ -184,10 +172,6 @@ defmodule ET.Reducers do
 
   """
 
-  @spec map() :: ET.reducer
-  @spec map(fun) :: ET.reducer
-  @spec map(ET.Transducer.t) :: ET.reducer
-  @spec map(ET.Transducer.t, fun) :: ET.reducer
   def map() do
     fn
       :init -> {:cont, [%{}]}
@@ -215,13 +199,13 @@ defmodule ET.Reducers do
 
   """
 
-  def ok(), do: ok(:ok)
-  def ok(%ET.Transducer{} = trans), do: compose(trans, ok)
-  def ok(t) do
+  def static(), do: static(:ok)
+  def static(%ET.Transducer{} = trans), do: compose(trans, static)
+  def static(t) do
     fn :init              -> {:cont, []}
        {:cont, [], _elem} -> {:cont, []}
        {:done, []}        -> t
     end
   end
-  def ok(%ET.Transducer{} = trans, t), do: compose(trans, ok(t))
+  def static(%ET.Transducer{} = trans, t), do: compose(trans, static(t))
 end
