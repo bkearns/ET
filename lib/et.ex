@@ -20,8 +20,8 @@ defmodule ET do
   """
 
   def reduce(coll, r_fun) do
-    {_signal, state, _coll} = reduce_elements(coll, r_fun.(:init), r_fun)
-    r_fun.({:done, state})
+    {_coll, {_, {_sig, r_state}}} = reduce_elements(coll, {r_fun, r_fun.(:init)})
+    r_fun.({:done, r_state})
   end
 
 
@@ -31,31 +31,27 @@ defmodule ET do
 
   """
 
-  def reduce_elements(coll, {:cont, state}, r_fun) do
-    {signal, state, collection} = reduce_step(coll, state, r_fun)
-    reduce_elements(collection, {signal, state}, r_fun)
+  def reduce_elements(:empty, reducer), do: {:empty, reducer}
+  def reduce_elements(coll, {_, {:cont, _}} = reducer) do
+    {collection, reducer} = reduce_step(coll, reducer)
+    reduce_elements(collection, reducer)
   end
-  def reduce_elements(coll, {signal, state}, r_fun) do
-    {signal, state, coll}
-  end
-
+  def reduce_elements(coll, reducer), do: {coll, reducer}
 
   @doc """
   A helper function for performing a single :cont step of the reduce operation.
 
-  It returns a tuple in the form of {{signal, reducer_state}, collection} with
-  the normal reducer signals with the addition of :done, which will be returned
-  when the collection doesn't provide a new element and thus the reducer is not
-  called.
+  It returns a tuple with a continuation and a reducer. If the continuation
+  is :done, the tuple continuation will be :empty.
 
   """
 
-  def reduce_step(collection, state, r_fun) do
+  def reduce_step(collection, {r_fun, {:cont, r_state}}) do
     case Transducible.next(collection) do
       {elem, rem} ->
-        {sig, state} = r_fun.({:cont, state, elem})
-        {sig, state, rem}
-      :done -> {:empty, state, collection}
+        {sig, state} = r_fun.({:cont, r_state, elem})
+        {rem, {r_fun, {sig, state}}}
+      :done -> {:empty, {r_fun, {:cont, r_state}}}
     end
   end
 end

@@ -38,14 +38,14 @@ defmodule ETTransducersTest do
   end
 
   test "ET.Transducers.at_indices(transducible) early termination" do
-    reducer =
+    r_fun =
       ET.Transducers.at_indices([1])
       |> ET.Reducers.count
-    {_, state} = reducer.(:init)
+    reducer = {r_fun, r_fun.(:init)}
 
-    assert {:cont, state, cont} = ET.reduce_step(1..3, state, reducer)
-    assert {:done, state, _cont} = ET.reduce_step(cont, state, reducer)
-    assert 1 == reducer.({:done, state})
+    assert {cont, {_,{:cont,_}} = reducer} = ET.reduce_step(1..3, reducer)
+    assert {_cont, {_,{:done,_}} = reducer} = ET.reduce_step(cont, reducer)
+    assert 1 == ET.Transducer.finish(reducer)
   end
 
   test "ET.Transducers.at_indices(transducible) early termination taking first element" do
@@ -308,12 +308,12 @@ defmodule ETTransducersTest do
     |> ensure_test
   end
 
-  defp ensure_test(reducer) do
+  defp ensure_test(r_fun) do
     coll = [1,2,3]
-    {:cont, state} = reducer.(:init)
-    assert {:cont, state,  coll} = ET.reduce_step(coll, state, reducer)
-    assert {:done, state, _coll} = ET.reduce_step(coll, state, reducer)
-    assert [1] = reducer.({:done, state})
+    reducer = {r_fun, r_fun.(:init)}
+    assert {coll, {_,{:cont,_}} = reducer} = ET.reduce_step(coll, reducer)
+    assert {_coll, {_,{:done,_}} = reducer} = ET.reduce_step(coll, reducer)
+    assert [1] = ET.Transducer.finish(reducer)
   end
 
   test "ET.Transducers.filter(function)" do

@@ -224,11 +224,10 @@ defmodule ET.Transducer do
 
   """
 
-  def reduce_many(transducible, reducer)
-  def reduce_many(transducible, {r_fun, {:cont, _} = r_signal}) do
-    case ET.reduce_elements(transducible, r_signal, r_fun) do
-      {:empty, r_state, _} -> {r_fun, {:cont, r_state}}
-      {signal, r_state, _} -> {r_fun, {signal, r_state}}
+  def reduce_many(transducible, reducer) do
+    case ET.reduce_elements(transducible, reducer) do
+      {:empty, {r_fun, {_, r_state}}} -> {r_fun, {:cont, r_state}}
+      {_coll, reducer} -> reducer
     end
   end
 
@@ -240,10 +239,7 @@ defmodule ET.Transducer do
   """
 
   def reduce_one(transducible, reducer)
-  def reduce_one(transducible, {r_fun, {:cont, r_state}}) do
-    case ET.reduce_step(transducible, r_state, r_fun) do
-      {:empty, r_state, continuation} -> {:empty, {r_fun, {:cont, r_state}}}
-      {sig, r_state, continuation} -> {continuation, {r_fun, {sig, r_state}}}
-    end
+  def reduce_one(transducible, {_, {:cont, _}} = reducer) do
+    ET.reduce_step(transducible, reducer)
   end
 end
