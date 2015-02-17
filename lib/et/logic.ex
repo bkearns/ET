@@ -97,7 +97,7 @@ defmodule ET.Logic do
   defp do_chunk(_, nil, [], _, reducer) do
     cont(reducer, {nil, []})
   end
-  defp do_chunk(_, curr_chunk, _, _, {_,{:halt,_}} = reducer) do
+  defp do_chunk(_, curr_chunk, _, _, {_,{:done,_}} = reducer) do
     finish(curr_chunk)
     halt(reducer, {nil, []})
   end
@@ -105,8 +105,8 @@ defmodule ET.Logic do
     curr_chunk = elems |> :lists.reverse |> reduce_many((inner_r_fun |> init))
     do_chunk(elem, curr_chunk, chunks, inner_r_fun, reducer)
   end
-  defp do_chunk(elem, {_,{:halt,_}} = curr_chunk, chunks, inner_r_fun, reducer) do
-    reducer = curr_chunk |> finish |> elem(1) |> reduce(reducer)
+  defp do_chunk(elem, {_,{:done,_}} = curr_chunk, chunks, inner_r_fun, reducer) do
+    reducer = curr_chunk |> finish |> reduce(reducer)
     do_chunk(elem, nil, chunks, inner_r_fun, reducer)
   end
   defp do_chunk(elem, {_,{:cont,_}} = curr_chunk, chunks, inner_r_fun, reducer) do
@@ -127,7 +127,7 @@ defmodule ET.Logic do
     finish(reducer)
   end
   defp finish_chunk(curr_chunk, chunks, inner_r_fun, {_,{signal,_}}=reducer, _) when
-  signal == :halt or (curr_chunk == nil and chunks == []) do
+  signal == :done or (curr_chunk == nil and chunks == []) do
     finish_chunk(curr_chunk, chunks, inner_r_fun, reducer, nil)
   end
   defp finish_chunk(curr_chunk, chunks, inner_r_fun, {r_fun,_}=reducer, padding) do
@@ -137,13 +137,13 @@ defmodule ET.Logic do
           do_chunk({elem, nil}, curr_chunk, chunks, inner_r_fun, reducer)
           finish_chunk(curr_chunk, chunks, inner_r_fun, {r_fun,{signal,r_state}}, padding)
       :done ->
-        reducer = curr_chunk |> finish |> elem(1) |> reduce(reducer)
+        reducer = curr_chunk |> finish |> reduce(reducer)
         finish_chunks(chunks, inner_r_fun, reducer)
     end
   end
 
   defp finish_chunks(chunks, inner_r_fun, {_,{signal,_}} = reducer) when
-  chunks == [] or signal == :halt do
+  chunks == [] or signal == :done do
     finish_chunk(nil, [], inner_r_fun, reducer, nil)
   end
   defp finish_chunks([elems | chunks], inner_r_fun, reducer) do
@@ -281,7 +281,7 @@ defmodule ET.Logic do
   defp do_group_by(v_reducer, {_,value} = elem, reducer, groups) do
     v_reducer = elem |> reduce(v_reducer)
     if halted?(v_reducer) do
-      {:fin, result} = finish(v_reducer)
+      result = finish(v_reducer)
       reducer = {value, result} |> reduce(reducer)
       if halted?(reducer) do
         ET.reduce(groups, finish_group_reducer)
@@ -298,8 +298,7 @@ defmodule ET.Logic do
   defp finish_group_reducer do
        ET.Transducers.filter(&( elem(&1,1) != :done ))
     |> ET.Transducers.map(fn {value, v_reducer} ->
-                {:fin, result} = finish(v_reducer)
-                {value, result}
+                {value, finish(v_reducer)}
               end)
     |> ET.Reducers.list
   end

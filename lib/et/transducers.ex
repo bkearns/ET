@@ -510,14 +510,14 @@ defmodule ET.Transducers do
   defp do_first_zip({:done, reducer}, transducibles) do
     cont(reducer, transducibles)
   end
-  defp do_first_zip({_, {_,{:halt,_}} = reducer}, _) do
+  defp do_first_zip({_, {_,{:done,_}} = reducer}, _) do
     halt(reducer, [])
   end
   defp do_first_zip({continuation, reducer}, transducibles) do
     cont(reducer, [continuation | transducibles])
   end
 
-  defp finish_zip(_, _, {_,{:halt,_}} = reducer) do
+  defp finish_zip(_, _, {_,{:done,_}} = reducer) do
     finish(reducer)
   end
   defp finish_zip([], [], reducer), do: finish(reducer)
@@ -526,7 +526,7 @@ defmodule ET.Transducers do
   end
   defp finish_zip([collection | t_rem], t_acc, reducer) do
     case reduce_one(collection, reducer) do
-      {:done, reducer} -> finish_zip(t_rem, t_acc, reducer)
+      {:empty, reducer} -> finish_zip(t_rem, t_acc, reducer)
       {continuation, reducer} ->
         finish_zip(t_rem, [continuation | t_acc], reducer)
     end

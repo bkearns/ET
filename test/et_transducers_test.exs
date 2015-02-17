@@ -19,7 +19,7 @@ defmodule ETTransducersTest do
   defp at_index_n_test(reducer) do
     assert ET.reduce(1..4, reducer) == [3]
   end
-  
+
   test "ET.Transducers.at_indices(transducible)" do
     ET.Transducers.at_indices([1,3])
     |> ET.Reducers.list
@@ -43,9 +43,9 @@ defmodule ETTransducersTest do
       |> ET.Reducers.count
     {_, state} = reducer.(:init)
 
-    assert {{:cont, state}, cont} = ET.reduce_step(1..3, state, reducer)
-    assert {{:halt, state}, _cont} = ET.reduce_step(cont, state, reducer)
-    assert 1 == ET.finish_reduce(state, reducer)
+    assert {:cont, state, cont} = ET.reduce_step(1..3, state, reducer)
+    assert {:done, state, _cont} = ET.reduce_step(cont, state, reducer)
+    assert 1 == reducer.({:done, state})
   end
 
   test "ET.Transducers.at_indices(transducible) early termination taking first element" do
@@ -78,7 +78,7 @@ defmodule ETTransducersTest do
     |> ET.Reducers.list()
     |> chunk_size_step_test
   end
-  
+
   test "ET.Transducers.chunk(transducer, size, step)" do
     identity_trans
     |> ET.Transducers.chunk(2,1)
@@ -106,7 +106,7 @@ defmodule ETTransducersTest do
   defp chunk_size_inner_reducer_test(reducer) do
     assert ET.reduce(1..5, reducer) == [2, 2]
   end
-  
+
   test "ET.Transducers.chunk(size, padding)" do
     ET.Transducers.chunk(2, [:a, :b, :c])
     |> ET.Reducers.list()
@@ -123,7 +123,7 @@ defmodule ETTransducersTest do
   defp chunk_size_padding_test(reducer) do
     assert ET.reduce(1..5, reducer) == [[1,2], [3,4], [5,:a]]
   end
-  
+
   test "ET.Transducers.chunk(size, empty_padding)" do
     chunker = ET.Transducers.chunk(2, []) |> ET.Reducers.list()
     assert ET.reduce(1..5, chunker) == [[1,2], [3,4], [5]]
@@ -145,7 +145,7 @@ defmodule ETTransducersTest do
   defp chunk_size_step_padding_test(reducer) do
     assert ET.reduce(1..3, reducer) == [[1,2], [2,3], [3,:a]]
   end
-  
+
   test "ET.Transducers.chunk(size, step, inner_reducer)" do
     ET.Transducers.chunk(2, 1, ET.Reducers.count())
     |> ET.Reducers.list()
@@ -162,7 +162,7 @@ defmodule ETTransducersTest do
   defp chunk_size_step_inner_reducer_test(reducer) do
     assert ET.reduce(1..4, reducer) == [2, 2, 2]
   end
-  
+
   test "ET.Transducers.chunk(size, step, padding, inner_reducer)" do
     ET.Transducers.chunk(2, 1, [:a], ET.Reducers.count())
     |> ET.Reducers.list()
@@ -180,7 +180,7 @@ defmodule ETTransducersTest do
     assert ET.reduce(1..3, reducer) == [2, 2, 2]
   end
   #TODO test early :halt timing and order for inner reducer
-  #TODO test generic chunk  
+  #TODO test generic chunk
 
   test "ET.Transducers.chunk_by()" do
     ET.Transducers.chunk_by()
@@ -198,13 +198,13 @@ defmodule ETTransducersTest do
   defp chunk_by_test(reducer) do
     assert ET.reduce([1,2,2,3,2], reducer) == [[1],[2,2],[3],[2]]
   end
-  
+
   test "ET.Transducers.chunk_by(map_fun)" do
     ET.Transducers.chunk_by(&(rem(&1,3)==0))
     |> ET.Reducers.list()
     |> chunk_by_map_fun_test
   end
-  
+
   test "ET.Transducers.chunk_by(transducer, map_fun)" do
     identity_trans
     |> ET.Transducers.chunk_by(&(rem(&1,3)==0))
@@ -275,7 +275,7 @@ defmodule ETTransducersTest do
 
     assert ET.reduce(1..5, reducer) == [1,2]
   end
-  
+
   test "ET.Transducers.drop_while(fun)" do
     ET.Transducers.drop_while(&(rem(&1, 3) != 0))
     |> ET.Reducers.list
@@ -286,13 +286,13 @@ defmodule ETTransducersTest do
     identity_trans
     |> ET.Transducers.drop_while(&(&1<3))
     |> ET.Reducers.list
-    |> drop_while_fun_test    
+    |> drop_while_fun_test
   end
 
   defp drop_while_fun_test(reducer) do
     assert ET.reduce(1..4, reducer) == [3,4]
   end
-  
+
   test "ET.Transducers.ensure(n)" do
     ET.Transducers.ensure(2)
     |> ET.Transducers.take(1)
@@ -311,9 +311,9 @@ defmodule ETTransducersTest do
   defp ensure_test(reducer) do
     coll = [1,2,3]
     {:cont, state} = reducer.(:init)
-    assert {{:cont, state},  coll} = ET.reduce_step(coll, state, reducer)
-    assert {{:halt, state}, _coll} = ET.reduce_step(coll, state, reducer)
-    assert {:fin, [1]} = reducer.({:fin, state})
+    assert {:cont, state,  coll} = ET.reduce_step(coll, state, reducer)
+    assert {:done, state, _coll} = ET.reduce_step(coll, state, reducer)
+    assert [1] = reducer.({:done, state})
   end
 
   test "ET.Transducers.filter(function)" do
@@ -385,7 +385,7 @@ defmodule ETTransducersTest do
   defp group_by_fun_reducer_test(rem_three_count) do
     assert ET.reduce(1..4, rem_three_count) == %{0 => 1, 1 => 2, 2 => 1}
   end
-  
+
   test "ET.Transducers.group_by(fun, reducer, reducers)" do
     ET.Transducers.group_by(&(rem(&1,3)), ET.Reducers.count, %{0 => ET.Reducers.list})
     |> ET.Reducers.map
@@ -439,7 +439,7 @@ defmodule ETTransducersTest do
   defp map_map_fun_test(reducer) do
     assert ET.reduce(1..3, reducer) == [2,3,4]
   end
-  
+
   test "ET.Transducers.take(n)" do
     ET.Transducers.take(3)
     |> ET.Reducers.list()
@@ -457,7 +457,7 @@ defmodule ETTransducersTest do
     assert ET.reduce([1], reducer) == [1]
     assert ET.reduce(1..4, reducer) == [1,2,3]
   end
-  
+
   test "ET.Transducers.zip()" do
     ET.Transducers.zip
     |> ET.Reducers.list()
@@ -475,7 +475,7 @@ defmodule ETTransducersTest do
     assert ET.reduce([1..4, [8, 9]], reducer) ==
       [1, 8, 2, 9, 3, 4]
   end
-  
+
   test "ET.Transducers.zip properly terminates early" do
     zip_two =
       ET.Transducers.zip

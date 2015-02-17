@@ -9,16 +9,16 @@ defmodule ETTest do
   end
 
   test "ET.reduce_elements" do
-    assert {:done, [[2,1]], []} = ET.reduce_elements([1,2], {:cont, [[]]}, ET.Reducers.list())
-    assert {:halt, [0,[1]], [2]} = ET.reduce_elements([1,2], {:cont, [0,[]]}, (ET.Transducers.take(1) |> ET.Reducers.list))
+    assert {:empty, [[2,1]], []} =
+      ET.reduce_elements([1,2], {:cont, [[]]}, ET.Reducers.list())
+
+    assert {:done, [0,[1]], [2]} =
+      ET.reduce_elements([1,2], {:cont, [0,[]]},
+        (ET.Transducers.take(1) |> ET.Reducers.list))
   end
 
-  test "ET.finish_reduce" do
-    assert [1,2,3] == ET.finish_reduce([[3,2,1]], ET.Reducers.list)
-  end
-  
   test "ET.reduce_step" do
-    assert ET.reduce_step([1,2], [[]], ET.Reducers.list()) == {{:cont, [[1]]}, [2]}
-    assert ET.reduce_step([], [[1]], ET.Reducers.list()) == {{:done, [[1]]}, []}
+    assert ET.reduce_step([1,2], [[]], ET.Reducers.list()) == {:cont, [[1]], [2]}
+    assert ET.reduce_step([], [[1]], ET.Reducers.list()) == {:empty, [[1]], []}
   end
 end

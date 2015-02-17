@@ -63,9 +63,9 @@ defmodule ET.Reducers do
         if fun.(elem) do
           {:cont, [true]}
         else
-          {:halt, [false]}
+          {:done, [false]}
         end
-      {:fin, [result]} -> {:fin, result}
+      {:done, [result]} -> result
     end
   end
   def all?(), do: all?(fn x -> x end)
@@ -93,11 +93,11 @@ defmodule ET.Reducers do
       :init -> {:cont, [false]}
       {:cont, [_], elem} ->
         if fun.(elem) do
-          {:halt, [true]}
+          {:done, [true]}
         else
           {:cont, [false]}
         end
-      {:fin, [result]} -> {:fin, result}
+      {:done, [result]} -> result
     end
   end
   def any?(), do: any?(fn x -> x end)
@@ -112,7 +112,7 @@ defmodule ET.Reducers do
     fn
       :init -> {:cont, [""]}
       {:cont, [acc], elem} -> {:cont, [acc <> to_string(elem)]}
-      {:fin, [acc]} -> {:fin, acc}
+      {:done, [acc]} -> acc
     end
   end
   def binary(%ET.Transducer{} = trans), do: compose(trans, binary)
@@ -132,7 +132,7 @@ defmodule ET.Reducers do
   def count() do
     fn :init                 -> {:cont, [0]}
        {:cont, [acc], _elem} -> {:cont, [acc+1]}
-       {:fin, [acc]}         -> {:fin, acc}
+       {:done, [acc]}         -> acc
     end
   end
 
@@ -148,7 +148,7 @@ defmodule ET.Reducers do
       :init -> {:cont, [Collectable.into(collectable)]}
       {:cont, [{acc, c_fun}], elem} ->
         {:cont, [{c_fun.(acc, {:cont, elem}), c_fun}]}
-      {:fin, [{acc, c_fun}]} -> {:fin, c_fun.(acc, :done)}
+      {:done, [{acc, c_fun}]} -> c_fun.(acc, :done)
     end
   end
   def into(%ET.Transducer{} = trans, coll) do
@@ -168,9 +168,9 @@ defmodule ET.Reducers do
   def list(%ET.Transducer{} = trans), do: compose(trans, list())
   def list do
     fn
-      :init                            -> { :cont, [[]] }
-      {:cont, [acc], elem}             -> { :cont, [[elem | acc]] }
-      {:fin, [acc]}                    -> { :fin, :lists.reverse(acc) }
+      :init                -> { :cont, [[]] }
+      {:cont, [acc], elem} -> { :cont, [[elem | acc]] }
+      {:done, [acc]}       -> :lists.reverse(acc)
     end
   end
 
@@ -193,7 +193,7 @@ defmodule ET.Reducers do
       :init -> {:cont, [%{}]}
       {:cont, [acc], {key, value}} ->
         {:cont, [Dict.put(acc, key, value)]}
-      {:fin, [acc]} -> {:fin, acc}
+      {:done, [acc]} -> acc
     end
   end
   def map(%ET.Transducer{} = trans), do: compose(trans, map)
@@ -202,7 +202,7 @@ defmodule ET.Reducers do
       :init -> {:cont, [%{}]}
       {:cont, [acc], {key, value}} ->
         {:cont, [Dict.update(acc, key, value, &(fun.(&1,value)))]}
-      {:fin, [acc]} -> {:fin, acc}
+      {:done, [acc]} -> acc
     end
   end
   def map(%ET.Transducer{} = trans, fun), do: compose(trans, map(fun))
@@ -220,7 +220,7 @@ defmodule ET.Reducers do
   def ok(t) do
     fn :init              -> {:cont, []}
        {:cont, [], _elem} -> {:cont, []}
-       {:fin, []}         -> {:fin, t}
+       {:done, []}        -> t
     end
   end
   def ok(%ET.Transducer{} = trans, t), do: compose(trans, ok(t))
