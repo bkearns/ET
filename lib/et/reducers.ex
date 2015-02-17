@@ -210,7 +210,20 @@ defmodule ET.Reducers do
 
 
   @doc """
-  A reducer which returns the element for which fun.(element) is the largest.
+  A reducer which returns the largest element or nil if no elements are
+  received.
+
+  """
+
+  def max() do
+    max_by(&(&1))
+  end
+  def max(%ET.Transducer{} = trans), do: compose(trans, max)
+
+
+  @doc """
+  A reducer which returns the element for which fun.(element) is the largest or
+  nil if no elements are received.
 
   """
 

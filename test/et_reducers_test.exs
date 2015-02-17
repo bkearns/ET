@@ -164,6 +164,21 @@ defmodule ETReducersTest do
     %{one: 3, two: 2}
   end
 
+  test "ET.Reducers.max()" do
+    ET.Reducers.max
+    |> max_test
+  end
+
+  test "ET.Reducers.max(transnducer)" do
+    identity_trans
+    |> ET.Reducers.max
+    |> max_test
+  end
+
+  defp max_test(max_r_fun) do
+    assert ET.reduce([2,4,3,1], max_r_fun) == 4
+  end
+
   test "ET.Reducers.max_by(fun)" do
     ET.Reducers.max_by(&(-&1))
     |> max_by_fun_test
