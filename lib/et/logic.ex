@@ -60,11 +60,11 @@ defmodule ET.Logic do
   cached for future chunks and applied immediately upon the completion of
   the previous chunk.
 
-  Chunks only end when the inner reducer returns :halt or the :fin signal
+  Chunks only end when the inner reducer returns :done or the :fin signal
   is received from above.
 
   If a padding transducible is provided, on finish, any remaining inner
-  reducers will be fed from that until they :halt (as above) or the
+  reducers will be fed from that until they :done (as above) or the
   padding is :done. In this case, they will all be finished and sent to
   the main reducer. Padding elements are mapped to {element, nil}.
 
@@ -165,10 +165,6 @@ defmodule ET.Logic do
 
   """
 
-  @spec destructure() :: ET.Transducer.t
-  @spec destructure(ET.Transducer.t) :: ET.Transducer.t
-  @spec destructure(integer) :: ET.Transducer.t
-  @spec destructure(ET.Transducer.t, integer) :: ET.Transducer.t
   def destructure(), do: destructure(1)
   def destructure(%ET.Transducer{} = trans), do: compose(trans, destructure)
   def destructure(1) do
@@ -185,8 +181,6 @@ defmodule ET.Logic do
 
   """
 
-  @spec filter(ET.Transducer.t) :: ET.Transducer.t
-  @spec filter() :: ET.Transducer.t
   def filter(%ET.Transducer{} = trans), do: compose(trans, filter)
   def filter() do
     new(
@@ -202,14 +196,12 @@ defmodule ET.Logic do
 
   @doc """
   A transducer which sends elements to the reducer, but when it receives
-  {_, true}, it sends that element and forces a :halt signal on the return.
+  {_, true}, it sends that element and forces a :done signal on the return.
 
   """
 
-  @spec halt_after() :: ET.Transducer.t
-  @spec halt_after(ET.Transducer.t) :: ET.Transducer.t
-  def halt_after(%ET.Transducer{} = trans), do: compose(trans, halt_after)
-  def halt_after() do
+  def done_after(%ET.Transducer{} = trans), do: compose(trans, done_after)
+  def done_after() do
     new(
       fn
         {_, bool} = elem, reducer when bool in [false, nil] ->
@@ -222,14 +214,12 @@ defmodule ET.Logic do
 
   @doc """
   A transducer which sends elements to the reducer, but when it receives
-  {_, true}, it immediately sends :halt without reducing the current element.
+  {_, true}, it immediately sends :done without reducing the current element.
 
   """
 
-  @spec halt_on() :: ET.Transducer.t
-  @spec halt_on(ET.Transducer.t) :: ET.Transducer.t
-  def halt_on(%ET.Transducer{} = trans), do: compose(trans, halt_on)
-  def halt_on() do
+  def done_on(%ET.Transducer{} = trans), do: compose(trans, done_on)
+  def done_on() do
     new(
       fn
         {_, bool} = elem, reducer when bool in [false, nil] ->
@@ -247,7 +237,7 @@ defmodule ET.Logic do
   but may be overridden. Additionally, a Dict of reducer functions can be
   included where keys are values and those elements will be reduced separately.
 
-  Once an inner reducer :halts, it will be immediately reduced as
+  Once an inner reducer is :done, it will be immediately reduced as
   {value, result} and no more elements of that value will be processed. If there
   are remaining reducers on a :fin signal, they will be reduced in the same
   method at that time.
@@ -358,10 +348,6 @@ defmodule ET.Logic do
 
   """
 
-  @spec in_collection(ET.Transducer.t, ET.Transducible.t) :: ET.Transducer.t
-  @spec in_collection(ET.Transducible.t) :: ET.Transducer.t
-  @spec in_collection(ET.Transducible.t, list({:one_for_one, boolean})) :: ET.Transducer.t
-  @spec in_collection(ET.Transducer.t, ET.Transducible.t, list({:one_for_one, boolean})) :: ET.Transducer.t
   def in_collection(transducible), do: in_collection(transducible, one_for_one: false)
   def in_collection(%ET.Transducer{} = trans, transducible) do
     compose(trans, in_collection(transducible))
@@ -458,8 +444,6 @@ defmodule ET.Logic do
 
   """
 
-  @spec reverse_destructure() :: ET.Transducer.t
-  @spec reverse_destructure(ET.Transducer.t) :: ET.Transducer.t
   def reverse_destructure() do
     new(
       fn {_, v}, reducer ->
@@ -477,8 +461,6 @@ defmodule ET.Logic do
 
   """
 
-  @spec structure(ET.Transducer.t, (term -> term)) :: ET.Transducer.t
-  @spec structure((term -> term)) :: ET.Transducer.t
   def structure(%ET.Transducer{} = trans, fun), do: compose(trans, structure(fun))
   def structure(fun) do
     new(
@@ -497,8 +479,6 @@ defmodule ET.Logic do
 
   """
 
-  @spec negate(ET.Transducer.t) :: ET.Transducer.t
-  @spec negate() :: ET.Transducer.t
   def negate(%ET.Transducer{} = trans), do: compose(trans, negate)
   def negate() do
     new(
@@ -517,10 +497,6 @@ defmodule ET.Logic do
 
   """
 
-  @spec true_every(non_neg_integer) :: ET.Transducer.t
-  @spec true_every(ET.Transducer.t, non_neg_integer) :: ET.Transducer.t
-  @spec true_every(non_neg_integer, [{:first, boolean}]) :: ET.Transducer.t
-  @spec true_every(ET.Transducer.t, non_neg_integer, [{:first, boolean}]) :: ET.Transducer.t
   def true_every(n), do: true_every(n, first: false)
   def true_every(%ET.Transducer{} = trans, n) do
     compose(trans, true_every(n))
@@ -545,6 +521,7 @@ defmodule ET.Logic do
   def true_every(%ET.Transducer{} = trans, n, first) do
     compose(trans, true_every(n, first))
   end
+
 
   @doc """
   A transducer which takes elements and wraps them in their 0-based index.

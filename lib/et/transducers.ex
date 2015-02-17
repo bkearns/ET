@@ -57,7 +57,7 @@ defmodule ET.Transducers do
     )
     |> ET.Logic.filter
     |> ET.Logic.destructure
-    |> ET.Logic.halt_after
+    |> ET.Logic.done_after
     |> ET.Logic.destructure
   end
 
@@ -184,7 +184,7 @@ defmodule ET.Transducers do
   def chunk_by(change_fun, inner_reducer) do
     inner_reducer =
       ET.Logic.ignore(1)
-      |> ET.Logic.halt_on
+      |> ET.Logic.done_on
       |> ET.Logic.destructure(2)
       |> compose(inner_reducer)
 
@@ -468,7 +468,7 @@ defmodule ET.Transducers do
   def take(%ET.Transducer{} = trans, num), do: compose(trans, take(num))
   def take(num) do
     ET.Logic.true_every(num)
-    |> ET.Logic.halt_after
+    |> ET.Logic.done_after
     |> ET.Logic.destructure
   end
 
