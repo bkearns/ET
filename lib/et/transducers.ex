@@ -26,20 +26,16 @@ defmodule ET.Transducers do
 
   """
 
-  @spec at_index(non_neg_integer) :: ET.Transducer.t
-  @spec at_index(ET.Transducer.t, non_neg_integer) :: ET.Transducer.t
   def at_index(n), do: at_indices([n])
   def at_index(t, n), do: at_indices(t, [n])
 
 
   @doc """
   A transducer which takes only the items from indices taken from the
-  transducible. Automatically halts if all indices are taken.
+  transducible. Automatically done if all indices are taken.
 
   """
 
-  @spec at_indices(ET.Transducer.t, ET.Transducible.t) :: ET.Transducer.t
-  @spec at_indices(ET.Transducible.t) :: ET.Transducer.t
   def at_indices(%ET.Transducer{} = trans, indices) do
     compose(trans, at_indices(indices))
   end
@@ -88,6 +84,7 @@ defmodule ET.Transducers do
     at_indices_find_element(Transducible.next(indices), index, [elem | acc])
   end
 
+
   @doc """
   A transducer which takes elements and emits chunks of size elements. These
   chunks default to ET.Reducers.list(), but an alternate reducer may be
@@ -121,7 +118,6 @@ defmodule ET.Transducers do
 
   """
 
-  # TODO spec definition for chunk
   def chunk(size), do: chunk(size, size)
   def chunk(%ET.Transducer{} = trans, two) do
     compose(trans, chunk(two))
@@ -169,12 +165,6 @@ defmodule ET.Transducers do
 
   """
 
-  @spec chunk_by() :: ET.Transducer.t
-  @spec chunk_by(ET.Transducer.t) :: ET.Transducer.t
-  @spec chunk_by((term -> term)) :: ET.Transducer.t
-  @spec chunk_by((term -> term), ET.reducer) :: ET.Transducer.t
-  @spec chunk_by(ET.Transducer.t, (term -> term)) :: ET.Transducer.t
-  @spec chunk_by(ET.Transducer.t, (term -> term), ET.reducer) :: ET.Transducer.t
   def chunk_by(), do: chunk_by(&(&1))
   def chunk_by(%ET.Transducer{} = trans), do: compose(trans, chunk_by())
   def chunk_by(change_fun), do: chunk_by(change_fun, ET.Reducers.list())
@@ -205,8 +195,6 @@ defmodule ET.Transducers do
 
   """
 
-  @spec concat(ET.Transducer.t) :: ET.Transducer.t
-  @spec concat() :: ET.Transducer.t
   def concat(%ET.Transducer{} = trans), do: compose(trans, concat)
   def concat() do
     new(
@@ -259,6 +247,7 @@ defmodule ET.Transducers do
     )
   end
 
+
   @doc """
   A transducer which does not reduce elements until fun stops returning true.
 
@@ -268,8 +257,6 @@ defmodule ET.Transducers do
 
   """
 
-  @spec drop_while(ET.Transducer.t, (term -> boolean)) :: ET.Transducer.t
-  @spec drop_while((term -> boolean)) :: ET.Transducer.t
   def drop_while(%ET.Transducer{} = trans, fun) do
     compose(trans, drop_while(fun))
   end
@@ -295,15 +282,13 @@ defmodule ET.Transducers do
 
 
   @doc """
-  A transducer which will not relay :halt signals until it has recieved a
-  specified number of elements. Elements received after a :halt signal is
+  A transducer which will not relay :done signals until it has recieved a
+  specified number of elements. Elements received after a :done signal is
   recieved are not passed to the reducer. It has no special effect if a :fin
-  signal is received before a :halt.
+  signal is received before a :done.
 
   """
 
-  @spec ensure(ET.Transducer.t, non_neg_integer) :: ET.Transducer.t
-  @spec ensure(non_neg_integer) :: ET.Transducer.t
   def ensure(%ET.Transducer{} = trans, n), do: compose(trans, ensure(n))
   def ensure(n) do
     new(
@@ -355,8 +340,6 @@ defmodule ET.Transducers do
 
   """
 
-  @spec find_indices((term -> term)) :: ET.Transducer.t
-  @spec find_indices(ET.Transducer.t, (term -> term)) :: ET.Transducer.t
   def find_indices(fun) do
     ET.Logic.with_index
     |> ET.Logic.structure(fn {elem, _} -> !fun.(elem) end)
@@ -382,7 +365,6 @@ defmodule ET.Transducers do
 
   """
 
-  #TODO spec definition for group_by
   def group_by(fun), do: group_by(fun, ET.Reducers.list)
   def group_by(%ET.Transducer{} = trans, fun), do: compose(trans, group_by(fun))
   def group_by(fun, r_fun), do: group_by(fun, r_fun, %{})
@@ -439,8 +421,6 @@ defmodule ET.Transducers do
 
   """
 
-  @spec map(ET.Transducer.t, (term -> term)) :: ET.Transducer.t
-  @spec map((term -> term)) :: ET.Transducer.t
   def map(%ET.Transducer{} = trans, fun), do: compose(trans, map(fun))
   def map(fun) do
     new(
@@ -463,8 +443,6 @@ defmodule ET.Transducers do
 
   """
 
-  @spec take(ET.Transducer.t , non_neg_integer) :: ET.Transducer.t
-  @spec take(non_neg_integer) :: ET.Transducer.t
   def take(%ET.Transducer{} = trans, num), do: compose(trans, take(num))
   def take(num) do
     ET.Logic.true_every(num)
@@ -491,8 +469,6 @@ defmodule ET.Transducers do
 
   """
 
-  @spec zip(ET.Transducer.t) :: ET.Transducer.t
-  @spec zip() :: ET.Transducer.t
   def zip(%ET.Transducer{} = trans), do: compose(trans, zip())
   def zip() do
     new(
