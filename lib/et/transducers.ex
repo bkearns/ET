@@ -316,17 +316,17 @@ defmodule ET.Transducers do
 
         elem, reducer, {:cont, n} ->
           reducer = reduce(elem, reducer)
-          if halted?(reducer) do
-            cont_nohalt(reducer, {:halt, n-1})
+          if done?(reducer) do
+            cont_not_done(reducer, {:done, n-1})
           else
             cont(reducer, {:cont, n-1})
           end
 
-        _, reducer, {:halt, 0} ->
-          halt(reducer, {:halt, 0})
+        _, reducer, {:done, 0} ->
+          done(reducer, {:done, 0})
 
-        _, reducer, {:halt, n} ->
-          cont(reducer, {:halt, n-1})
+        _, reducer, {:done, n} ->
+          cont(reducer, {:done, n-1})
       end,
       fn reducer, _ -> finish(reducer) end
     )
@@ -372,7 +372,7 @@ defmodule ET.Transducers do
   @doc """
   A transducer which groups by the result of fun into separate inner_reducers.
   These reducers will be reduced as {fun_value, result} tuples first in the
-  order in which they :halt, or in some non-guaranteed order on finish.
+  order in which they :done, or in some non-guaranteed order on finish.
 
   By default, items are reduced into simple lists, but an optional reducing
   function can be passed to override this.
@@ -480,7 +480,7 @@ defmodule ET.Transducers do
   Zip sends the first element of each transducible as soon as it receives it,
   but all remaining elements are cached until a signal to finish is received
   at which point it recurses over the remaining elements. If it ever receives
-  a signal to halt from below, it clears its cache.
+  a signal :done from below, it clears its cache.
 
     iex> ET.reduce([1..4, ["a", "b"]], ET.Transducers.zip |> ET.Reducers.list)
     [1, "a", 2, "b", 3, 4]
@@ -511,7 +511,7 @@ defmodule ET.Transducers do
     cont(reducer, transducibles)
   end
   defp do_first_zip({_, {_,{:done,_}} = reducer}, _) do
-    halt(reducer, [])
+    done(reducer, [])
   end
   defp do_first_zip({continuation, reducer}, transducibles) do
     cont(reducer, [continuation | transducibles])

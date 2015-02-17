@@ -99,7 +99,7 @@ defmodule ET.Logic do
   end
   defp do_chunk(_, curr_chunk, _, _, {_,{:done,_}} = reducer) do
     finish(curr_chunk)
-    halt(reducer, {nil, []})
+    done(reducer, {nil, []})
   end
   defp do_chunk(elem, nil, [elems | chunks], inner_r_fun, reducer) do
     curr_chunk = elems |> :lists.reverse |> reduce_many((inner_r_fun |> init))
@@ -111,7 +111,7 @@ defmodule ET.Logic do
   end
   defp do_chunk(elem, {_,{:cont,_}} = curr_chunk, chunks, inner_r_fun, reducer) do
     curr_chunk = elem |> reduce(curr_chunk)
-    if halted?(curr_chunk) do
+    if done?(curr_chunk) do
       do_chunk(elem, curr_chunk, chunks, inner_r_fun, reducer)
     else
       cont(reducer, {curr_chunk, add_elem_to_chunks(elem, chunks)})
@@ -215,7 +215,7 @@ defmodule ET.Logic do
         {_, bool} = elem, reducer when bool in [false, nil] ->
           elem |> reduce(reducer) |> cont
         elem, reducer ->
-          elem |> reduce(reducer) |> halt
+          elem |> reduce(reducer) |> done
       end
     )
   end
@@ -235,7 +235,7 @@ defmodule ET.Logic do
         {_, bool} = elem, reducer when bool in [false, nil] ->
           elem |> reduce(reducer) |> cont
         _, reducer ->
-          reducer |> halt
+          reducer |> done
       end
     )
   end
@@ -280,12 +280,12 @@ defmodule ET.Logic do
   defp do_group_by(:done, _, reducer, groups), do: cont(reducer, groups)
   defp do_group_by(v_reducer, {_,value} = elem, reducer, groups) do
     v_reducer = elem |> reduce(v_reducer)
-    if halted?(v_reducer) do
+    if done?(v_reducer) do
       result = finish(v_reducer)
       reducer = {value, result} |> reduce(reducer)
-      if halted?(reducer) do
+      if done?(reducer) do
         ET.reduce(groups, finish_group_reducer)
-        halt(reducer, %{})
+        done(reducer, %{})
       else
         cont(Dict.put(groups, value, :done))
       end
