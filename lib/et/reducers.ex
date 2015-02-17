@@ -138,6 +138,25 @@ defmodule ET.Reducers do
 
 
   @doc """
+  A reducer which uses the Collectable protocol to build a new collection from
+  an existing collection.
+
+  """
+
+  def into(collectable) do
+    fn
+      :init -> {:cont, [Collectable.into(collectable)]}
+      {:cont, [{acc, c_fun}], elem} ->
+        {:cont, [{c_fun.(acc, {:cont, elem}), c_fun}]}
+      {:fin, [{acc, c_fun}]} -> {:fin, c_fun.(acc, :done)}
+    end
+  end
+  def into(%ET.Transducer{} = trans, coll) do
+    compose(trans, into(coll))
+  end
+
+
+  @doc """
   A reducer which returns a list of items received in the same order.
 
     iex> ET.reduce(1..3, ET.Reducers.list)

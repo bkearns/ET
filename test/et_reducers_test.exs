@@ -102,6 +102,21 @@ defmodule ETReducersTest do
     assert ET.reduce(1..4, reducer) == 4
   end
 
+  test "ET.Reducers.into(list)" do
+    ET.Reducers.into([0])
+    |> into_list_test
+  end
+
+  test "ET.Reducers.into(transducible, list)" do
+    identity_trans
+    |> ET.Reducers.into([0])
+    |> into_list_test
+  end
+
+  defp into_list_test(list_reducer) do
+    assert ET.reduce([1,2], list_reducer) == [0,1,2]
+  end
+
   test "ET.Reducers.list()" do
     ET.Reducers.list
     |> list_test
