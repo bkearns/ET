@@ -516,28 +516,6 @@ defmodule ET.Logic do
 
 
   @doc """
-  A transducer which emits {elem, result} tuples and maintains an accumulator.
-
-  The function should be in the form of (elem, prev_acc -> {result, next_acc})
-
-  """
-
-  def scan(acc, fun) do
-    new(
-      fn r_fun -> r_fun |> init |> cont(acc) end,
-      fn elem, reducer, acc ->
-        {result, acc} = fun.(elem, acc)
-        {elem, result} |> reduce(reducer) |> cont(acc)
-      end,
-      fn reducer, _ -> finish(reducer) end
-    )
-  end
-  def scan(%ET.Transducer{} = trans, acc, fun) do
-    compose(trans, scan(acc, fun))
-  end
-
-
-  @doc """
   A transducer which sends {true, element} every n elements received.
   If first: true is also sent, the transducer will start with a true.
 
@@ -566,6 +544,28 @@ defmodule ET.Logic do
   end
   def true_every(%ET.Transducer{} = trans, n, first) do
     compose(trans, true_every(n, first))
+  end
+
+
+  @doc """
+  A transducer which emits {elem, result} tuples and maintains an accumulator.
+
+  The function should be in the form of (elem, prev_acc -> {result, next_acc})
+
+  """
+
+  def unfold(acc, fun) do
+    new(
+      fn r_fun -> r_fun |> init |> cont(acc) end,
+      fn elem, reducer, acc ->
+        {result, acc} = fun.(elem, acc)
+        {elem, result} |> reduce(reducer) |> cont(acc)
+      end,
+      fn reducer, _ -> finish(reducer) end
+    )
+  end
+  def unfold(%ET.Transducer{} = trans, acc, fun) do
+    compose(trans, unfold(acc, fun))
   end
 
 

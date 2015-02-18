@@ -408,24 +408,6 @@ defmodule ETLogicTest do
            [true, 2, false, nil]
   end
 
-  test "ET.Logic.scan(acc, fun)" do
-    ET.Logic.scan(0, fn e, a -> r = e+a; {rem(r,3), r} end)
-    |> ET.Reducers.list
-    |> scan_acc_fun_test
-  end
-
-  test "ET.Logic.scan(transducer, acc, fun)" do
-    identity_trans
-    |> ET.Logic.scan(0, fn e, a -> r = e+a; {rem(r,3), r} end)
-    |> ET.Reducers.list
-    |> scan_acc_fun_test
-  end
-
-  defp scan_acc_fun_test(sum_r_fun) do
-    assert ET.reduce(1..5, sum_r_fun) ==
-           [{1,1},{2,0},{3,0},{4,1},{5,0}]
-  end
-
   test "ET.Logic.structure(fun)" do
     ET.Logic.structure(&(rem(&1,3)))
     |> ET.Reducers.list
@@ -479,6 +461,24 @@ defmodule ETLogicTest do
   defp true_every_n_first_true_test(r_fun) do
     assert ET.reduce(1..4, r_fun) ==
            [{1, true}, {2, false}, {3, true}, {4, false}]
+  end
+
+  test "ET.Logic.unfold(acc, fun)" do
+    ET.Logic.unfold(0, fn e, a -> r = e+a; {rem(r,3), r} end)
+    |> ET.Reducers.list
+    |> unfold_acc_fun_test
+  end
+
+  test "ET.Logic.unfold(transducer, acc, fun)" do
+    identity_trans
+    |> ET.Logic.unfold(0, fn e, a -> r = e+a; {rem(r,3), r} end)
+    |> ET.Reducers.list
+    |> unfold_acc_fun_test
+  end
+
+  defp unfold_acc_fun_test(sum_r_fun) do
+    assert ET.reduce(1..5, sum_r_fun) ==
+           [{1,1},{2,0},{3,0},{4,1},{5,0}]
   end
 
   test "ET.Logic.with_index()" do

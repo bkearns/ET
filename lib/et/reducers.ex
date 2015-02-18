@@ -229,7 +229,7 @@ defmodule ET.Reducers do
 
   def max_by(fun) do
     ET.Logic.structure(fun)
-    |> ET.Logic.scan(nil, max_compare_fun)
+    |> ET.Logic.unfold(nil, max_compare_fun)
     |> ET.Logic.last_by
     |> ET.Logic.destructure(2)
     |> ET.Reducers.last
