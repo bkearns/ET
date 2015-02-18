@@ -282,10 +282,10 @@ defmodule ET.Transducers do
 
 
   @doc """
-  A transducer which will not relay :done signals until it has recieved a
-  specified number of elements. Elements received after a :done signal is
+  A transducer which will not relay :halt signals until it has recieved a
+  specified number of elements. Elements received after a :halt signal is
   recieved are not passed to the reducer. It has no special effect if a :fin
-  signal is received before a :done.
+  signal is received before a :halt.
 
   """
 
@@ -302,16 +302,16 @@ defmodule ET.Transducers do
         elem, reducer, {:cont, n} ->
           reducer = reduce(elem, reducer)
           if halt?(reducer) do
-            cont_no_halt(reducer, {:done, n-1})
+            reducer |> cont_no_halt({:halt, n-1})
           else
-            cont(reducer, {:cont, n-1})
+            reducer |> cont({:cont, n-1})
           end
 
-        _, reducer, {:done, 0} ->
-          halt(reducer, {:done, 0})
+        _, reducer, {:halt, 0} ->
+          reducer |> halt({:halt, 0})
 
-        _, reducer, {:done, n} ->
-          cont(reducer, {:done, n-1})
+        _, reducer, {:halt, n} ->
+          reducer |> cont({:halt, n-1})
       end,
       fn reducer, _ -> finish(reducer) end
     )
@@ -355,7 +355,7 @@ defmodule ET.Transducers do
   @doc """
   A transducer which groups by the result of fun into separate inner_reducers.
   These reducers will be reduced as {fun_value, result} tuples first in the
-  order in which they :done, or in some non-guaranteed order on finish.
+  order in which they :halt, or in some non-guaranteed order on finish.
 
   By default, items are reduced into simple lists, but an optional reducing
   function can be passed to override this.
@@ -458,7 +458,7 @@ defmodule ET.Transducers do
   Zip sends the first element of each transducible as soon as it receives it,
   but all remaining elements are cached until a signal to finish is received
   at which point it recurses over the remaining elements. If it ever receives
-  a signal :done from below, it clears its cache.
+  a signal :halt from below, it clears its cache.
 
     iex> ET.reduce([1..4, ["a", "b"]], ET.Transducers.zip |> ET.Reducers.list)
     [1, "a", 2, "b", 3, 4]

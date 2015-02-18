@@ -102,7 +102,7 @@ defmodule ET.Transducer do
 
 
   @doc """
-  Creates a :done signal regardless of the reducer's signal.
+  Creates a :halt signal regardless of the reducer's signal.
 
   """
 
@@ -111,7 +111,7 @@ defmodule ET.Transducer do
 
 
   @doc """
-  Creates a :done signal with state prepended to its state.
+  Creates a :halt signal with state prepended to its state.
 
   """
 
@@ -120,7 +120,7 @@ defmodule ET.Transducer do
 
 
   @doc """
-  Returns true if the reducer's signal is :done and false if it is :cont.
+  Returns true if the reducer's signal is :halt and false if it is :cont.
 
   """
 
@@ -141,7 +141,7 @@ defmodule ET.Transducer do
   Builds a new stateless transducer similar to ET.Helpers.new_transducer/2.
 
   The cont_fun should be in the form of:
-  (elem, reducer -> {:cont, state} | {:done, state})
+  (elem, reducer -> {:cont, state} | {:halt, state})
 
   """
 
@@ -164,14 +164,14 @@ defmodule ET.Transducer do
 
 
   The init_fun should be in the form of:
-  (reducing_fun -> {:cont, state} | {:done, state})
+  (reducing_fun -> {:cont, state} | {:halt, state})
 
   This is often achieved by:
   reducing_fun |> ET.Helpers.init |> ET.Helpers.cont(state)
 
 
   The cont_fun should be in the form of:
-  (elem, my_state, reducer -> {:cont, state} | {:done, state})
+  (elem, my_state, reducer -> {:cont, state} | {:halt, state})
 
   ET.Helpers.cont/2 and ET.Helpers.done/2 both aid in this and
   ET.Helpers.reduce/2 transforms a reducer given a new element. this can look
@@ -187,10 +187,10 @@ defmodule ET.Transducer do
 
 
   Reducers passed to cont_fun and fin_fun are always set to :cont even if this
-  transducer has previously received a :done signal. The transducer must ensure
-  that if it transforms a :done into a :cont or if it has work to do on finish
+  transducer has previously received a :halt signal. The transducer must ensure
+  that if it transforms a :halt into a :cont or if it has work to do on finish
   that it does not try to reduce elements into a reducer which has returned
-  :done.
+  :halt.
   """
 
   def new(init_fun, cont_fun, fin_fun) do
@@ -221,7 +221,7 @@ defmodule ET.Transducer do
 
 
   @doc """
-  Reduces all elements in transducer until it finishes or reducer returns :done.
+  Reduces all elements in transducer until it finishes or reducer returns :halt.
   Return signal is :cont if the transducible finishes.
 
   """

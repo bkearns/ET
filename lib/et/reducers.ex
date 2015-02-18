@@ -5,27 +5,27 @@ defmodule ET.Reducers do
 
   Reducers are expected to accept the following commands:
 
-    :init -> Sent once before other signals, this is a good opportunity to set
-             initial state.
-    {:cont, state, element} -> This message is sent for each element as long as
-                               the reduction is continuing.
-    {:done, state} -> Called as long as there is not an exception. This is an
-                      opportunity to close anything that needs closing and
-                      indicates that the result should be returned.
+    _, :init -> Sent once before other signals, this is a good opportunity to
+                set initial state.
+    element, state -> This message is sent for each element as long as the
+                      reduction is continuing.
+    state, :fin -> Called as long as there is not an exception. This is an
+                   opportunity to close anything that needs closing and
+                   indicates that the result should be returned.
 
   The state object is shared among any transducers and the reducer and is a
   list. A stateful transducer or reducer is allowed one element on this list and
   must remove it before sending a message to the reducer below it so that the
   next stateful function's state is the new head.
 
-  :init and :cont can return either:
+  :init and continue can return either:
 
     {:cont, state} -> Indicates that the reducer is ready and waiting for a new
                       element.
-    {:done, state} -> Indicates that no more elements should be sent and a :done
+    {:halt, state} -> Indicates that no more elements should be sent and a :fin
                       signal should come next to finish the reduction.
 
-  When a reducer takes the :done command, it simply returns the result of the
+  When a reducer takes the :fin command, it simply returns the result of the
   reduction
 
   This module contains base reducers which might become wrapped with layers of
