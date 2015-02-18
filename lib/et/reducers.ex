@@ -229,12 +229,20 @@ defmodule ET.Reducers do
 
   def max_by(fun) do
     ET.Logic.structure(fun)
-    |> ET.Logic.max_by
-    |> ET.Logic.destructure
+    |> ET.Logic.scan(nil, max_compare_fun)
+    |> ET.Logic.last_by
+    |> ET.Logic.destructure(2)
     |> ET.Reducers.last
   end
   def max_by(%ET.Transducer{} = trans, fun), do: compose(trans, max_by(fun))
 
+  defp max_compare_fun do
+    fn
+      e, nil -> {true, e}
+      {_,c1} = elem, {_,c2} when c1 > c2 -> {true, elem}
+      _, acc -> {false, acc}
+    end
+  end
 
   @doc """
   A reducer which returns a fixed value regardless of what it receives.

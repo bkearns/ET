@@ -440,23 +440,27 @@ defmodule ET.Logic do
 
 
   @doc """
-  A transducer which compares {elem, compare} and sends the largest on :done.
+  A transducer which saves the most recent matching {_, truthy} and sends it on
+  :done. It sends nothing if no element ever matches.
 
   """
 
-  def max_by() do
+  def last_by() do
     new(
-      fn r_fun -> r_fun |> init |> cont({false, nil}) end,
+      fn r_fun -> r_fun |> init |> cont({nil, nil}) end,
       fn
-        elem, reducer, {false, nil} -> reducer |> cont({true, elem})
-        {_,comp1} = elem, reducer, {_,{_,comp2}} when comp1 > comp2 ->
-          reducer |> cont({true, elem})
+        {_, bool} = elem, reducer, _ when not (bool in [false, nil]) ->
+          reducer |> cont(elem)
         _, reducer, state -> reducer |> cont(state)
       end,
-      fn reducer, {_, elem} -> elem |> reduce(reducer) |> finish end
+      fn
+        reducer, {_, bool} = elem when not (bool in [false, nil]) ->
+          elem |> reduce(reducer) |> finish
+        reducer, _ -> finish(reducer)
+      end
     )
   end
-  def max_by(%ET.Transducer{} = trans), do: compose(trans, max_by)
+  def last_by(%ET.Transducer{} = trans), do: compose(trans, last_by)
 
 
   @doc """
@@ -508,6 +512,28 @@ defmodule ET.Logic do
         |> cont
       end
     )
+  end
+
+
+  @doc """
+  A transducer which emits {elem, result} tuples and maintains an accumulator.
+
+  The function should be in the form of (elem, prev_acc -> {result, next_acc})
+
+  """
+
+  def scan(acc, fun) do
+    new(
+      fn r_fun -> r_fun |> init |> cont(acc) end,
+      fn elem, reducer, acc ->
+        {result, acc} = fun.(elem, acc)
+        {elem, result} |> reduce(reducer) |> cont(acc)
+      end,
+      fn reducer, _ -> finish(reducer) end
+    )
+  end
+  def scan(%ET.Transducer{} = trans, acc, fun) do
+    compose(trans, scan(acc, fun))
   end
 
 

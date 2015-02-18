@@ -346,22 +346,30 @@ defmodule ETLogicTest do
            [{{false, 1}, true}, {{true, 1}, nil}]
   end
 
-  test "ET.Logic.max_by()" do
-    ET.Logic.max_by
+  test "ET.Logic.last_by()" do
+    ET.Logic.last_by
     |> ET.Reducers.last
-    |> max_by_test
+    |> last_by_test
   end
 
-  test "ET.Logic.max_by(transducer)" do
+  test "ET.Logic.last_by(transducer)" do
     identity_trans
-    |> ET.Logic.max_by
+    |> ET.Logic.last_by
     |> ET.Reducers.last
-    |> max_by_test
+    |> last_by_test
   end
 
-  defp max_by_test(r_fun) do
-    assert ET.reduce([two: 2, three: 3, one: 1, another_three: 3], r_fun) ==
-           {:three, 3}
+  defp last_by_test(r_fun) do
+    assert ET.reduce([two: false, three: true, one: true, four: false], r_fun) ==
+           {:one, true}
+  end
+
+  test "ET.Logic.last_by() nothing true" do
+    r_fun =
+      ET.Logic.last_by
+      |> ET.Reducers.last
+
+    assert ET.reduce([one: false, two: false], r_fun) == nil
   end
 
   test "ET.Logic.negate()" do
@@ -398,6 +406,24 @@ defmodule ETLogicTest do
   defp reverse_destructure_test(r_fun) do
     assert ET.reduce([{1, true}, {2, 2}, {3, false}, {4, nil}], r_fun) ==
            [true, 2, false, nil]
+  end
+
+  test "ET.Logic.scan(acc, fun)" do
+    ET.Logic.scan(0, fn e, a -> r = e+a; {rem(r,3), r} end)
+    |> ET.Reducers.list
+    |> scan_acc_fun_test
+  end
+
+  test "ET.Logic.scan(transducer, acc, fun)" do
+    identity_trans
+    |> ET.Logic.scan(0, fn e, a -> r = e+a; {rem(r,3), r} end)
+    |> ET.Reducers.list
+    |> scan_acc_fun_test
+  end
+
+  defp scan_acc_fun_test(sum_r_fun) do
+    assert ET.reduce(1..5, sum_r_fun) ==
+           [{1,1},{2,0},{3,0},{4,1},{5,0}]
   end
 
   test "ET.Logic.structure(fun)" do
