@@ -58,14 +58,14 @@ defmodule ETTransducersTest do
 
   test "ET.Transducers.chunk(size)" do
     ET.Transducers.chunk(2)
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_size_test
   end
 
   test "ET.Transducers.chunk(transducer, size)" do
     identity_trans
     |> ET.Transducers.chunk(2)
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_size_test
   end
 
@@ -75,14 +75,14 @@ defmodule ETTransducersTest do
 
   test "ET.Transducers.chunk(size, step)" do
     ET.Transducers.chunk(2,1)
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_size_step_test
   end
 
   test "ET.Transducers.chunk(transducer, size, step)" do
     identity_trans
     |> ET.Transducers.chunk(2,1)
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_size_step_test
   end
 
@@ -92,14 +92,14 @@ defmodule ETTransducersTest do
 
   test "ET.Transducers.chunk(size, inner_reducer)" do
     ET.Transducers.chunk(2, ET.Reducers.count())
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_size_inner_reducer_test
   end
 
   test "ET.Transducers.chunk(transducersize, inner_reducer)" do
     identity_trans
     |> ET.Transducers.chunk(2, ET.Reducers.count())
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_size_inner_reducer_test
   end
 
@@ -109,14 +109,14 @@ defmodule ETTransducersTest do
 
   test "ET.Transducers.chunk(size, padding)" do
     ET.Transducers.chunk(2, [:a, :b, :c])
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_size_padding_test
   end
 
   test "ET.Transducers.chunk(transducer, size, padding)" do
     identity_trans
     |> ET.Transducers.chunk(2, [:a, :b, :c])
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_size_padding_test
   end
 
@@ -125,20 +125,20 @@ defmodule ETTransducersTest do
   end
 
   test "ET.Transducers.chunk(size, empty_padding)" do
-    chunker = ET.Transducers.chunk(2, []) |> ET.Reducers.list()
+    chunker = ET.Transducers.chunk(2, []) |> ET.Reducers.list
     assert ET.reduce(1..5, chunker) == [[1,2], [3,4], [5]]
   end
 
   test "ET.Transducers.chunk(size, step, padding)" do
     ET.Transducers.chunk(2, 1, [:a])
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_size_step_padding_test
   end
 
   test "ET.Transducers.chunk(transducer, size, step, padding)" do
     identity_trans
     |> ET.Transducers.chunk(2, 1, [:a])
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_size_step_padding_test
   end
 
@@ -148,14 +148,14 @@ defmodule ETTransducersTest do
 
   test "ET.Transducers.chunk(size, step, inner_reducer)" do
     ET.Transducers.chunk(2, 1, ET.Reducers.count())
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_size_step_inner_reducer_test
   end
 
   test "ET.Transducers.chunk(transducer, size, step, inner_reducer)" do
     identity_trans
     |> ET.Transducers.chunk(2, 1, ET.Reducers.count())
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_size_step_inner_reducer_test
   end
 
@@ -165,14 +165,14 @@ defmodule ETTransducersTest do
 
   test "ET.Transducers.chunk(size, step, padding, inner_reducer)" do
     ET.Transducers.chunk(2, 1, [:a], ET.Reducers.count())
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_size_step_padding_inner_reducer_test
   end
 
   test "ET.Transducers.chunk(transducer, size, step, padding, inner_reducer)" do
     identity_trans
     |> ET.Transducers.chunk(2, 1, [:a], ET.Reducers.count())
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_size_step_padding_inner_reducer_test
   end
 
@@ -184,14 +184,14 @@ defmodule ETTransducersTest do
 
   test "ET.Transducers.chunk_by()" do
     ET.Transducers.chunk_by()
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_by_test
   end
 
   test "ET.Transducers.chunk_by(transducer)" do
     identity_trans
     |> ET.Transducers.chunk_by()
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_by_test
   end
 
@@ -201,14 +201,14 @@ defmodule ETTransducersTest do
 
   test "ET.Transducers.chunk_by(map_fun)" do
     ET.Transducers.chunk_by(&(rem(&1,3)==0))
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_by_map_fun_test
   end
 
   test "ET.Transducers.chunk_by(transducer, map_fun)" do
     identity_trans
     |> ET.Transducers.chunk_by(&(rem(&1,3)==0))
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_by_map_fun_test
   end
 
@@ -218,14 +218,14 @@ defmodule ETTransducersTest do
 
   test "ET.Transducers.chunk_by(map_fun, inner_reducer)" do
     ET.Transducers.chunk_by(&(rem(&1,3)==0), ET.Reducers.count())
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_by_map_fun_inner_reducer_test
   end
 
   test "ET.Transducers.chunk_by(transducer, map_fun, inner_reducer)" do
     identity_trans
     |> ET.Transducers.chunk_by(&(rem(&1,3)==0), ET.Reducers.count())
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> chunk_by_map_fun_inner_reducer_test
   end
 
@@ -425,14 +425,14 @@ defmodule ETTransducersTest do
 
   test "ET.Transducers.map(map_fun)" do
     ET.Transducers.map(&(&1+1))
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> map_map_fun_test
   end
 
   test "ET.Transducers.map(transducer, map_fun)" do
     identity_trans
     |> ET.Transducers.map(&(&1+1))
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> map_map_fun_test
   end
 
@@ -442,14 +442,14 @@ defmodule ETTransducersTest do
 
   test "ET.Transducers.take(n)" do
     ET.Transducers.take(3)
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> take_n_test
   end
 
   test "ET.Transducers.take(transducer, n)" do
     identity_trans
     |> ET.Transducers.take(3)
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> take_n_test
   end
 
@@ -460,14 +460,14 @@ defmodule ETTransducersTest do
 
   test "ET.Transducers.zip()" do
     ET.Transducers.zip
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> zip_test
   end
 
   test "ET.Transducers.zip(transducer)" do
     identity_trans
     |> ET.Transducers.zip
-    |> ET.Reducers.list()
+    |> ET.Reducers.list
     |> zip_test
   end
 
@@ -480,7 +480,7 @@ defmodule ETTransducersTest do
     zip_two =
       ET.Transducers.zip
       |> ET.Transducers.take(2)
-      |> ET.Reducers.list()
+      |> ET.Reducers.list
 
     assert ET.reduce([[1,2],[3,4],[5,6]], zip_two) == [1,3]
   end
