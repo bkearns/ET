@@ -586,4 +586,61 @@ defmodule ET.Logic do
       fn reducer, _ -> finish(reducer) end
     )
   end
+
+
+  @doc """
+  A transducer which zips several transducibles and emits elements in the form
+  {elem, new_cycle?} where new_cycle? is true each time an element from the
+  first remaining transducible is sent.
+
+  """
+
+  def zip(%ET.Transducer{} = trans), do: compose(trans, zip())
+  def zip() do
+    new(
+      fn r_fun -> r_fun |> init |> cont([]) end,
+      fn collection, reducer, transducibles ->
+        reduce_one_with(collection, transducibles == [], reducer)
+        |> do_first_zip(transducibles)
+      end,
+      fn reducer, transducibles ->
+        finish_zip([], transducibles, reducer)
+      end
+    )
+  end
+
+  defp do_first_zip({:done, reducer}, transducibles) do
+    cont(reducer, transducibles)
+  end
+  defp do_first_zip({_, {_,{:done,_}} = reducer}, _) do
+    done(reducer, [])
+  end
+  defp do_first_zip({continuation, reducer}, transducibles) do
+    cont(reducer, [continuation | transducibles])
+  end
+
+  defp finish_zip(_, _, {_,{:done,_}} = reducer) do
+    finish(reducer)
+  end
+  defp finish_zip([], [], reducer), do: finish(reducer)
+  defp finish_zip([], t_acc, reducer) do
+    finish_zip(:lists.reverse(t_acc), [], reducer)
+  end
+  defp finish_zip([collection | t_rem], t_acc, reducer) do
+    case reduce_one_with(collection, t_acc == [], reducer) do
+      {:empty, reducer} -> finish_zip(t_rem, t_acc, reducer)
+      {continuation, reducer} ->
+        finish_zip(t_rem, [continuation | t_acc], reducer)
+    end
+  end
+
+  defp reduce_one_with(collection, term, {r_fun ,{:cont, r_state}}) do
+    case Transducible.next(collection) do
+      {elem, rem} ->
+        signal = r_fun.({:cont, r_state, {elem, term}})
+        {rem, {r_fun, signal}}
+      :done -> {:empty, {r_fun, {:cont, r_state}}}
+    end
+  end
+
 end

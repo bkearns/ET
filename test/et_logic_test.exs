@@ -484,18 +484,36 @@ defmodule ETLogicTest do
   test "ET.Logic.with_index()" do
     ET.Logic.with_index
     |> ET.Reducers.list
-    |> logic_test
+    |> with_index_test
   end
 
   test "ET.Logic.with_index(transducer)" do
     identity_trans
     |> ET.Logic.with_index
     |> ET.Reducers.list
-    |> logic_test
+    |> with_index_test
   end
 
-  defp logic_test(r_fun) do
+  defp with_index_test(r_fun) do
     assert ET.reduce(1..3, r_fun) == [{1,0},{2,1},{3,2}]
+  end
+
+  test "ET.Logic.zip()" do
+    ET.Logic.zip
+    |> ET.Reducers.list
+    |> zip_test
+  end
+
+  test "ET.Logic.zip(transducer)" do
+    identity_trans
+    |> ET.Logic.zip
+    |> ET.Reducers.list
+    |> zip_test
+  end
+
+  defp zip_test(zip_r_fun) do
+    assert ET.reduce([1..2, 3..5, [6]], zip_r_fun) ==
+    [{1,true}, {3,false}, {6,false}, {2,true}, {4,false}, {5,true}]
   end
 
 end
