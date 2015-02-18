@@ -3,28 +3,32 @@ ET - Elixir Transducers
 
 ## Why Transducers?
 
-Standard enumerators get us very far already, why a different model? Well, let's say you have something like this:
+Elixir already comes with Stream which seems to do the same sort of thing that transducers do, so why?
 
-```elixir
-big_list
-|> Enum.map( &some_expensive_transformation/1 )
-|> Enum.take_while( &bool_test/1 )
-```
-
-You just did a big, expensive transformation against a big list and you might only end up keeping a hand-full of them.
-
-Transducers solve this by creating Stream-like composable functions, but with the added benefit of managing their own flow-control. Transducer elements also don't care what sort of collection it is coming from or what sort it is going to.
+Transducers are simply a different model for doing the same sort of thing, but where Stream focuses on wrapping the collection in functions, transducers focus on wrapping the reducing function. It feels a bit more natural for me, at least, to think it terms of composing functions together and marrying them with the collection when one wants the calculation to be performed than coupling the collection with part of the reduction and then marrying it with the last bit of it.
 
 ## How does it look?
 
 ```elixir
-reducer =
-     ET.Transducers.map( &some_expensive_transformation/1 )
-  |> ET.Transducers.take_while( &bool_test/1 )
+stream =
+     1..10000
+  |> Stream.map(&some_nasty_transformation/1)
+  |> Steram.filter(&filter_fun/1)
+  |> Stream.take_while(&bool_check/1)
+
+Enum.to_list(stream)
+```
+
+```elixir
+r_fun =
+     ET.Transducers.map(&some_nasty_transformation/1)
+  |> ET.Transducers.filter(&filter_fun/1)
+  |> ET.Transducers.take_while(&bool_check/1)
   |> ET.Reducers.list
-ET.reduce( big_list, reducer )
+
+ET.reduce(1..10000, r_fun)
 ```
 
 ## Status
 
-Taking shape. Getting ready to start churning out standard enumerable elements in transducer form. Still thinking on if/how the reduce function should be able to change the default arguments.
+Taking shape. Much of the standard library is implemented, although the focus has been more on learning how to compose transducers than performance.
