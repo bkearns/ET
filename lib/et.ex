@@ -5,6 +5,15 @@ defmodule ET do
   modules.
   """
 
+  def next(collection) when is_function(collection, 1) do
+    collection.({:cont, nil})
+  end
+  def next(collection) do
+    suspend_fun = fn elem, _ -> {:suspend, elem} end
+    Enumerable.reduce(collection, {:cont, nil}, suspend_fun)
+  end
+
+
   @doc """
   Applies a reducing function to a transducible data structure.
 
@@ -20,38 +29,7 @@ defmodule ET do
   """
 
   def reduce(coll, r_fun) do
-    {_coll, {_, {_sig, r_state}}} = reduce_elements(coll, {r_fun, r_fun.(:init)})
-    r_fun.({:done, r_state})
-  end
-
-
-  @doc """
-  A helper function for performing the :cont recursion over a transducible into
-  a reducer with an already generated state.
-
-  """
-
-  def reduce_elements(:empty, reducer), do: {:empty, reducer}
-  def reduce_elements(coll, {_, {:cont, _}} = reducer) do
-    {collection, reducer} = reduce_step(coll, reducer)
-    reduce_elements(collection, reducer)
-  end
-  def reduce_elements(coll, reducer), do: {coll, reducer}
-
-  @doc """
-  A helper function for performing a single :cont step of the reduce operation.
-
-  It returns a tuple with a continuation and a reducer. If the continuation
-  is :done, the tuple continuation will be :empty.
-
-  """
-
-  def reduce_step(collection, {r_fun, {:cont, r_state}}) do
-    case Transducible.next(collection) do
-      {elem, rem} ->
-        {sig, state} = r_fun.({:cont, r_state, elem})
-        {rem, {r_fun, {sig, state}}}
-      :done -> {:empty, {r_fun, {:cont, r_state}}}
-    end
+    {_, r_state} = Enumerable.reduce(coll, r_fun.(nil, :init), r_fun)
+    r_fun.(r_state, :fin)
   end
 end

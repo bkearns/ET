@@ -97,21 +97,21 @@ defmodule ET.Logic do
   defp do_chunk(_, nil, [], _, reducer) do
     cont(reducer, {nil, []})
   end
-  defp do_chunk(_, curr_chunk, _, _, {_,{:done,_}} = reducer) do
+  defp do_chunk(_, curr_chunk, _, _, {_,{:halt,_}} = reducer) do
     finish(curr_chunk)
-    done(reducer, {nil, []})
+    halt(reducer, {nil, []})
   end
   defp do_chunk(elem, nil, [elems | chunks], inner_r_fun, reducer) do
     curr_chunk = elems |> :lists.reverse |> reduce_many((inner_r_fun |> init))
     do_chunk(elem, curr_chunk, chunks, inner_r_fun, reducer)
   end
-  defp do_chunk(elem, {_,{:done,_}} = curr_chunk, chunks, inner_r_fun, reducer) do
+  defp do_chunk(elem, {_,{:halt,_}} = curr_chunk, chunks, inner_r_fun, reducer) do
     reducer = curr_chunk |> finish |> reduce(reducer)
     do_chunk(elem, nil, chunks, inner_r_fun, reducer)
   end
   defp do_chunk(elem, {_,{:cont,_}} = curr_chunk, chunks, inner_r_fun, reducer) do
     curr_chunk = elem |> reduce(curr_chunk)
-    if done?(curr_chunk) do
+    if halt?(curr_chunk) do
       do_chunk(elem, curr_chunk, chunks, inner_r_fun, reducer)
     else
       cont(reducer, {curr_chunk, add_elem_to_chunks(elem, chunks)})
@@ -127,23 +127,23 @@ defmodule ET.Logic do
     finish(reducer)
   end
   defp finish_chunk(curr_chunk, chunks, inner_r_fun, {_,{signal,_}}=reducer, _) when
-  signal == :done or (curr_chunk == nil and chunks == []) do
+  signal == :halt or (curr_chunk == nil and chunks == []) do
     finish_chunk(curr_chunk, chunks, inner_r_fun, reducer, nil)
   end
   defp finish_chunk(curr_chunk, chunks, inner_r_fun, {r_fun,_}=reducer, padding) do
-    case Transducible.next(padding) do
-      {elem, padding} ->
+    case ET.next(padding) do
+      {:suspended, elem, padding} ->
         {signal, [{curr_chunk, chunks} | r_state]} =
           do_chunk({elem, nil}, curr_chunk, chunks, inner_r_fun, reducer)
-          finish_chunk(curr_chunk, chunks, inner_r_fun, {r_fun,{signal,r_state}}, padding)
-      :done ->
+        finish_chunk(curr_chunk, chunks, inner_r_fun, {r_fun,{signal,r_state}}, padding)
+      {:done, nil} ->
         reducer = curr_chunk |> finish |> reduce(reducer)
         finish_chunks(chunks, inner_r_fun, reducer)
     end
   end
 
   defp finish_chunks(chunks, inner_r_fun, {_,{signal,_}} = reducer) when
-  chunks == [] or signal == :done do
+  chunks == [] or signal == :halt do
     finish_chunk(nil, [], inner_r_fun, reducer, nil)
   end
   defp finish_chunks([elems | chunks], inner_r_fun, reducer) do
@@ -196,7 +196,7 @@ defmodule ET.Logic do
 
   @doc """
   A transducer which sends elements to the reducer, but when it receives
-  {_, true}, it sends that element and forces a :done signal on the return.
+  {_, true}, it sends that element and forces a :halt signal on the return.
 
   """
 
@@ -207,14 +207,14 @@ defmodule ET.Logic do
         {_, bool} = elem, reducer when bool in [false, nil] ->
           elem |> reduce(reducer) |> cont
         elem, reducer ->
-          elem |> reduce(reducer) |> done
+          elem |> reduce(reducer) |> halt
       end
     )
   end
 
   @doc """
   A transducer which sends elements to the reducer, but when it receives
-  {_, true}, it immediately sends :done without reducing the current element.
+  {_, true}, it immediately sends :halt without reducing the current element.
 
   """
 
@@ -225,7 +225,7 @@ defmodule ET.Logic do
         {_, bool} = elem, reducer when bool in [false, nil] ->
           elem |> reduce(reducer) |> cont
         _, reducer ->
-          reducer |> done
+          reducer |> halt
       end
     )
   end
@@ -237,7 +237,7 @@ defmodule ET.Logic do
   but may be overridden. Additionally, a Dict of reducer functions can be
   included where keys are values and those elements will be reduced separately.
 
-  Once an inner reducer is :done, it will be immediately reduced as
+  Once an inner reducer sends :halt, it will be immediately reduced as
   {value, result} and no more elements of that value will be processed. If there
   are remaining reducers on a :fin signal, they will be reduced in the same
   method at that time.
@@ -270,12 +270,12 @@ defmodule ET.Logic do
   defp do_group_by(:done, _, reducer, groups), do: cont(reducer, groups)
   defp do_group_by(v_reducer, {_,value} = elem, reducer, groups) do
     v_reducer = elem |> reduce(v_reducer)
-    if done?(v_reducer) do
+    if halt?(v_reducer) do
       result = finish(v_reducer)
       reducer = {value, result} |> reduce(reducer)
-      if done?(reducer) do
+      if halt?(reducer) do
         ET.reduce(groups, finish_group_reducer)
-        done(reducer, %{})
+        halt(reducer, %{})
       else
         cont(Dict.put(groups, value, :done))
       end
@@ -426,16 +426,16 @@ defmodule ET.Logic do
   end
 
   defp in_collection_find_element(t, test) do
-    in_collection_find_element(Transducible.next(t), test, [])
+    in_collection_find_element(ET.next(t), test, [])
   end
-  defp in_collection_find_element(:done, _test, acc) do
+  defp in_collection_find_element({:done, nil}, _test, acc) do
     {false, :done, acc}
   end
-  defp in_collection_find_element({test, t}, test, acc) do
+  defp in_collection_find_element({:suspended, test, t}, test, acc) do
     {true, t, [test | acc]}
   end
-  defp in_collection_find_element({elem, t}, test, acc) do
-    in_collection_find_element(Transducible.next(t), test, [elem | acc])
+  defp in_collection_find_element({:suspended, elem, t}, test, acc) do
+    in_collection_find_element(ET.next(t), test, [elem | acc])
   end
 
 
@@ -609,17 +609,17 @@ defmodule ET.Logic do
     )
   end
 
-  defp do_first_zip({:done, reducer}, transducibles) do
+  defp do_first_zip({:halt, reducer}, transducibles) do
     cont(reducer, transducibles)
   end
-  defp do_first_zip({_, {_,{:done,_}} = reducer}, _) do
-    done(reducer, [])
+  defp do_first_zip({_, {_,{:halt,_}} = reducer}, _) do
+    halt(reducer, [])
   end
   defp do_first_zip({continuation, reducer}, transducibles) do
     cont(reducer, [continuation | transducibles])
   end
 
-  defp finish_zip(_, _, {_,{:done,_}} = reducer) do
+  defp finish_zip(_, _, {_,{:halt,_}} = reducer) do
     finish(reducer)
   end
   defp finish_zip([], [], reducer), do: finish(reducer)
@@ -634,13 +634,14 @@ defmodule ET.Logic do
     end
   end
 
-  defp reduce_one_with(collection, term, {r_fun ,{:cont, r_state}}) do
-    case Transducible.next(collection) do
-      {elem, rem} ->
-        signal = r_fun.({:cont, r_state, {elem, term}})
-        {rem, {r_fun, signal}}
-      :done -> {:empty, {r_fun, {:cont, r_state}}}
-    end
+  def reduce_one_with(collection, term, reducer) do
+    do_reduce_one_with(ET.next(collection), term, reducer)
+  end
+
+  defp do_reduce_one_with({:done, nil}, _, reducer), do: {:empty, reducer}
+  defp do_reduce_one_with({:suspended, elem, cont_fun},
+                          term, {r_fun, {:cont, r_state}}) do
+    {cont_fun, {r_fun, r_fun.({elem, term}, r_state)}}
   end
 
 end

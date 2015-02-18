@@ -45,7 +45,7 @@ defmodule ET.Transducers do
       fn r_fun -> r_fun |> init |> cont({indices, HashSet.new}) end,
       fn {elem, index}, reducer, {indices, set} ->
         {result, indices, set} = at_indices_set_test(index, indices, set)
-        {{elem,(indices == :done and Transducible.next(set) == :done)}, !result}
+        {{elem,(indices == :done and Set.size(set) == 0)}, !result}
         |> reduce(reducer)
         |> cont({indices, set})
       end,
@@ -72,16 +72,16 @@ defmodule ET.Transducers do
     {false, :done, []}
   end
   defp at_indices_find_element(indices, index) do
-    at_indices_find_element(Transducible.next(indices), index, [])
+    at_indices_find_element(ET.next(indices), index, [])
   end
-  defp at_indices_find_element(:done, _index, acc) do
+  defp at_indices_find_element({:done, nil}, _index, acc) do
     {false, :done, acc}
   end
-  defp at_indices_find_element({index, indices}, index, acc) do
+  defp at_indices_find_element({:suspended, index, indices}, index, acc) do
     {true, indices, [index | acc]}
   end
-  defp at_indices_find_element({elem, indices}, index, acc) do
-    at_indices_find_element(Transducible.next(indices), index, [elem | acc])
+  defp at_indices_find_element({:suspended, elem, indices}, index, acc) do
+    at_indices_find_element(ET.next(indices), index, [elem | acc])
   end
 
 
@@ -135,7 +135,7 @@ defmodule ET.Transducers do
     compose(trans, chunk(two, three))
   end
   def chunk(size, step, reducer) when
-  is_integer(size) and is_integer(step) and is_function(reducer, 1) do
+  is_integer(size) and is_integer(step) and is_function(reducer, 2) do
     chunk(size, step, nil, reducer)
   end
   def chunk(size, step, padding) when is_integer(size) and is_integer(step) do
@@ -301,14 +301,14 @@ defmodule ET.Transducers do
 
         elem, reducer, {:cont, n} ->
           reducer = reduce(elem, reducer)
-          if done?(reducer) do
-            cont_not_done(reducer, {:done, n-1})
+          if halt?(reducer) do
+            cont_no_halt(reducer, {:done, n-1})
           else
             cont(reducer, {:cont, n-1})
           end
 
         _, reducer, {:done, 0} ->
-          done(reducer, {:done, 0})
+          halt(reducer, {:done, 0})
 
         _, reducer, {:done, n} ->
           cont(reducer, {:done, n-1})

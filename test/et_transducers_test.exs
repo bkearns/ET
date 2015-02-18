@@ -41,10 +41,10 @@ defmodule ETTransducersTest do
     r_fun =
       ET.Transducers.at_indices([1])
       |> ET.Reducers.count
-    reducer = {r_fun, r_fun.(:init)}
+    reducer = {r_fun, r_fun.(nil, :init)}
 
-    assert {cont, {_,{:cont,_}} = reducer} = ET.reduce_step(1..3, reducer)
-    assert {_cont, {_,{:done,_}} = reducer} = ET.reduce_step(cont, reducer)
+    assert {cont, {_,{:cont,_}} = reducer} = ET.Transducer.reduce_one(1..3, reducer)
+    assert {_cont, {_,{:halt,_}} = reducer} = ET.Transducer.reduce_one(cont, reducer)
     assert 1 == ET.Transducer.finish(reducer)
   end
 
@@ -310,9 +310,9 @@ defmodule ETTransducersTest do
 
   defp ensure_test(r_fun) do
     coll = [1,2,3]
-    reducer = {r_fun, r_fun.(:init)}
-    assert {coll, {_,{:cont,_}} = reducer} = ET.reduce_step(coll, reducer)
-    assert {_coll, {_,{:done,_}} = reducer} = ET.reduce_step(coll, reducer)
+    reducer = {r_fun, r_fun.(nil, :init)}
+    assert {coll, {_,{:cont,_}} = reducer} = ET.Transducer.reduce_one(coll, reducer)
+    assert {_coll, {_,{:halt,_}} = reducer} = ET.Transducer.reduce_one(coll, reducer)
     assert [1] = ET.Transducer.finish(reducer)
   end
 

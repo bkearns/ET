@@ -18,7 +18,7 @@ defmodule ETTransducerTest do
 
   test "ET.Transducer.cont(reducer_tuple)" do
     assert ET.Transducer.cont({ET.Reducers.list, {:cont, [[]]}}) == {:cont, [[]]}
-    assert ET.Transducer.cont({ET.Reducers.list, {:done, [[]]}}) == {:done, [[]]}
+    assert ET.Transducer.cont({ET.Reducers.list, {:halt, [[]]}}) == {:halt, [[]]}
   end
 
   test "ET.Transducer.cont(cont_reducer_tuple, state)" do
@@ -26,20 +26,20 @@ defmodule ETTransducerTest do
            {:cont, [:foo, []]}
   end
 
-  test "ET.Transducer.cont(done_reducer_tuple, state)" do
-    assert ET.Transducer.cont({ET.Reducers.list, {:done, [[]] }}, :foo) ==
-           {:done, [:foo, []]}
+  test "ET.Transducer.cont(halted_reducer_tuple, state)" do
+    assert ET.Transducer.cont({ET.Reducers.list, {:halt, [[]] }}, :foo) ==
+           {:halt, [:foo, []]}
   end
 
-  test "ET.Transducer.cont_not_done(reducer)" do
+  test "ET.Transducer.cont_no_halt(reducer)" do
     list_reducer = ET.Reducers.list
-    assert ET.Transducer.cont_not_done({list_reducer, {:done, [[]]}}) ==
+    assert ET.Transducer.cont_no_halt({list_reducer, {:halt, [[]]}}) ==
            {:cont, [[]]}
   end
 
-  test "ET.Transducer.cont_not_done(reducer, state)" do
+  test "ET.Transducer.cont_no_halt(reducer, state)" do
     list_reducer = ET.Reducers.list
-    assert ET.Transducer.cont_not_done({list_reducer, {:done, [[]]}}, :foo) ==
+    assert ET.Transducer.cont_no_halt({list_reducer, {:halt, [[]]}}, :foo) ==
            {:cont, [:foo, []]}
   end
 
@@ -50,18 +50,18 @@ defmodule ETTransducerTest do
            [1,2]
   end
 
-  test "ET.Transducer.done(reducer_tuple)" do
-    assert ET.Transducer.done({ET.Reducers.list, {:cont, [[]]}}) == {:done, [[]]}
+  test "ET.Transducer.halt(reducer_tuple)" do
+    assert ET.Transducer.halt({ET.Reducers.list, {:cont, [[]]}}) == {:halt, [[]]}
   end
 
-  test "ET.Transducer.done(reducer_tuple, state)" do
-    assert ET.Transducer.done({ET.Reducers.list, {:cont, [[]]}}, :foo) ==
-           {:done, [:foo, []]}
+  test "ET.Transducer.halt(reducer_tuple, state)" do
+    assert ET.Transducer.halt({ET.Reducers.list, {:cont, [[]]}}, :foo) ==
+           {:halt, [:foo, []]}
   end
 
-  test "ET.Transducer.done?(reducer)" do
-    assert ET.Transducer.done?({ET.Reducers.list, {:cont, [[]]}}) == false
-    assert ET.Transducer.done?({ET.Reducers.list, {:done, [[]]}}) == true
+  test "ET.Transducer.halt?(reducer)" do
+    assert ET.Transducer.halt?({ET.Reducers.list, {:cont, [[]]}}) == false
+    assert ET.Transducer.halt?({ET.Reducers.list, {:halt, [[]]}}) == true
   end
 
   test "ET.Transducer.init(reducer)" do
@@ -72,7 +72,7 @@ defmodule ETTransducerTest do
 
   test "ET.Transducer.new(fun)" do
     ET.Transducer.new(
-      fn 3, reducer -> done(reducer)
+      fn 3, reducer -> halt(reducer)
          n, reducer -> n |> reduce(reducer) |> cont
       end
     )
@@ -83,7 +83,7 @@ defmodule ETTransducerTest do
   test "ET.Transducer.new(transducer, fun)" do
     identity_trans
     |> ET.Transducer.new(
-         fn 3, reducer -> done(reducer)
+         fn 3, reducer -> halt(reducer)
             n, reducer -> n |> reduce(reducer) |> cont
          end
        )
@@ -102,7 +102,7 @@ defmodule ETTransducerTest do
         elem, reducer, 0 ->
           elem
           |> reduce(reducer)
-          |> done(0)
+          |> halt(0)
         elem, reducer, count ->
           elem
           |> reduce(reducer)
@@ -122,7 +122,7 @@ defmodule ETTransducerTest do
         elem, reducer, 0 ->
           elem
           |> reduce(reducer)
-          |> done(0)
+          |> halt(0)
         elem, reducer, count ->
           elem
           |> reduce(reducer)
@@ -160,14 +160,15 @@ defmodule ETTransducerTest do
 
   test "ET.Transducer.reduce_many(transducible, reducer) early termination" do
     take_two_list_reducer = ET.Transducers.take(2) |> ET.Reducers.list
-    assert ET.Transducer.reduce_many(1..4, {take_two_list_reducer, {:cont, [1, []]}}) ==
-           {take_two_list_reducer, {:done, [1, [2,1]]}}
+    assert {_, {:halt, [1, [2,1]]}} =
+      ET.Transducer.reduce_many(1..4, {take_two_list_reducer, {:cont, [1, []]}})
   end
 
   test "ET.Transducer.reduce_one(transducible, reducer)" do
     list_reducer = ET.Reducers.list
-    assert ET.Transducer.reduce_one([1,2,3], {list_reducer, {:cont, [[]]}}) ==
-           {[2,3], {list_reducer, {:cont, [[1]]}}}
+    assert {_, {list_reducer, {:cont, [[1]]}}} =
+      ET.Transducer.reduce_one([1,2,3], {list_reducer, {:cont, [[]]}})
+
     assert ET.Transducer.reduce_one([], {list_reducer, {:cont, [[]]}}) ==
            {:empty, {list_reducer, {:cont, [[]]}}}
   end

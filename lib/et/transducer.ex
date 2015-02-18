@@ -77,8 +77,8 @@ defmodule ET.Transducer do
 
   """
 
-  def cont_not_done(reducer)
-  def cont_not_done({_, {_, r_state}}), do: {:cont, r_state}
+  def cont_no_halt(reducer)
+  def cont_no_halt({_, {_, r_state}}), do: {:cont, r_state}
 
 
   @doc """
@@ -88,8 +88,9 @@ defmodule ET.Transducer do
 
   """
 
-  def cont_not_done(reducer, state)
-  def cont_not_done({_, {_, r_state}}, state), do: {:cont, [state | r_state]}
+  def cont_no_halt(reducer, state)
+  def cont_no_halt({_, {_, r_state}}, state), do: {:cont, [state | r_state]}
+
 
   @doc """
   Finishes the reducer.
@@ -97,7 +98,7 @@ defmodule ET.Transducer do
   """
 
   def finish(reducer)
-  def finish({reducer, {_, r_state}}), do: reducer.({:done, r_state})
+  def finish({reducer, {_, r_state}}), do: reducer.(r_state, :fin)
 
 
   @doc """
@@ -105,8 +106,8 @@ defmodule ET.Transducer do
 
   """
 
-  def done(reducer)
-  def done({_, {_, r_state}}), do: {:done, r_state}
+  def halt(reducer)
+  def halt({_, {_, r_state}}), do: {:halt, r_state}
 
 
   @doc """
@@ -114,8 +115,8 @@ defmodule ET.Transducer do
 
   """
 
-  def done(reducer, state)
-  def done({_, {_, r_state}}, state), do: {:done, [state | r_state]}
+  def halt(reducer, state)
+  def halt({_, {_, r_state}}, state), do: {:halt, [state | r_state]}
 
 
   @doc """
@@ -123,9 +124,9 @@ defmodule ET.Transducer do
 
   """
 
-  def done?(reducer)
-  def done?({_, {:done, _}}), do: true
-  def done?({_, {:cont, _}}), do: false
+  def halt?(reducer)
+  def halt?({_, {:halt, _}}), do: true
+  def halt?({_, {:cont, _}}), do: false
 
 
   @doc """
@@ -133,7 +134,7 @@ defmodule ET.Transducer do
 
   """
 
-  def init(reducing_fun), do: {reducing_fun, reducing_fun.(:init)}
+  def init(reducing_fun), do: {reducing_fun, reducing_fun.(nil, :init)}
 
 
   @doc """
@@ -146,10 +147,10 @@ defmodule ET.Transducer do
 
   def new(cont_fun) do
     %ET.Transducer{elements: [fn reducer ->
-      fn :init -> reducer.(:init)
-         {:cont, r_state, elem} ->
+      fn _, :init -> reducer.(nil, :init)
+         r_state, :fin -> reducer.(r_state, :fin)
+         elem, r_state ->
            cont_fun.(elem, {reducer, {:cont, r_state}})
-         {:done, r_state} -> reducer.({:done, r_state})
       end
      end]}
   end
@@ -194,12 +195,12 @@ defmodule ET.Transducer do
 
   def new(init_fun, cont_fun, fin_fun) do
     %ET.Transducer{elements: [fn reducer ->
-      fn :init ->
+      fn _, :init ->
            init_fun.(reducer)
-         {:cont, [state | r_state], elem} ->
-           cont_fun.(elem, {reducer, {:cont, r_state}}, state)
-         {:done, [state | r_state]} ->
+         [state | r_state], :fin ->
            fin_fun.({reducer, {:cont, r_state}}, state)
+         elem, [state | r_state] ->
+           cont_fun.(elem, {reducer, {:cont, r_state}}, state)
       end
     end]}
   end
@@ -215,7 +216,7 @@ defmodule ET.Transducer do
 
   def reduce(elem, reducer)
   def reduce(elem, {r_fun, {:cont, r_state}}) do
-    {r_fun, r_fun.({:cont, r_state, elem})}
+    {r_fun, r_fun.(elem, r_state)}
   end
 
 
@@ -225,10 +226,10 @@ defmodule ET.Transducer do
 
   """
 
-  def reduce_many(transducible, reducer) do
-    case ET.reduce_elements(transducible, reducer) do
-      {:empty, {r_fun, {_, r_state}}} -> {r_fun, {:cont, r_state}}
-      {_coll, reducer} -> reducer
+  def reduce_many(collection, {r_fun, {:cont, r_state}}) do
+    case Enumerable.reduce(collection, {:cont, r_state}, r_fun) do
+      {:done, r_state} -> {r_fun, {:cont, r_state}}
+      {:halted, r_state} -> {r_fun, {:halt, r_state}}
     end
   end
 
@@ -239,8 +240,12 @@ defmodule ET.Transducer do
 
   """
 
-  def reduce_one(transducible, reducer)
-  def reduce_one(transducible, {_, {:cont, _}} = reducer) do
-    ET.reduce_step(transducible, reducer)
+  def reduce_one(collection, reducer) do
+    do_reduce_one(ET.next(collection), reducer)
+  end
+
+  defp do_reduce_one({:done, nil}, reducer), do: {:empty, reducer}
+  defp do_reduce_one({:suspended, elem, cont_fun}, {r_fun, {:cont, r_state}}) do
+    {cont_fun, {r_fun, r_fun.(elem, r_state)}}
   end
 end

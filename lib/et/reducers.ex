@@ -54,14 +54,14 @@ defmodule ET.Reducers do
   def all?(%ET.Transducer{} = trans), do: all?(trans, fn x -> x end)
   def all?(fun) do
     fn
-      :init -> {:cont, [true]}
-      {:cont, [_], elem} ->
+      _, :init -> {:cont, [true]}
+      [result], :fin -> result
+      elem, [_] ->
         if fun.(elem) do
           {:cont, [true]}
         else
-          {:done, [false]}
+          {:halt, [false]}
         end
-      {:done, [result]} -> result
     end
   end
   def all?(), do: all?(fn x -> x end)
@@ -82,14 +82,14 @@ defmodule ET.Reducers do
   def any?(%ET.Transducer{} = trans), do: any?(trans, fn x -> x end)
   def any?(fun) do
     fn
-      :init -> {:cont, [false]}
-      {:cont, [_], elem} ->
+      _, :init -> {:cont, [false]}
+      [result], :fin -> result
+      elem, [_] ->
         if fun.(elem) do
-          {:done, [true]}
+          {:halt, [true]}
         else
           {:cont, [false]}
         end
-      {:done, [result]} -> result
     end
   end
   def any?(), do: any?(fn x -> x end)
@@ -102,9 +102,9 @@ defmodule ET.Reducers do
 
   def binary() do
     fn
-      :init -> {:cont, [""]}
-      {:cont, [acc], elem} -> {:cont, [acc <> to_string(elem)]}
-      {:done, [acc]} -> acc
+      _, :init     -> {:cont, [""]}
+      [acc], :fin -> acc
+      elem, [acc]  -> {:cont, [acc <> to_string(elem)]}
     end
   end
   def binary(%ET.Transducer{} = trans), do: compose(trans, binary)
@@ -120,9 +120,9 @@ defmodule ET.Reducers do
 
   def count(%ET.Transducer{} = trans), do: compose(trans, count())
   def count() do
-    fn :init                 -> {:cont, [0]}
-       {:cont, [acc], _elem} -> {:cont, [acc+1]}
-       {:done, [acc]}         -> acc
+    fn _, :init      -> {:cont, [0]}
+       [acc], :fin -> acc
+       _elem, [acc] -> {:cont, [acc+1]}
     end
   end
 
@@ -135,10 +135,10 @@ defmodule ET.Reducers do
 
   def into(collectable) do
     fn
-      :init -> {:cont, [Collectable.into(collectable)]}
-      {:cont, [{acc, c_fun}], elem} ->
+      _, :init -> {:cont, [Collectable.into(collectable)]}
+      [{acc, c_fun}], :fin -> c_fun.(acc, :done)
+      elem, [{acc, c_fun}] ->
         {:cont, [{c_fun.(acc, {:cont, elem}), c_fun}]}
-      {:done, [{acc, c_fun}]} -> c_fun.(acc, :done)
     end
   end
   def into(%ET.Transducer{} = trans, coll) do
@@ -156,9 +156,9 @@ defmodule ET.Reducers do
   def list(%ET.Transducer{} = trans), do: compose(trans, list())
   def list do
     fn
-      :init                -> { :cont, [[]] }
-      {:cont, [acc], elem} -> { :cont, [[elem | acc]] }
-      {:done, [acc]}       -> :lists.reverse(acc)
+      _, :init     -> { :cont, [[]] }
+      [acc], :fin -> :lists.reverse(acc)
+      elem, [acc]  -> { :cont, [[elem | acc]] }
     end
   end
 
@@ -172,9 +172,9 @@ defmodule ET.Reducers do
   def last(%ET.Transducer{} = trans), do: compose(trans, last)
   def last(term) do
     fn
-      :init              -> {:cont, [term]}
-      {:cont, [_], elem} -> {:cont, [elem]}
-      {:done, [result]}  -> result
+      _, :init       -> {:cont, [term]}
+      [result], :fin -> result
+      elem, [_]      -> {:cont, [elem]}
     end
   end
   def last(%ET.Transducer{} = trans, term), do: compose(trans, last(term))
@@ -191,19 +191,19 @@ defmodule ET.Reducers do
 
   def map() do
     fn
-      :init -> {:cont, [%{}]}
-      {:cont, [acc], {key, value}} ->
+      _, :init -> {:cont, [%{}]}
+      [acc], :fin -> acc
+      {key, value}, [acc] ->
         {:cont, [Dict.put(acc, key, value)]}
-      {:done, [acc]} -> acc
     end
   end
   def map(%ET.Transducer{} = trans), do: compose(trans, map)
   def map(fun) do
     fn
-      :init -> {:cont, [%{}]}
-      {:cont, [acc], {key, value}} ->
+      _, :init -> {:cont, [%{}]}
+      [acc], :fin -> acc
+      {key, value}, [acc] ->
         {:cont, [Dict.update(acc, key, value, &(fun.(&1,value)))]}
-      {:done, [acc]} -> acc
     end
   end
   def map(%ET.Transducer{} = trans, fun), do: compose(trans, map(fun))
@@ -253,9 +253,9 @@ defmodule ET.Reducers do
   def static(), do: static(:ok)
   def static(%ET.Transducer{} = trans), do: compose(trans, static)
   def static(t) do
-    fn :init              -> {:cont, []}
-       {:cont, [], _elem} -> {:cont, []}
-       {:done, []}        -> t
+    fn _, :init  -> {:cont, []}
+       [], :fin -> t
+       _elem, [] -> {:cont, []}
     end
   end
   def static(%ET.Transducer{} = trans, t), do: compose(trans, static(t))
