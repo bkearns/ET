@@ -7,8 +7,6 @@ Elixir already comes with Stream which seems to do the same sort of thing that t
 
 Transducers are simply a different model for doing the same sort of thing, but where Stream focuses on wrapping the collection in functions, transducers focus on wrapping the reducing function. It feels a bit more natural for me, at least, to think it terms of composing functions together and marrying them with the collection when one wants the calculation to be performed than coupling the collection with part of the reduction and then marrying it with the last bit of it.
 
-## How does it look?
-
 ```elixir
 stream =
      1..10000
@@ -27,6 +25,28 @@ r_fun =
   |> ET.Reducers.list
 
 ET.reduce(1..10000, r_fun)
+```
+
+Also, these transducers are implemented in more generic ways to allow for deeper composability.
+
+```elixir
+r_fun =
+     ET.Transducers.group_by(&( rem(&1, 3) ))
+  |> ET.Reducers.map
+
+ET.reduce(1..7, r_fun)  #> %{0 => [3, 6], 1 => [1, 4, 7], 2 => [2, 5]}
+```
+
+```elixir
+all_lt_five? = ET.Reducers.all?(&(&1<5))
+
+r_fun =
+     ET.Transducers.group_by(&( rem(&1, 3) ),
+                             ET.Reducers.count,
+                             %{0 => all_lt_five?})
+  |> ET.Reducers.map
+
+ET.reduce(1..6, r_fun)  #> %{0 => false, 1 => 3, 2 => 2}
 ```
 
 ## Status
