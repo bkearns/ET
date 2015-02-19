@@ -244,6 +244,42 @@ defmodule ET.Reducers do
     end
   end
 
+
+  @doc """
+  A reducer which returns the smallest element or nil if no elements are
+  received.
+
+  """
+
+  def min() do
+    min_by(&(&1))
+  end
+  def min(%ET.Transducer{} = trans), do: compose(trans, min)
+
+
+  @doc """
+  A reducers which returns the element for which fun.(element) is the smallest
+  or nil if no elements are received.
+
+  """
+
+  def min_by(fun) do
+    ET.Logic.structure(fun)
+    |> ET.Logic.unfold(nil, min_compare_fun)
+    |> ET.Logic.last_by
+    |> ET.Logic.destructure(2)
+    |> ET.Reducers.last
+  end
+  def min_by(%ET.Transducer{} = trans, fun), do: compose(trans, min_by(fun))
+
+  defp min_compare_fun do
+    fn
+      e, nil -> {true, e}
+      {_,c1} = elem, {_,c2} when c1 < c2 -> {true, elem}
+      _, acc -> {false, acc}
+    end
+  end
+
   @doc """
   A reducer which returns a fixed value regardless of what it receives.
   The default is :ok.

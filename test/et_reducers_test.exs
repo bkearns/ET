@@ -43,7 +43,7 @@ defmodule ETReducersTest do
 
   test "ET.Reducers.any?(transducer)" do
     identity_trans
-    |> ET.Reducers.any?()
+    |> ET.Reducers.any?
     |> any_test
   end
 
@@ -192,6 +192,36 @@ defmodule ETReducersTest do
 
   defp max_by_fun_test(max_r_fun) do
     assert ET.reduce([2,4,1,3], max_r_fun) == 1
+  end
+
+  test "ET.Reducers.min()" do
+    ET.Reducers.min
+    |> min_test
+  end
+
+  test "ET.Reducers.min(transnducer)" do
+    identity_trans
+    |> ET.Reducers.min
+    |> min_test
+  end
+
+  defp min_test(min_r_fun) do
+    assert ET.reduce([2,4,3,1], min_r_fun) == 1
+  end
+
+  test "ET.Reducers.min_by(fun)" do
+    ET.Reducers.min_by(&(-&1))
+    |> min_by_fun_test
+  end
+
+  test "ET.Reducers.min_by(transducer, fun)" do
+    identity_trans
+    |> ET.Reducers.min_by(&(-&1))
+    |> min_by_fun_test
+  end
+
+  defp min_by_fun_test(min_r_fun) do
+    assert ET.reduce([2,4,1,3], min_r_fun) == 4
   end
 
   test "ET.Reducers.map(fun)" do
