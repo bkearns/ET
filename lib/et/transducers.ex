@@ -435,6 +435,28 @@ defmodule ET.Transducers do
 
 
   @doc """
+  Reverses the elements. To do so, it must cache all elements and send them
+  on :fin.
+
+  """
+
+  def reverse() do
+    new(
+      fn r_fun -> r_fun |> init |> cont([]) end,
+      fn
+        elem, reducer, acc ->
+          reducer |> cont([elem | acc])
+      end,
+      fn
+        reducer, acc ->
+          acc |> reduce_many(reducer) |> finish
+      end
+    )
+  end
+  def reverse(%ET.Transducer{} = trans), do: compose(trans, reverse)
+
+
+  @doc """
   A transducer which limits the number of elements processed.
 
     iex> take_two = ET.Transducers.take(2) |> ET.Reducers.list

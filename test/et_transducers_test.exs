@@ -440,6 +440,24 @@ defmodule ETTransducersTest do
     assert ET.reduce(1..3, reducer) == [2,3,4]
   end
 
+  test "ET.Transducers.reverse()" do
+    ET.Transducers.reverse
+    |> ET.Reducers.list
+    |> reverse_test
+  end
+
+  test "ET.Transducers.reverse(transducer)" do
+    identity_trans
+    |> ET.Transducers.reverse
+    |> ET.Reducers.list
+    |> reverse_test
+  end
+
+  defp reverse_test(reverse_r_fun) do
+    assert ET.reduce(1..4, reverse_r_fun) ==
+           [4,3,2,1]
+  end
+
   test "ET.Transducers.take(n)" do
     ET.Transducers.take(3)
     |> ET.Reducers.list
