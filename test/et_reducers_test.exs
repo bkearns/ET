@@ -240,6 +240,21 @@ defmodule ETReducersTest do
            %{one: 4, two: 6}
   end
 
+  test "ET.Reducers.reduce(term, fun)" do
+    ET.Reducers.reduce(1, &Kernel.*/2)
+    |> reduce_fun_test
+  end
+
+  test "ET.Reducers.reduce(transducer, fun)" do
+    identity_trans
+    |> ET.Reducers.reduce(1, &Kernel.*/2)
+    |> reduce_fun_test
+  end
+
+  defp reduce_fun_test(mult_r_fun) do
+    assert ET.reduce(1..4, mult_r_fun) == 24
+  end
+
   test "ET.Reducers.static()" do
     ET.Reducers.static
     |> static_test

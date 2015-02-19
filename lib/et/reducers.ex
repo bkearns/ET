@@ -280,6 +280,25 @@ defmodule ET.Reducers do
     end
   end
 
+
+  @doc """
+  A reducer which performs the reduce function with each additonal element
+  passing the previous result as the new acc.
+
+  """
+
+  def reduce(acc, fun) do
+    fn
+      _, :init -> {:cont, [acc]}
+      elem, [acc] -> {:cont, [fun.(elem, acc)]}
+      [acc], :fin -> acc
+    end
+  end
+  def reduce(%ET.Transducer{} = trans, acc, fun) do
+    compose(trans, reduce(acc, fun))
+  end
+
+
   @doc """
   A reducer which returns a fixed value regardless of what it receives.
   The default is :ok.
