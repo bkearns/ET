@@ -458,6 +458,24 @@ defmodule ETTransducersTest do
            [4,3,2,1]
   end
 
+  test "ET.Transducers.scan(acc, fun)" do
+    ET.Transducers.scan(1, &Kernel.*/2)
+    |> ET.Reducers.list
+    |> scan_acc_fun_test
+  end
+
+  test "ET.Transducers.scan(transducer, acc, fun)" do
+    identity_trans
+    |> ET.Transducers.scan(1, &Kernel.*/2)
+    |> ET.Reducers.list
+    |> scan_acc_fun_test
+  end
+
+  defp scan_acc_fun_test(mult_scan_r_fun) do
+    assert ET.reduce(1..4, mult_scan_r_fun) ==
+           [1,2,6,24]
+  end
+
   test "ET.Transducers.take(n)" do
     ET.Transducers.take(3)
     |> ET.Reducers.list

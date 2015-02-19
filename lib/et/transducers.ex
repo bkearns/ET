@@ -457,6 +457,21 @@ defmodule ET.Transducers do
 
 
   @doc """
+  A transducer which calls fun.(elem, acc) and emits acc and uses it for the
+  next element.
+
+  """
+
+  def scan(acc, fun) do
+    ET.Logic.unfold(acc, fn e, a -> r = fun.(e,a); {r,r} end)
+    |> ET.Logic.reverse_destructure
+  end
+  def scan(%ET.Transducer{} = trans, acc, fun) do
+    compose(trans, scan(acc, fun))
+  end
+
+
+  @doc """
   A transducer which limits the number of elements processed.
 
     iex> take_two = ET.Transducers.take(2) |> ET.Reducers.list
