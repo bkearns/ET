@@ -495,6 +495,33 @@ defmodule ETTransducersTest do
            [3,1,4,2]
   end
 
+  test "ET.Tranducers.slice(positive_start, count)" do
+    ET.Transducers.slice(2, 3)
+    |> ET.Reducers.list
+    |> slice_positive_start_count_test
+  end
+
+  test "ET.Tranducers.slice(transducer, positive_start, count)" do
+    identity_trans
+    |> ET.Transducers.slice(2, 3)
+    |> ET.Reducers.list
+    |> slice_positive_start_count_test
+  end
+
+  defp slice_positive_start_count_test(two_three_r_fun) do
+    assert ET.reduce(1..6, two_three_r_fun) ==
+           [3,4,5]
+  end
+
+  test "ET.Tranducers.slice(negative_start, count)" do
+    r_fun =
+      ET.Transducers.slice(-4, 3)
+      |> ET.Reducers.list
+
+    assert ET.reduce(1..6, r_fun) ==
+           [3,4,5]
+  end
+
   test "ET.Transducers.sort()" do
     ET.Transducers.sort
     |> ET.Reducers.list
@@ -548,6 +575,7 @@ defmodule ETTransducersTest do
     assert ET.reduce([3,1,4,2], rev_sort_r_fun) ==
            [4,3,2,1]
   end
+
   test "ET.Transducers.take(positive_n)" do
     ET.Transducers.take(3)
     |> ET.Reducers.list
@@ -567,19 +595,10 @@ defmodule ETTransducersTest do
   end
 
   test "ET.Transducers.take(negative_n)" do
-    ET.Transducers.take(-3)
-    |> ET.Reducers.list
-    |> take_negative_n_test
-  end
+    last_three_r_fun =
+      ET.Transducers.take(-3)
+      |> ET.Reducers.list
 
-  test "ET.Transducers.take(transducer, negative_n)" do
-    identity_trans
-    |> ET.Transducers.take(-3)
-    |> ET.Reducers.list
-    |> take_negative_n_test
-  end
-
-  defp take_negative_n_test(last_three_r_fun) do
     assert ET.reduce(1..5, last_three_r_fun) == [3,4,5]
     assert ET.reduce(1..2, last_three_r_fun) == [1,2]
   end

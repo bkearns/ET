@@ -486,6 +486,24 @@ defmodule ET.Transducers do
 
 
   @doc """
+  A transducer which takes count elements starting at 0-based index start.
+
+  """
+
+  def slice(start, count) when start >= 0 do
+    drop(start)
+    |> take(count)
+  end
+  def slice(start, count) do
+    take(start)
+    |> take(count)
+  end
+  def slice(%ET.Transducer{} = trans, start, count) do
+    compose(trans, slice(start, count))
+  end
+
+
+  @doc """
   A transducer which sorts elements.
   Requires cacheing all elements until :fin is received.
 
