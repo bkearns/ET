@@ -503,13 +503,17 @@ defmodule ET.Transducers do
 
   """
 
-  def sort_by(fun) do
-    ET.Logic.wrap(fun)
-    |> ET.Logic.sort_by
+  def sort_by(map_fun), do: sort_by(map_fun, &<=/2)
+  def sort_by(%ET.Transducer{} = trans, map_fun) do
+    compose(trans, sort_by(map_fun))
+  end
+  def sort_by(map_fun, sort_fun) do
+    ET.Logic.wrap(map_fun)
+    |> ET.Logic.sort_by(sort_fun)
     |> ET.Logic.unwrap
   end
-  def sort_by(%ET.Transducer{} = trans, fun) do
-    compose(trans, sort_by(fun))
+  def sort_by(%ET.Transducer{} = trans, map_fun, sort_fun) do
+    compose(trans, sort_by(map_fun, sort_fun))
   end
 
 
