@@ -52,9 +52,9 @@ defmodule ET.Transducers do
       fn reducer, _ -> finish(reducer) end
     )
     |> ET.Logic.filter
-    |> ET.Logic.destructure
+    |> ET.Logic.unwrap
     |> ET.Logic.done_after
-    |> ET.Logic.destructure
+    |> ET.Logic.unwrap
   end
 
   defp at_indices_set_test(index, indices, set) do
@@ -146,7 +146,7 @@ defmodule ET.Transducers do
   end
   def chunk(size, step, padding, reducer) do
     inner_reducer =
-      ET.Logic.destructure
+      ET.Logic.unwrap
       |> take(size)
       |> compose(reducer)
 
@@ -175,7 +175,7 @@ defmodule ET.Transducers do
     inner_reducer =
       ET.Logic.ignore(1)
       |> ET.Logic.done_on
-      |> ET.Logic.destructure(2)
+      |> ET.Logic.unwrap(2)
       |> compose(inner_reducer)
 
       ET.Logic.change?(change_fun, first: true)
@@ -229,7 +229,7 @@ defmodule ET.Transducers do
       fn reducer, _ -> finish(reducer) end
     )
     |> ET.Logic.filter
-    |> ET.Logic.destructure
+    |> ET.Logic.unwrap
   end
   def drop(n) do
     new(
@@ -277,7 +277,7 @@ defmodule ET.Transducers do
       fn reducer, _ -> finish(reducer) end
     )
     |> ET.Logic.filter
-    |> ET.Logic.destructure
+    |> ET.Logic.unwrap
   end
 
 
@@ -327,10 +327,10 @@ defmodule ET.Transducers do
   @spec filter((term -> term)) :: ET.Transducer.t
   def filter(%ET.Transducer{} = trans, fun), do: compose(trans, filter(fun))
   def filter(fun) do
-    ET.Logic.structure(fun)
+    ET.Logic.wrap(fun)
     |> ET.Logic.negate
     |> ET.Logic.filter
-    |> ET.Logic.destructure(2)
+    |> ET.Logic.unwrap(2)
   end
 
 
@@ -342,10 +342,10 @@ defmodule ET.Transducers do
 
   def find_indices(fun) do
     ET.Logic.with_index
-    |> ET.Logic.structure(fn {elem, _} -> !fun.(elem) end)
+    |> ET.Logic.wrap(fn {elem, _} -> !fun.(elem) end)
     |> ET.Logic.filter
-    |> ET.Logic.destructure
-    |> ET.Logic.reverse_destructure
+    |> ET.Logic.unwrap
+    |> ET.Logic.reverse_unwrap
   end
   def find_indices(%ET.Transducer{} = trans, fun) do
     compose(trans, find_indices(fun))
@@ -372,20 +372,20 @@ defmodule ET.Transducers do
     compose(trans, group_by(fun, r_fun))
   end
   def group_by(fun, r_fun, r_funs) do
-    r_fun = compose(ET.Logic.destructure, r_fun)
-    r_funs = destructure_r_funs(r_funs)
+    r_fun = compose(ET.Logic.unwrap, r_fun)
+    r_funs = unwrap_r_funs(r_funs)
 
-    ET.Logic.structure(fun)
+    ET.Logic.wrap(fun)
     |> ET.Logic.group_by(r_fun, r_funs)
   end
   def group_by(%ET.Transducer{} = trans, fun, r_fun, r_funs) do
     compose(trans, group_by(fun, r_fun, r_funs))
   end
 
-  defp destructure_r_funs(r_funs) do
+  defp unwrap_r_funs(r_funs) do
     reducer =
       ET.Transducers.map(fn {v,v_fun} ->
-        {v, compose(ET.Logic.destructure, v_fun)}
+        {v, compose(ET.Logic.unwrap, v_fun)}
       end)
     |> ET.Reducers.list
 
@@ -401,10 +401,10 @@ defmodule ET.Transducers do
   """
 
   def intersperse(term) do
-    ET.Logic.structure(fn _ -> true end)
+    ET.Logic.wrap(fn _ -> true end)
     |> ET.Logic.ignore(1)
     |> ET.Logic.insert_before({{term, nil}, nil})
-    |> ET.Logic.destructure(2)
+    |> ET.Logic.unwrap(2)
   end
   def intersperse(%ET.Transducer{} = trans, term) do
     compose(trans, intersperse(term))
@@ -464,7 +464,7 @@ defmodule ET.Transducers do
 
   def scan(acc, fun) do
     ET.Logic.unfold(acc, fn e, a -> r = fun.(e,a); {r,r} end)
-    |> ET.Logic.reverse_destructure
+    |> ET.Logic.reverse_unwrap
   end
   def scan(%ET.Transducer{} = trans, acc, fun) do
     compose(trans, scan(acc, fun))
@@ -484,7 +484,7 @@ defmodule ET.Transducers do
   def take(num) do
     ET.Logic.true_every(num)
     |> ET.Logic.done_after
-    |> ET.Logic.destructure
+    |> ET.Logic.unwrap
   end
 
 
@@ -508,7 +508,7 @@ defmodule ET.Transducers do
 
   def zip() do
     ET.Logic.zip
-    |> ET.Logic.destructure
+    |> ET.Logic.unwrap
   end
   def zip(%ET.Transducer{} = trans), do: compose(trans, zip)
 end

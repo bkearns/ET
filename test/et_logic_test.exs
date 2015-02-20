@@ -120,38 +120,38 @@ defmodule ETLogicTest do
     [[{2, true}, {3, false}], [{4, true}, {5, nil}]]
   end
 
-  test "ET.Logic.destructure()" do
-    ET.Logic.destructure
+  test "ET.Logic.unwrap()" do
+    ET.Logic.unwrap
     |> ET.Reducers.list
-    |> destructure_test
+    |> unwrap_test
   end
 
-  test "ET.Logic.destructure(transducer)" do
+  test "ET.Logic.unwrap(transducer)" do
     identity_trans
-    |> ET.Logic.destructure
+    |> ET.Logic.unwrap
     |> ET.Reducers.list
-    |> destructure_test
+    |> unwrap_test
   end
 
-  defp destructure_test(r_fun) do
+  defp unwrap_test(r_fun) do
     assert ET.reduce([{1, true}, {2, false}, {3, true}], r_fun) ==
            [1,2,3]
   end
 
-  test "ET.Logic.destructure(n)" do
-    ET.Logic.destructure(2)
+  test "ET.Logic.unwrap(n)" do
+    ET.Logic.unwrap(2)
     |> ET.Reducers.list
-    |> destructure_n_test
+    |> unwrap_n_test
   end
 
-  test "ET.Logic.destructure(transducer, n)" do
+  test "ET.Logic.unwrap(transducer, n)" do
     identity_trans
-    |> ET.Logic.destructure(2)
+    |> ET.Logic.unwrap(2)
     |> ET.Reducers.list
-    |> destructure_n_test
+    |> unwrap_n_test
   end
 
-  defp destructure_n_test(r_fun) do
+  defp unwrap_n_test(r_fun) do
     assert ET.reduce([{{1, true}, false}, {{2, false}, false}, {{3, true}, true}], r_fun) ==
            [1,2,3]
   end
@@ -176,7 +176,7 @@ defmodule ETLogicTest do
 
   test "ET.Logic.group_by(reducer, reducers)" do
     ET.Logic.group_by(ET.Reducers.count,
-                      %{2 => ET.Logic.destructure |> ET.Reducers.list})
+                      %{2 => ET.Logic.unwrap |> ET.Reducers.list})
     |> ET.Reducers.map
     |> group_by_reducer_reducers_test
   end
@@ -184,7 +184,7 @@ defmodule ETLogicTest do
   test "ET.Logic.group_by(transducer, reducer, reducers)" do
     identity_trans
     |> ET.Logic.group_by(ET.Reducers.count,
-                         %{2 => ET.Logic.destructure |> ET.Reducers.list})
+                         %{2 => ET.Logic.unwrap |> ET.Reducers.list})
     |> ET.Reducers.map
     |> group_by_reducer_reducers_test
   end
@@ -196,14 +196,14 @@ defmodule ETLogicTest do
   end
 
   test "ET.Logic.group_by(r_fun)" do
-    ET.Logic.group_by(ET.Logic.destructure |> ET.Reducers.list)
+    ET.Logic.group_by(ET.Logic.unwrap |> ET.Reducers.list)
     |> ET.Reducers.map
     |> group_by_reducer_test
   end
 
   test "ET.Logic.group_by(transducer, r_fun)" do
     identity_trans
-    |> ET.Logic.group_by(ET.Logic.destructure |> ET.Reducers.list)
+    |> ET.Logic.group_by(ET.Logic.unwrap |> ET.Reducers.list)
     |> ET.Reducers.map
     |> group_by_reducer_test
   end
@@ -215,12 +215,12 @@ defmodule ETLogicTest do
 
   test "ET.Logic.group_by doesn't send items to done reducer" do
     r_fun =
-      ET.Logic.structure(&(&1))
+      ET.Logic.wrap(&(&1))
       |> ET.Logic.group_by(ET.Transducers.take(1)
-                           |> ET.Logic.destructure
+                           |> ET.Logic.unwrap
                            |> ET.Reducers.list)
       |> ET.Transducers.take(1)
-      |> ET.Logic.destructure
+      |> ET.Logic.unwrap
       |> ET.Reducers.list
 
     assert ET.reduce(1..6, r_fun) == [1]
@@ -390,38 +390,38 @@ defmodule ETLogicTest do
            [{{1,true},false}, {{2,2},false}, {{3,false},true}, {{4,nil},true}]
   end
 
-  test "ET.Logic.reverse_destructure()" do
-    ET.Logic.reverse_destructure
+  test "ET.Logic.reverse_unwrap()" do
+    ET.Logic.reverse_unwrap
     |> ET.Reducers.list
-    |> reverse_destructure_test
+    |> reverse_unwrap_test
   end
 
-  test "ET.Logic.reverse_destructure(transducer)" do
+  test "ET.Logic.reverse_unwrap(transducer)" do
     identity_trans
-    |> ET.Logic.reverse_destructure
+    |> ET.Logic.reverse_unwrap
     |> ET.Reducers.list
-    |> reverse_destructure_test
+    |> reverse_unwrap_test
   end
 
-  defp reverse_destructure_test(r_fun) do
+  defp reverse_unwrap_test(r_fun) do
     assert ET.reduce([{1, true}, {2, 2}, {3, false}, {4, nil}], r_fun) ==
            [true, 2, false, nil]
   end
 
-  test "ET.Logic.structure(fun)" do
-    ET.Logic.structure(&(rem(&1,3)))
+  test "ET.Logic.wrap(fun)" do
+    ET.Logic.wrap(&(rem(&1,3)))
     |> ET.Reducers.list
-    |> structure_test
+    |> wrap_test
   end
 
-  test "ET.Logic.structure(transducer, fun)" do
+  test "ET.Logic.wrap(transducer, fun)" do
     identity_trans
-    |> ET.Logic.structure(&(rem(&1,3)))
+    |> ET.Logic.wrap(&(rem(&1,3)))
     |> ET.Reducers.list
-    |> structure_test
+    |> wrap_test
   end
 
-  defp structure_test(r_fun) do
+  defp wrap_test(r_fun) do
     assert ET.reduce(1..4, r_fun) ==
            [{1,1},{2,2},{3,0},{4,1}]
   end

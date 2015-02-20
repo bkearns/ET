@@ -172,23 +172,23 @@ defmodule ET.Logic do
   @doc """
   A transducer which transforms {elem, _} into elem. Used with various
   generic transducers which take elements in this form. If an integer is
-  provided, it destructures that many times
+  provided, it unwraps that many times
 
-    iex> reducer = ET.Transducers.destructure |> ET.Reducers.list
+    iex> reducer = ET.Transducers.unwrap |> ET.Reducers.list
     iex> ET.reduce([{1, false}, {2, true}], reducer)
     [1, 2]
 
   """
 
-  def destructure(), do: destructure(1)
-  def destructure(%ET.Transducer{} = trans), do: compose(trans, destructure)
-  def destructure(1) do
+  def unwrap(), do: unwrap(1)
+  def unwrap(%ET.Transducer{} = trans), do: compose(trans, unwrap)
+  def unwrap(1) do
     ET.Transducers.map(fn {elem, _} -> elem end)
   end
-  def destructure(n) do
-    compose(destructure(n-1), destructure(1))
+  def unwrap(n) do
+    compose(unwrap(n-1), unwrap(1))
   end
-  def destructure(%ET.Transducer{} = trans, n), do: compose(trans, destructure(n))
+  def unwrap(%ET.Transducer{} = trans, n), do: compose(trans, unwrap(n))
 
   @doc """
   A transducer which reduces elements of form {_, false} and does not reduce
@@ -483,15 +483,15 @@ defmodule ET.Logic do
 
   """
 
-  def reverse_destructure() do
+  def reverse_unwrap() do
     new(
       fn {_, v}, reducer ->
         v |> reduce(reducer) |> cont
       end
     )
   end
-  def reverse_destructure(%ET.Transducer{} = trans) do
-    compose(trans, reverse_destructure)
+  def reverse_unwrap(%ET.Transducer{} = trans) do
+    compose(trans, reverse_unwrap)
   end
 
 
@@ -500,8 +500,8 @@ defmodule ET.Logic do
 
   """
 
-  def structure(%ET.Transducer{} = trans, fun), do: compose(trans, structure(fun))
-  def structure(fun) do
+  def wrap(%ET.Transducer{} = trans, fun), do: compose(trans, wrap(fun))
+  def wrap(fun) do
     new(
       fn elem, reducer ->
         {elem, fun.(elem)}
