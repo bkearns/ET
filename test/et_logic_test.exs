@@ -390,6 +390,24 @@ defmodule ETLogicTest do
            [one: 1, two: 2, three: 3, four: 4]
   end
 
+  test "ET.Logic.sort_by(fun)" do
+    ET.Logic.sort_by(&>=/2)
+    |> ET.Reducers.list
+    |> sort_by_fun_test
+  end
+
+  test "ET.Logic.sort_by(transducer, fun)" do
+    identity_trans
+    |> ET.Logic.sort_by(&>=/2)
+    |> ET.Reducers.list
+    |> sort_by_fun_test
+  end
+
+  defp sort_by_fun_test(rev_sort_r_fun) do
+    assert ET.reduce([three: 3, one: 1, four: 4, two: 2], rev_sort_r_fun) ==
+           [four: 4, three: 3, two: 2, one: 1]
+  end
+
   test "ET.Logic.true_every(n)" do
     ET.Logic.true_every(2)
     |> ET.Reducers.list

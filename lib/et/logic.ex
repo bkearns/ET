@@ -497,19 +497,21 @@ defmodule ET.Logic do
   until :fin.
 
   """
-
-  def sort_by() do
+  def sort_by(), do: sort_by(&<=/2)
+  def sort_by(%ET.Transducer{} = trans), do: compose(trans, sort_by)
+  def sort_by(sort_fun) do
     new(
       fn r_fun -> r_fun |> init |> cont([]) end,
       fn elem, reducer, acc -> reducer |> cont([elem | acc]) end,
-      fn reducer, acc -> :lists.keysort(2, acc)
+      fn reducer, acc -> :lists.sort(&(sort_fun.(elem(&1,1),elem(&2,1))), acc)
                          |> reduce_many(reducer)
                          |> finish
       end
     )
   end
-  def sort_by(%ET.Transducer{} = trans), do: compose(trans, sort_by)
-
+  def sort_by(%ET.Transducer{} = trans, fun) do
+    compose(trans, sort_by(fun))
+  end
 
   @doc """
   A transducer which sends {true, element} every n elements received.
