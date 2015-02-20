@@ -120,42 +120,6 @@ defmodule ETLogicTest do
     [[{2, true}, {3, false}], [{4, true}, {5, nil}]]
   end
 
-  test "ET.Logic.unwrap()" do
-    ET.Logic.unwrap
-    |> ET.Reducers.list
-    |> unwrap_test
-  end
-
-  test "ET.Logic.unwrap(transducer)" do
-    identity_trans
-    |> ET.Logic.unwrap
-    |> ET.Reducers.list
-    |> unwrap_test
-  end
-
-  defp unwrap_test(r_fun) do
-    assert ET.reduce([{1, true}, {2, false}, {3, true}], r_fun) ==
-           [1,2,3]
-  end
-
-  test "ET.Logic.unwrap(n)" do
-    ET.Logic.unwrap(2)
-    |> ET.Reducers.list
-    |> unwrap_n_test
-  end
-
-  test "ET.Logic.unwrap(transducer, n)" do
-    identity_trans
-    |> ET.Logic.unwrap(2)
-    |> ET.Reducers.list
-    |> unwrap_n_test
-  end
-
-  defp unwrap_n_test(r_fun) do
-    assert ET.reduce([{{1, true}, false}, {{2, false}, false}, {{3, true}, true}], r_fun) ==
-           [1,2,3]
-  end
-
   test "ET.Logic.filter()" do
     ET.Logic.filter
     |> ET.Reducers.list
@@ -408,25 +372,6 @@ defmodule ETLogicTest do
            [true, 2, false, nil]
   end
 
-  test "ET.Logic.wrap(fun)" do
-    ET.Logic.wrap(&(rem(&1,3)))
-    |> ET.Reducers.list
-    |> wrap_test
-  end
-
-  test "ET.Logic.wrap(transducer, fun)" do
-    identity_trans
-    |> ET.Logic.wrap(&(rem(&1,3)))
-    |> ET.Reducers.list
-    |> wrap_test
-  end
-
-  defp wrap_test(r_fun) do
-    assert ET.reduce(1..4, r_fun) ==
-           [{1,1},{2,2},{3,0},{4,1}]
-  end
-
-
   test "ET.Logic.true_every(n)" do
     ET.Logic.true_every(2)
     |> ET.Reducers.list
@@ -481,6 +426,42 @@ defmodule ETLogicTest do
            [{1,1},{2,0},{3,0},{4,1},{5,0}]
   end
 
+  test "ET.Logic.unwrap()" do
+    ET.Logic.unwrap
+    |> ET.Reducers.list
+    |> unwrap_test
+  end
+
+  test "ET.Logic.unwrap(transducer)" do
+    identity_trans
+    |> ET.Logic.unwrap
+    |> ET.Reducers.list
+    |> unwrap_test
+  end
+
+  defp unwrap_test(r_fun) do
+    assert ET.reduce([{1, true}, {2, false}, {3, true}], r_fun) ==
+           [1,2,3]
+  end
+
+  test "ET.Logic.unwrap(n)" do
+    ET.Logic.unwrap(2)
+    |> ET.Reducers.list
+    |> unwrap_n_test
+  end
+
+  test "ET.Logic.unwrap(transducer, n)" do
+    identity_trans
+    |> ET.Logic.unwrap(2)
+    |> ET.Reducers.list
+    |> unwrap_n_test
+  end
+
+  defp unwrap_n_test(r_fun) do
+    assert ET.reduce([{{1, true}, false}, {{2, false}, false}, {{3, true}, true}], r_fun) ==
+           [1,2,3]
+  end
+
   test "ET.Logic.with_index()" do
     ET.Logic.with_index
     |> ET.Reducers.list
@@ -496,6 +477,24 @@ defmodule ETLogicTest do
 
   defp with_index_test(r_fun) do
     assert ET.reduce(1..3, r_fun) == [{1,0},{2,1},{3,2}]
+  end
+
+  test "ET.Logic.wrap(fun)" do
+    ET.Logic.wrap(&(rem(&1,3)))
+    |> ET.Reducers.list
+    |> wrap_test
+  end
+
+  test "ET.Logic.wrap(transducer, fun)" do
+    identity_trans
+    |> ET.Logic.wrap(&(rem(&1,3)))
+    |> ET.Reducers.list
+    |> wrap_test
+  end
+
+  defp wrap_test(r_fun) do
+    assert ET.reduce(1..4, r_fun) ==
+           [{1,1},{2,2},{3,0},{4,1}]
   end
 
   test "ET.Logic.zip()" do

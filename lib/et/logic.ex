@@ -170,27 +170,6 @@ defmodule ET.Logic do
 
 
   @doc """
-  A transducer which transforms {elem, _} into elem. Used with various
-  generic transducers which take elements in this form. If an integer is
-  provided, it unwraps that many times
-
-    iex> reducer = ET.Transducers.unwrap |> ET.Reducers.list
-    iex> ET.reduce([{1, false}, {2, true}], reducer)
-    [1, 2]
-
-  """
-
-  def unwrap(), do: unwrap(1)
-  def unwrap(%ET.Transducer{} = trans), do: compose(trans, unwrap)
-  def unwrap(1) do
-    ET.Transducers.map(fn {elem, _} -> elem end)
-  end
-  def unwrap(n) do
-    compose(unwrap(n-1), unwrap(1))
-  end
-  def unwrap(%ET.Transducer{} = trans, n), do: compose(trans, unwrap(n))
-
-  @doc """
   A transducer which reduces elements of form {_, false} and does not reduce
   elements of form {_, true}.
 
@@ -479,40 +458,6 @@ defmodule ET.Logic do
 
 
   @doc """
-  A transducer which takes {elem, value} and outputs value.
-
-  """
-
-  def reverse_unwrap() do
-    new(
-      fn {_, v}, reducer ->
-        v |> reduce(reducer) |> cont
-      end
-    )
-  end
-  def reverse_unwrap(%ET.Transducer{} = trans) do
-    compose(trans, reverse_unwrap)
-  end
-
-
-  @doc """
-  A transducer which takes element and outputs {element, fun.(element)}.
-
-  """
-
-  def wrap(%ET.Transducer{} = trans, fun), do: compose(trans, wrap(fun))
-  def wrap(fun) do
-    new(
-      fn elem, reducer ->
-        {elem, fun.(elem)}
-        |> reduce(reducer)
-        |> cont
-      end
-    )
-  end
-
-
-  @doc """
   A transducer which takes elements in the form {_, t} and outputs in the form
   {{_, t}, !t}.
 
@@ -527,6 +472,23 @@ defmodule ET.Logic do
         |> cont
       end
     )
+  end
+
+
+  @doc """
+  A transducer which takes {elem, value} and outputs value.
+
+  """
+
+  def reverse_unwrap() do
+    new(
+      fn {_, v}, reducer ->
+        v |> reduce(reducer) |> cont
+      end
+    )
+  end
+  def reverse_unwrap(%ET.Transducer{} = trans) do
+    compose(trans, reverse_unwrap)
   end
 
 
@@ -585,6 +547,28 @@ defmodule ET.Logic do
 
 
   @doc """
+  A transducer which transforms {elem, _} into elem. Used with various
+  generic transducers which take elements in this form. If an integer is
+  provided, it unwraps that many times
+
+    iex> reducer = ET.Transducers.unwrap |> ET.Reducers.list
+    iex> ET.reduce([{1, false}, {2, true}], reducer)
+    [1, 2]
+
+  """
+
+  def unwrap(), do: unwrap(1)
+  def unwrap(%ET.Transducer{} = trans), do: compose(trans, unwrap)
+  def unwrap(1) do
+    ET.Transducers.map(fn {elem, _} -> elem end)
+  end
+  def unwrap(n) do
+    compose(unwrap(n-1), unwrap(1))
+  end
+  def unwrap(%ET.Transducer{} = trans, n), do: compose(trans, unwrap(n))
+
+
+  @doc """
   A transducer which takes elements and wraps them in their 0-based index.
 
   """
@@ -599,6 +583,23 @@ defmodule ET.Logic do
         |> cont(index+1)
       end,
       fn reducer, _ -> finish(reducer) end
+    )
+  end
+
+
+  @doc """
+  A transducer which takes element and outputs {element, fun.(element)}.
+
+  """
+
+  def wrap(%ET.Transducer{} = trans, fun), do: compose(trans, wrap(fun))
+  def wrap(fun) do
+    new(
+      fn elem, reducer ->
+        {elem, fun.(elem)}
+        |> reduce(reducer)
+        |> cont
+      end
     )
   end
 
