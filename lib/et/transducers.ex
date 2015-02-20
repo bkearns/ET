@@ -301,7 +301,7 @@ defmodule ET.Transducers do
 
         elem, reducer, {:cont, n} ->
           reducer = reduce(elem, reducer)
-          if halt?(reducer) do
+          if halted?(reducer) do
             reducer |> cont_no_halt({:halt, n-1})
           else
             reducer |> cont({:cont, n-1})

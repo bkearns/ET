@@ -59,9 +59,9 @@ defmodule ETTransducerTest do
            {:halt, [:foo, []]}
   end
 
-  test "ET.Transducer.halt?(reducer)" do
-    assert ET.Transducer.halt?({ET.Reducers.list, {:cont, [[]]}}) == false
-    assert ET.Transducer.halt?({ET.Reducers.list, {:halt, [[]]}}) == true
+  test "ET.Transducer.halted?(reducer)" do
+    assert ET.Transducer.halted?({ET.Reducers.list, {:cont, [[]]}}) == false
+    assert ET.Transducer.halted?({ET.Reducers.list, {:halt, [[]]}}) == true
   end
 
   test "ET.Transducer.init(reducer)" do

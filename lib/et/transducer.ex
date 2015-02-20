@@ -124,9 +124,9 @@ defmodule ET.Transducer do
 
   """
 
-  def halt?(reducer)
-  def halt?({_, {:halt, _}}), do: true
-  def halt?({_, {:cont, _}}), do: false
+  def halted?(reducer)
+  def halted?({_, {:halt, _}}), do: true
+  def halted?({_, {:cont, _}}), do: false
 
 
   @doc """

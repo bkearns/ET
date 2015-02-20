@@ -113,7 +113,7 @@ defmodule ET.Logic do
   end
   defp do_chunk(elem, {_,{:cont,_}} = curr_chunk, chunks, inner_r_fun, reducer) do
     curr_chunk = elem |> reduce(curr_chunk)
-    if halt?(curr_chunk) do
+    if halted?(curr_chunk) do
       do_chunk(elem, curr_chunk, chunks, inner_r_fun, reducer)
     else
       {{curr_chunk, add_elem_to_chunks(elem, chunks)}, reducer}
@@ -264,10 +264,10 @@ defmodule ET.Logic do
   defp do_group_by(:done, _, reducer, groups), do: cont(reducer, groups)
   defp do_group_by(v_reducer, {_,value} = elem, reducer, groups) do
     v_reducer = elem |> reduce(v_reducer)
-    if halt?(v_reducer) do
+    if halted?(v_reducer) do
       result = finish(v_reducer)
       reducer = {value, result} |> reduce(reducer)
-      if halt?(reducer) do
+      if halted?(reducer) do
         ET.reduce(groups, finish_group_reducer)
         halt(reducer, %{})
       else
