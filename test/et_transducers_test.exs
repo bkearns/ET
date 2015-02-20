@@ -476,6 +476,25 @@ defmodule ETTransducersTest do
            [1,2,6,24]
   end
 
+  test "ET.Transducers.shuffle()" do
+    ET.Transducers.shuffle
+    |> ET.Reducers.list
+    |> shuffle_test
+  end
+
+  test "ET.Transducers.shuffle(transducer)" do
+    identity_trans
+    |> ET.Transducers.shuffle
+    |> ET.Reducers.list
+    |> shuffle_test
+  end
+
+  defp shuffle_test(shuffle_r_fun) do
+    :random.seed({5220, 72574, 520325})
+    assert ET.reduce(1..4, shuffle_r_fun) ==
+           [3,1,4,2]
+  end
+
   test "ET.Transducers.take(n)" do
     ET.Transducers.take(3)
     |> ET.Reducers.list

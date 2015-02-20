@@ -472,6 +472,20 @@ defmodule ET.Transducers do
 
 
   @doc """
+  A transducer which caches elements and then emits them in a random order on
+  :fin.
+
+  """
+
+  def shuffle() do
+    ET.Logic.wrap(fn _ -> :random.uniform end)
+    |> ET.Logic.sort_by
+    |> ET.Logic.unwrap
+  end
+  def shuffle(%ET.Transducer{} = trans), do: compose(trans, shuffle)
+
+
+  @doc """
   A transducer which limits the number of elements processed.
 
     iex> take_two = ET.Transducers.take(2) |> ET.Reducers.list
