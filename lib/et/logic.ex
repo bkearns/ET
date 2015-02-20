@@ -493,6 +493,25 @@ defmodule ET.Logic do
 
 
   @doc """
+  A transducer which sorts {_, value} by value. By necessity it caches elements
+  until :fin.
+
+  """
+
+  def sort_by() do
+    new(
+      fn r_fun -> r_fun |> init |> cont([]) end,
+      fn elem, reducer, acc -> reducer |> cont([elem | acc]) end,
+      fn reducer, acc -> :lists.keysort(2, acc)
+                         |> reduce_many(reducer)
+                         |> finish
+      end
+    )
+  end
+  def sort_by(%ET.Transducer{} = trans), do: compose(trans, sort_by)
+
+
+  @doc """
   A transducer which sends {true, element} every n elements received.
   If first: true is also sent, the transducer will start with a true.
 
