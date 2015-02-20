@@ -548,22 +548,40 @@ defmodule ETTransducersTest do
     assert ET.reduce([3,1,4,2], rev_sort_r_fun) ==
            [4,3,2,1]
   end
-  test "ET.Transducers.take(n)" do
+  test "ET.Transducers.take(positive_n)" do
     ET.Transducers.take(3)
     |> ET.Reducers.list
-    |> take_n_test
+    |> take_positive_n_test
   end
 
-  test "ET.Transducers.take(transducer, n)" do
+  test "ET.Transducers.take(transducer, positive_n)" do
     identity_trans
     |> ET.Transducers.take(3)
     |> ET.Reducers.list
-    |> take_n_test
+    |> take_positive_n_test
   end
 
-  defp take_n_test(reducer) do
+  defp take_positive_n_test(reducer) do
     assert ET.reduce([1], reducer) == [1]
     assert ET.reduce(1..4, reducer) == [1,2,3]
+  end
+
+  test "ET.Transducers.take(negative_n)" do
+    ET.Transducers.take(-3)
+    |> ET.Reducers.list
+    |> take_negative_n_test
+  end
+
+  test "ET.Transducers.take(transducer, negative_n)" do
+    identity_trans
+    |> ET.Transducers.take(-3)
+    |> ET.Reducers.list
+    |> take_negative_n_test
+  end
+
+  defp take_negative_n_test(last_three_r_fun) do
+    assert ET.reduce(1..5, last_three_r_fun) == [3,4,5]
+    assert ET.reduce(1..2, last_three_r_fun) == [1,2]
   end
 
   test "ET.Transducers.zip()" do

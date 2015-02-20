@@ -527,10 +527,25 @@ defmodule ET.Transducers do
   """
 
   def take(%ET.Transducer{} = trans, num), do: compose(trans, take(num))
-  def take(num) do
-    ET.Logic.true_every(num)
+  def take(n) when n >= 0 do
+    ET.Logic.true_every(n)
     |> ET.Logic.done_after
     |> ET.Logic.unwrap
+  end
+  def take(n) do
+    new(
+      fn r_fun -> r_fun |> init |> cont({:queue.new, -n}) end,
+      fn
+        elem, reducer, {queue, 0} ->
+          {_, queue} = :queue.out(queue)
+          reducer |> cont({:queue.in(elem, queue), 0})
+        elem, reducer, {queue, n} ->
+          reducer |> cont({:queue.in(elem, queue), n-1})
+      end,
+      fn reducer, {queue, _} ->
+        queue |> :queue.to_list |> reduce_many(reducer) |> finish
+      end
+    )
   end
 
 
