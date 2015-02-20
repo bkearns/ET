@@ -495,6 +495,42 @@ defmodule ETTransducersTest do
            [3,1,4,2]
   end
 
+  test "ET.Transducers.sort()" do
+    ET.Transducers.sort
+    |> ET.Reducers.list
+    |> sort_test
+  end
+
+  test "ET.Transducers.sort(transducer)" do
+    identity_trans
+    |> ET.Transducers.sort
+    |> ET.Reducers.list
+    |> sort_test
+  end
+
+  defp sort_test(sort_r_fun) do
+    assert ET.reduce([3,1,4,2], sort_r_fun) ==
+           [1,2,3,4]
+  end
+
+  test "ET.Transducers.sort_by()" do
+    ET.Transducers.sort_by(&(-&1))
+    |> ET.Reducers.list
+    |> sort_by_test
+  end
+
+  test "ET.Transducers.sort_by(transducer)" do
+    identity_trans
+    |> ET.Transducers.sort_by(&(-&1))
+    |> ET.Reducers.list
+    |> sort_by_test
+  end
+
+  defp sort_by_test(neg_sort_r_fun) do
+    assert ET.reduce([3,1,4,2], neg_sort_r_fun) ==
+           [4,3,2,1]
+  end
+
   test "ET.Transducers.take(n)" do
     ET.Transducers.take(3)
     |> ET.Reducers.list

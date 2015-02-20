@@ -486,6 +486,34 @@ defmodule ET.Transducers do
 
 
   @doc """
+  A transducer which sorts elements.
+  Requires cacheing all elements until :fin is received.
+
+  """
+
+  def sort() do
+    sort_by(&(&1))
+  end
+  def sort(%ET.Transducer{} = trans), do: compose(trans, sort)
+
+
+  @doc """
+  A transducer which sorts elements on the result of fun.(elem).
+  Requires cacheing all elements until :fin is received.
+
+  """
+
+  def sort_by(fun) do
+    ET.Logic.wrap(fun)
+    |> ET.Logic.sort_by
+    |> ET.Logic.unwrap
+  end
+  def sort_by(%ET.Transducer{} = trans, fun) do
+    compose(trans, sort_by(fun))
+  end
+
+
+  @doc """
   A transducer which limits the number of elements processed.
 
     iex> take_two = ET.Transducers.take(2) |> ET.Reducers.list
