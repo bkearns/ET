@@ -80,8 +80,10 @@ defmodule ET.Logic do
     new(
       fn r_fun -> r_fun |> init |> cont({nil, []}) end,
       fn {_, bool} = elem, reducer, {curr_chunk, chunks} ->
-        chunks = if bool, do: chunks ++ [[]], else: chunks
-        do_chunk(elem, curr_chunk, chunks, inner_r_fun, reducer)
+        if bool, do: chunks = chunks ++ [[]]
+          {state, reducer} =
+            do_chunk(elem, curr_chunk, chunks, inner_r_fun, reducer)
+          reducer |> cont(state)
       end,
       fn reducer, {curr_chunk, chunks} ->
         finish_chunk(curr_chunk, chunks, inner_r_fun, reducer, padding)
@@ -95,11 +97,11 @@ defmodule ET.Logic do
 
 
   defp do_chunk(_, nil, [], _, reducer) do
-    cont(reducer, {nil, []})
+    {{nil, []}, reducer}
   end
   defp do_chunk(_, curr_chunk, _, _, {_,{:halt,_}} = reducer) do
     finish(curr_chunk)
-    halt(reducer, {nil, []})
+    {{nil, []}, reducer}
   end
   defp do_chunk(elem, nil, [elems | chunks], inner_r_fun, reducer) do
     curr_chunk = elems |> :lists.reverse |> reduce_many((inner_r_fun |> init))
@@ -114,7 +116,7 @@ defmodule ET.Logic do
     if halt?(curr_chunk) do
       do_chunk(elem, curr_chunk, chunks, inner_r_fun, reducer)
     else
-      cont(reducer, {curr_chunk, add_elem_to_chunks(elem, chunks)})
+      {{curr_chunk, add_elem_to_chunks(elem, chunks)}, reducer}
     end
   end
 
@@ -126,31 +128,44 @@ defmodule ET.Logic do
     if curr_chunk, do: finish(curr_chunk)
     finish(reducer)
   end
-  defp finish_chunk(curr_chunk, chunks, inner_r_fun, {_,{signal,_}}=reducer, _) when
-  signal == :halt or (curr_chunk == nil and chunks == []) do
-    finish_chunk(curr_chunk, chunks, inner_r_fun, reducer, nil)
-  end
-  defp finish_chunk(curr_chunk, chunks, inner_r_fun, {r_fun,_}=reducer, padding) do
-    case ET.next(padding) do
-      {:suspended, elem, padding} ->
-        {signal, [{curr_chunk, chunks} | r_state]} =
-          do_chunk({elem, nil}, curr_chunk, chunks, inner_r_fun, reducer)
-        finish_chunk(curr_chunk, chunks, inner_r_fun, {r_fun,{signal,r_state}}, padding)
-      {:done, nil} ->
-        reducer = curr_chunk |> finish |> reduce(reducer)
-        finish_chunks(chunks, inner_r_fun, reducer)
-    end
+  defp finish_chunk(curr_chunk, chunks, inner_r_fun, reducer, padding) do
+    padding |> ET.reduce(apply_padding(inner_r_fun, curr_chunk, chunks, reducer))
   end
 
-  defp finish_chunks(chunks, inner_r_fun, {_,{signal,_}} = reducer) when
-  chunks == [] or signal == :halt do
-    finish_chunk(nil, [], inner_r_fun, reducer, nil)
+  defp apply_padding(inner_r_fun, curr_chunk, chunks, {r_fun, _} = reducer) do
+    new(
+      fn _r_fun -> reducer |> cont({curr_chunk, chunks}) end,
+
+      fn elem, reducer, {curr_chunk, chunks} ->
+        case do_chunk({elem, nil}, curr_chunk, chunks, inner_r_fun, reducer) do
+          {{nil, []}, reducer} -> reducer |> halt({nil, []})
+          {state, reducer}     -> reducer |> cont(state)
+        end
+      end,
+
+      fn
+        reducer, {curr_chunk, chunks} ->
+          if curr_chunk do
+            reducer = curr_chunk |> finish |> reduce(reducer)
+          end
+          chunks |> ET.reduce(finish_chunks(inner_r_fun, reducer))
+      end
+    )
+    |> compose(r_fun)
   end
-  defp finish_chunks([elems | chunks], inner_r_fun, reducer) do
-    reducer =
-      elems |> :lists.reverse |> reduce_many(inner_r_fun |> init)
-      |> finish |> elem(1) |> reduce(reducer)
-    finish_chunks(chunks, inner_r_fun, reducer)
+
+  defp finish_chunks(inner_r_fun, {r_fun, _} = reducer) do
+    new(
+      fn _r_fun -> reducer |> cont(nil) end,
+
+      fn chunk, reducer, _ ->
+        chunk |> :lists.reverse |> reduce_many(inner_r_fun |> init)
+        |> finish |> elem(1) |> reduce(reducer) |> cont(nil)
+      end,
+
+      fn reducer, _ -> finish(reducer) end
+    )
+    |> compose(r_fun)
   end
 
 
