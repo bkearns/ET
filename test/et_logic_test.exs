@@ -190,38 +190,38 @@ defmodule ETLogicTest do
     assert ET.reduce(1..6, r_fun) == [1]
   end
 
-  test "ET.Logic.done_after()" do
-    ET.Logic.done_after
+  test "ET.Logic.halt_after()" do
+    ET.Logic.halt_after
     |> ET.Reducers.list
-    |> done_after_test
+    |> halt_after_test
   end
 
-  test "ET.Logic.done_after(transducer)" do
+  test "ET.Logic.halt_after(transducer)" do
     identity_trans
-    |> ET.Logic.done_after
+    |> ET.Logic.halt_after
     |> ET.Reducers.list
-    |> done_after_test
+    |> halt_after_test
   end
 
-  defp done_after_test(r_fun) do
+  defp halt_after_test(r_fun) do
     assert ET.reduce([{1, false}, {2, false}, {3, true}, {4, false}], r_fun) ==
     [{1, false}, {2, false}, {3, true}]
   end
 
-  test "ET.Logic.done_on()" do
-    ET.Logic.done_on
+  test "ET.Logic.halt_on()" do
+    ET.Logic.halt_on
     |> ET.Reducers.list
-    |> done_on_test
+    |> halt_on_test
   end
 
-  test "ET.Logic.done_on(transducer)" do
+  test "ET.Logic.halt_on(transducer)" do
     identity_trans
-    |> ET.Logic.done_on
+    |> ET.Logic.halt_on
     |> ET.Reducers.list
-    |> done_on_test
+    |> halt_on_test
   end
 
-  defp done_on_test(r_fun) do
+  defp halt_on_test(r_fun) do
     assert ET.reduce([{1, false}, {2, false}, {3, true}, {4, false}], r_fun) ==
     [{1, false}, {2, false}]
   end

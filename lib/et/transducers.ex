@@ -53,7 +53,7 @@ defmodule ET.Transducers do
     )
     |> ET.Logic.filter
     |> ET.Logic.unwrap
-    |> ET.Logic.done_after
+    |> ET.Logic.halt_after
     |> ET.Logic.unwrap
   end
 
@@ -174,7 +174,7 @@ defmodule ET.Transducers do
   def chunk_by(change_fun, inner_reducer) do
     inner_reducer =
       ET.Logic.ignore(1)
-      |> ET.Logic.done_on
+      |> ET.Logic.halt_on
       |> ET.Logic.unwrap(2)
       |> compose(inner_reducer)
 
@@ -490,6 +490,14 @@ defmodule ET.Transducers do
 
   """
 
+
+  def slice(%Range{first: first, last: last}) do
+    first_slice(first)
+    |> last_slice(last)
+  end
+  def slice(%ET.Transducer{} = trans, range) do
+    compose(trans, slice(range))
+  end
   def slice(start, count) when start >= 0 do
     drop(start)
     |> take(count)
@@ -502,6 +510,16 @@ defmodule ET.Transducers do
     compose(trans, slice(start, count))
   end
 
+  defp first_slice(n) when n >= 0, do: drop(n)
+  defp first_slice(n), do: take(n)
+
+  defp last_slice(first, n) when n >= 0 do
+    ET.Logic.with_index
+    |> compose(first)
+    |> take_while(&(elem(&1,1) <= n))
+    |> ET.Logic.unwrap
+  end
+  defp last_slice(first, n), do: compose(first, drop(n+1))
 
   @doc """
   A transducer which sorts elements.
@@ -547,7 +565,7 @@ defmodule ET.Transducers do
   def take(%ET.Transducer{} = trans, num), do: compose(trans, take(num))
   def take(n) when n >= 0 do
     ET.Logic.true_every(n)
-    |> ET.Logic.done_after
+    |> ET.Logic.halt_after
     |> ET.Logic.unwrap
   end
   def take(n) do
@@ -568,7 +586,23 @@ defmodule ET.Transducers do
 
 
   @doc """
-  A transducers which takes several transducers and interleaves their
+  A transducer which halts immediately if fun.(elem) returns falsey.
+
+  """
+
+  def take_while(fun) do
+    ET.Logic.wrap(fun)
+    |> ET.Logic.negate
+    |> ET.Logic.halt_on
+    |> ET.Logic.unwrap(2)
+  end
+  def take_while(%ET.Transducer{} = trans, fun) do
+    compose(trans, take_while(fun))
+  end
+
+
+  @doc """
+  A transducer which takes several transducers and interleaves their
   contents.
 
   Zip sends the first element of each transducible as soon as it receives it,

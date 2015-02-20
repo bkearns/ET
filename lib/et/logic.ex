@@ -194,8 +194,8 @@ defmodule ET.Logic do
 
   """
 
-  def done_after(%ET.Transducer{} = trans), do: compose(trans, done_after)
-  def done_after() do
+  def halt_after(%ET.Transducer{} = trans), do: compose(trans, halt_after)
+  def halt_after() do
     new(
       fn
         {_, bool} = elem, reducer when bool in [false, nil] ->
@@ -212,8 +212,8 @@ defmodule ET.Logic do
 
   """
 
-  def done_on(%ET.Transducer{} = trans), do: compose(trans, done_on)
-  def done_on() do
+  def halt_on(%ET.Transducer{} = trans), do: compose(trans, halt_on)
+  def halt_on() do
     new(
       fn
         {_, bool} = elem, reducer when bool in [false, nil] ->

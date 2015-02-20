@@ -522,6 +522,86 @@ defmodule ETTransducersTest do
            [3,4,5]
   end
 
+  test "ET.Transducers.slice(positive..positive)" do
+    ET.Transducers.slice(2..4)
+    |> ET.Reducers.list
+    |> slice_positive_positive_test
+  end
+
+  test "ET.Transducers.slice(transducer, positive..positive)" do
+    identity_trans
+    |> ET.Transducers.slice(2..4)
+    |> ET.Reducers.list
+    |> slice_positive_positive_test
+  end
+
+  defp slice_positive_positive_test(two_to_four_r_fun) do
+    assert ET.reduce(1..6, two_to_four_r_fun) ==
+           [3,4,5]
+  end
+
+  test "ET.Transducers.slice(positive..positive) inverted" do
+    r_fun =
+      ET.Transducers.slice(4..2)
+      |> ET.Reducers.list
+
+    assert ET.reduce(1..6, r_fun) == []
+  end
+
+  test "ET.Transducers.slice(negative..negative)" do
+    r_fun =
+      ET.Transducers.slice(-4..-2)
+      |> ET.Reducers.list
+
+    assert ET.reduce(1..6, r_fun) ==
+           [3,4,5]
+  end
+
+  test "ET.Transducers.slice(negative..negative) inverted" do
+    r_fun =
+      ET.Transducers.slice(-2..-4)
+      |> ET.Reducers.list
+
+    assert ET.reduce(1..6, r_fun) ==
+           []
+  end
+
+  test "ET.Transducers.slice(positive..negative)" do
+    r_fun =
+      ET.Transducers.slice(2..-2)
+      |> ET.Reducers.list
+
+    assert ET.reduce(1..6, r_fun) ==
+           [3,4,5]
+  end
+
+  test "ET.Transducers.slice(positive..negative) inverted" do
+    r_fun =
+      ET.Transducers.slice(4..-4)
+      |> ET.Reducers.list
+
+    assert ET.reduce(1..6, r_fun) ==
+           []
+  end
+
+  test "ET.Transducers.slice(negative..positive)" do
+    r_fun =
+      ET.Transducers.slice(-4..4)
+      |> ET.Reducers.list
+
+    assert ET.reduce(1..6, r_fun) ==
+           [3,4,5]
+  end
+
+  test "ET.Transducers.slice(negative..positive) inverted" do
+    r_fun =
+      ET.Transducers.slice(-2..2)
+      |> ET.Reducers.list
+
+    assert ET.reduce(1..6, r_fun) ==
+           []
+  end
+
   test "ET.Transducers.sort()" do
     ET.Transducers.sort
     |> ET.Reducers.list
@@ -601,6 +681,24 @@ defmodule ETTransducersTest do
 
     assert ET.reduce(1..5, last_three_r_fun) == [3,4,5]
     assert ET.reduce(1..2, last_three_r_fun) == [1,2]
+  end
+
+  test "ET.Transducers.take_while(fun)" do
+    ET.Transducers.take_while(&(&1<2))
+    |> ET.Reducers.list
+    |> take_while_fun_test
+  end
+
+  test "ET.Transducers.take_while(transducer, fun)" do
+    identity_trans
+    |> ET.Transducers.take_while(&(&1<2))
+    |> ET.Reducers.list
+    |> take_while_fun_test
+  end
+
+  defp take_while_fun_test(take_lt_two_r_fun) do
+    assert ET.reduce([0,1,0,2,0,1], take_lt_two_r_fun) ==
+           [0,1,0]
   end
 
   test "ET.Transducers.zip()" do
