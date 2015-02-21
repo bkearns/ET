@@ -314,4 +314,15 @@ defmodule ET.Reducers do
     end
   end
   def static(%ET.Transducer{} = trans, t), do: compose(trans, static(t))
+
+
+  @doc """
+  A reducer which returns the sum of all elements.
+
+  """
+
+  def sum() do
+    reduce(0, &+/2)
+  end
+  def sum(%ET.Transducer{} = trans), do: compose(trans, sum)
 end

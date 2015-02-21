@@ -284,4 +284,19 @@ defmodule ETReducersTest do
   defp static_t_test(r_fun) do
     assert ET.reduce(1..5, r_fun) == :error
   end
+
+  test "ET.Reducers.sum()" do
+    ET.Reducers.sum
+    |> sum_test
+  end
+
+  test "ET.Reducers.sum(transducer)" do
+    identity_trans
+    |> ET.Reducers.sum
+    |> sum_test
+  end
+
+  defp sum_test(sum_r_fun) do
+    assert ET.reduce(2..6, sum_r_fun) == 20
+  end
 end
