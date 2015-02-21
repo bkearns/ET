@@ -586,6 +586,22 @@ defmodule ET.Transducers do
 
 
   @doc """
+  A transducer which emits the first element and every nth element after.
+
+  """
+
+  def take_every(n) do
+    ET.Logic.true_every(n, first: true)
+    |> ET.Logic.negate
+    |> ET.Logic.filter
+    |> ET.Logic.unwrap(2)
+  end
+  def take_every(%ET.Transducer{} = trans, n) do
+    compose(trans, take_every(n))
+  end
+
+
+  @doc """
   A transducer which halts immediately if fun.(elem) returns falsey.
 
   """

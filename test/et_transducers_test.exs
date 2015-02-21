@@ -683,6 +683,25 @@ defmodule ETTransducersTest do
     assert ET.reduce(1..2, last_three_r_fun) == [1,2]
   end
 
+  test "ET.Transducers.take_every(n)" do
+    ET.Transducers.take_every(3)
+    |> ET.Reducers.list
+    |> take_every_n_test
+  end
+
+  test "ET.Transducers.take_every(transducer, n)" do
+    identity_trans
+    |> ET.Transducers.take_every(3)
+    |> ET.Reducers.list
+    |> take_every_n_test
+  end
+
+  defp take_every_n_test(take_three_r_fun) do
+    assert ET.reduce(1..8, take_three_r_fun) ==
+           [1,4,7]
+  end
+
+
   test "ET.Transducers.take_while(fun)" do
     ET.Transducers.take_while(&(&1<2))
     |> ET.Reducers.list
