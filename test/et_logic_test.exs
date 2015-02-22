@@ -482,6 +482,24 @@ defmodule ETLogicTest do
            [{1,1},{2,0},{3,0},{4,1},{5,0}]
   end
 
+  test "ET.Logic.unique_by()" do
+    ET.Logic.unique_by
+    |> ET.Reducers.list
+    |> unique_by_test
+  end
+
+  test "ET.Logic.unique_by(transducer)" do
+    identity_trans
+    |> ET.Logic.unique_by
+    |> ET.Reducers.list
+    |> unique_by_test
+  end
+
+  defp unique_by_test(unique_by) do
+    assert ET.reduce([one: 1, two: 2, three: 1, four: 4], unique_by) ==
+           [one: 1, two: 2, four: 4]
+  end
+
   test "ET.Logic.unwrap()" do
     ET.Logic.unwrap
     |> ET.Reducers.list

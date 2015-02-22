@@ -865,7 +865,6 @@ defmodule ETTransducersTest do
            [1,4,7]
   end
 
-
   test "ET.Transducers.take_while(fun)" do
     ET.Transducers.take_while(&(&1<2))
     |> ET.Reducers.list
@@ -882,6 +881,24 @@ defmodule ETTransducersTest do
   defp take_while_fun_test(take_lt_two_r_fun) do
     assert ET.reduce([0,1,0,2,0,1], take_lt_two_r_fun) ==
            [0,1,0]
+  end
+
+  test "ET.Transducers.uniq()" do
+    ET.Transducers.uniq
+    |> ET.Reducers.list
+    |> uniq_test
+  end
+
+  test "ET.Transducers.uniq(transducer)" do
+    identity_trans
+    |> ET.Transducers.uniq
+    |> ET.Reducers.list
+    |> uniq_test
+  end
+
+  def uniq_test(unique_r_fun) do
+    ET.reduce([1,2,1,2,3,2,1], unique_r_fun) ==
+              [1,2,3]
   end
 
   test "ET.Transducers.zip()" do

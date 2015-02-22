@@ -724,6 +724,19 @@ defmodule ET.Transducers do
 
 
   @doc """
+  A transducer which only emits the first occurrence of each unique element.
+
+  """
+
+  def uniq() do
+    ET.Logic.wrap(&(&1))
+    |> ET.Logic.unique_by
+    |> ET.Logic.unwrap
+  end
+  def uniq(%ET.Transducer{} = trans), do: compose(trans, uniq)
+
+
+  @doc """
   A transducer which takes several transducers and interleaves their
   contents.
 

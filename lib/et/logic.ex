@@ -590,6 +590,29 @@ defmodule ET.Logic do
 
 
   @doc """
+  A transducer which only emits the first element of form {_, value} for each
+  unique value.
+
+  """
+
+  def unique_by do
+    new(
+      fn r_fun -> r_fun |> init |> cont(HashSet.new) end,
+      fn {_, value} = elem, reducer, set ->
+        if Set.member?(set, value) do
+          reducer |> cont(set)
+        else
+          set = Set.put(set, value)
+          elem |> reduce(reducer) |> cont(set)
+        end
+      end,
+      fn reducer, _ -> finish(reducer) end
+    )
+  end
+  def unique_by(%ET.Transducer{} = trans), do: compose(trans, unique_by)
+
+
+  @doc """
   A transducer which transforms {elem, _} into elem. Used with various
   generic transducers which take elements in this form. If an integer is
   provided, it unwraps that many times
