@@ -656,6 +656,75 @@ defmodule ETTransducersTest do
            [4,3,2,1]
   end
 
+  test "ET.Transducers.split(n, r_fun, r_fun)" do
+    ET.Transducers.split(2, ET.Reducers.count, ET.Reducers.list)
+    |> ET.Reducers.list
+    |> split_n_r_fun_r_fun_test
+  end
+
+  test "ET.Transducers.split(transducer, n, r_fun, r_fun)" do
+    identity_trans
+    |> ET.Transducers.split(2, ET.Reducers.count, ET.Reducers.list)
+    |> ET.Reducers.list
+    |> split_n_r_fun_r_fun_test
+  end
+
+  defp split_n_r_fun_r_fun_test(two_count_list) do
+    assert ET.reduce(1..5, two_count_list) == [2, [3,4,5]]
+  end
+
+  test "ET.Transducers.split(n, r_fun)" do
+    ET.Transducers.split(2, ET.Reducers.count)
+    |> ET.Reducers.list
+    |> split_n_r_fun_test
+  end
+
+  test "ET.Transducers.split(transducer, n, r_fun)" do
+    identity_trans
+    |> ET.Transducers.split(2, ET.Reducers.count)
+    |> ET.Reducers.list
+    |> split_n_r_fun_test
+  end
+
+  defp split_n_r_fun_test(two_count) do
+    assert ET.reduce(1..5, two_count) == [2, 3]
+  end
+
+  test "ET.Transducers.split(n)" do
+    ET.Transducers.split(2)
+    |> ET.Reducers.list
+    |> split_n_test
+  end
+
+  test "ET.Transducers.split(transducer, n)" do
+    identity_trans
+    |> ET.Transducers.split(2)
+    |> ET.Reducers.list
+    |> split_n_test
+  end
+
+  defp split_n_test(two_count) do
+    assert ET.reduce(1..5, two_count) == [[1,2], [3,4,5]]
+  end
+
+  test "ET.Transducers.split(n, r_fun) early inner termination" do
+    r_fun =
+      ET.Transducers.split(2, ET.Transducers.take(1) |> ET.Reducers.list)
+      |> ET.Reducers.list
+
+    assert ET.reduce(1..3, r_fun) == [[1], [3]]
+    assert ET.reduce(1..5, r_fun) == [[1], [3]]
+  end
+
+  test "ET.Transducers.split(n) early outer termination" do
+    r_fun =
+      ET.Transducers.split(2)
+      |> ET.Transducers.take(1)
+      |> ET.Reducers.list
+
+    assert ET.reduce(1..5, r_fun) == [[1,2]]
+  end
+
   test "ET.Transducers.split_while(fun, r_fun, r_fun)" do
     ET.Transducers.split_while(&(&1 < 3), ET.Reducers.count, ET.Reducers.list)
     |> ET.Reducers.list

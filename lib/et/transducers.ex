@@ -554,6 +554,32 @@ defmodule ET.Transducers do
 
 
   @doc """
+  A transducer which splits after n elements. Each split is reduced to an inner
+  reducing function which defaults to ET.Reducers.list.
+
+  """
+
+  def split(n), do: split(n, ET.Reducers.list)
+  def split(%ET.Transducer{} = trans, n) do
+    compose(trans, split(n))
+  end
+  def split(n, r_fun), do: split(n, r_fun, r_fun)
+  def split(%ET.Transducer{} = trans, n, r_fun) do
+    compose(trans, split(n, r_fun))
+  end
+  def split(n, first_r_fun, second_r_fun) do
+    first_r_fun = compose(ET.Logic.unwrap, first_r_fun)
+    second_r_fun = compose(ET.Logic.unwrap, second_r_fun)
+
+    ET.Logic.with_index
+    |> split_while(&(elem(&1,1) < n), first_r_fun, second_r_fun)
+  end
+  def split(%ET.Transducer{} = trans, n, first_r_fun, second_r_fun) do
+    compose(trans, split(n, first_r_fun, second_r_fun))
+  end
+
+
+  @doc """
   A transducer which collects elements into one group while fun.(elem) returns
   truthy and then sends everything else into a second group. Each group is
   reduced independently to the optional r_fun(s), or into lists if not specified.
