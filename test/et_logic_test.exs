@@ -3,6 +3,26 @@ defmodule ETLogicTest do
 
   defp identity_trans, do: ET.Transducers.map(&(&1))
 
+  test "ET.Logic.allow(n)" do
+    ET.Logic.allow(2)
+    |> ET.Reducers.list
+    |> allow_n_test
+  end
+
+  test "ET.Logic.allow(transducer, n)" do
+    identity_trans
+    |> ET.Logic.allow(2)
+    |> ET.Reducers.list
+    |> allow_n_test
+  end
+
+  defp allow_n_test(allow_two) do
+    assert ET.reduce([one: true, two: false, three: nil,
+                      four: 1, five: true], allow_two) ==
+      [{{:one, true}, true}, {{:two, false}, false}, {{:three, nil}, nil},
+       {{:four, 1}, 1}, {{:five, true}, false}]
+  end
+
   test "ET.Logic.change?()" do
     ET.Logic.change?
     |> ET.Reducers.list

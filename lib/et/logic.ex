@@ -21,6 +21,28 @@ defmodule ET.Logic do
 
   """
 
+  def allow(n) do
+    new(
+      fn r_fun -> r_fun |> init |> cont(n) end,
+      fn
+        {_, bool} = elem, reducer, n when bool in [false, nil]->
+          {elem, bool} |> reduce(reducer) |> cont(n)
+        elem, reducer, 0 ->
+          {elem, false} |> reduce(reducer) |> cont(0)
+        {_,bool} = elem, reducer, n ->
+          {elem, bool} |> reduce(reducer) |> cont(n-1)
+      end,
+      fn reducer, _ -> finish(reducer) end
+    )
+  end
+  def allow(%ET.Transducer{} = trans, n), do: compose(trans, allow(n))
+
+
+  @doc """
+
+
+  """
+
   def change?(), do: change?(&(&1), first: false)
   def change?(%ET.Transducer{} = trans) do
     trans |> compose(change?)
