@@ -656,6 +656,101 @@ defmodule ETTransducersTest do
            [4,3,2,1]
   end
 
+  test "ET.Transducers.split_while(fun, r_fun, r_fun)" do
+    ET.Transducers.split_while(&(&1 < 3), ET.Reducers.count, ET.Reducers.list)
+    |> ET.Reducers.list
+    |> split_while_fun_r_fun_r_fun_test
+  end
+
+  test "ET.Transducers.split_while(transducers, fun, r_fun, r_fun)" do
+    identity_trans
+    |> ET.Transducers.split_while(&(&1 < 3), ET.Reducers.count, ET.Reducers.list)
+    |> ET.Reducers.list
+    |> split_while_fun_r_fun_r_fun_test
+  end
+
+  defp split_while_fun_r_fun_r_fun_test(under_three_count) do
+    ET.reduce(1..5, under_three_count) == [2,[3,4,5]]
+  end
+
+  test "ET.Transducers.split_while(fun, r_fun)" do
+    ET.Transducers.split_while(&(&1 < 3), ET.Reducers.count)
+    |> ET.Reducers.list
+    |> split_while_fun_r_fun_test
+  end
+
+  test "ET.Transducers.split_while(transducers, fun, r_fun)" do
+    identity_trans
+    |> ET.Transducers.split_while(&(&1 < 3), ET.Reducers.count)
+    |> ET.Reducers.list
+    |> split_while_fun_r_fun_test
+  end
+
+  defp split_while_fun_r_fun_test(under_three_count) do
+    ET.reduce(1..5, under_three_count) == [2,3]
+  end
+
+  test "ET.Transducers.split_while(fun)" do
+    ET.Transducers.split_while(&(&1 < 3))
+    |> ET.Reducers.list
+    |> split_while_fun_test
+  end
+
+  test "ET.Transducers.split_while(transducer, fun)" do
+    identity_trans
+    |> ET.Transducers.split_while(&(&1 < 3))
+    |> ET.Reducers.list
+    |> split_while_fun_test
+  end
+
+  defp split_while_fun_test(under_three) do
+    assert ET.reduce(1..5, under_three) ==
+                     [[1,2], [3,4,5]]
+  end
+
+  test "ET.Transducers.split_while(fun) with empty first half" do
+    r_fun =
+      ET.Transducers.split_while(&(&1 < 3))
+      |> ET.Reducers.list
+
+    assert ET.reduce(4..6, r_fun) == [[], [4,5,6]]
+  end
+
+  test "ET.Transducers.split_while(fun) with empty second half" do
+    r_fun =
+      ET.Transducers.split_while(&(&1 < 3))
+      |> ET.Reducers.list
+
+    assert ET.reduce(1..2, r_fun) == [[1,2], []]
+  end
+
+  test "ET.Transducers.split_while(fun) with no input" do
+    r_fun =
+      ET.Transducers.split_while(&(&1 < 3))
+      |> ET.Reducers.list
+
+    assert ET.reduce([], r_fun) == [[], []]
+  end
+
+  test "ET.Transducers.split_while(fun, r_fun) r_fun early termination" do
+    r_fun =
+      ET.Transducers.split_while(&(&1 < 3),
+        ET.Transducers.take(1) |> ET.Reducers.list)
+        |> ET.Reducers.list
+
+    assert ET.reduce(1..3, r_fun) == [[1], [3]]
+    assert ET.reduce(1..4, r_fun) == [[1], [3]]
+  end
+
+  test "ET.Transducers.split_while(fun) early main termination" do
+    r_fun =
+      ET.Transducers.split_while(&(&1 < 3))
+      |> ET.Transducers.take(1)
+      |> ET.Reducers.list
+
+    assert ET.reduce(1..5, r_fun) == [[1,2]]
+  end
+
   test "ET.Transducers.take(positive_n)" do
     ET.Transducers.take(3)
     |> ET.Reducers.list

@@ -554,6 +554,86 @@ defmodule ET.Transducers do
 
 
   @doc """
+  A transducer which collects elements into one group while fun.(elem) returns
+  truthy and then sends everything else into a second group. Each group is
+  reduced independently to the optional r_fun(s), or into lists if not specified.
+
+  """
+
+  def split_while(fun), do: split_while(fun, ET.Reducers.list)
+  def split_while(%ET.Transducer{} = trans, fun) do
+    compose(trans, split_while(fun))
+  end
+  def split_while(fun, r_fun), do: split_while(fun, r_fun, r_fun)
+  def split_while(%ET.Transducer{} = trans, fun, r_fun) do
+    compose(trans, split_while(fun, r_fun))
+  end
+  def split_while(fun, first_r_fun, second_r_fun) do
+    new(
+      fn r_fun ->
+        r_fun |> init
+        |> cont({init(first_r_fun), init(second_r_fun)})
+      end,
+      fn
+        elem, reducer, {nil, second_reducer} ->
+          second_split(elem, reducer, second_reducer)
+        elem, reducer, {first_reducer, second_reducer} ->
+          if fun.(elem) do
+            first_split(elem, reducer, first_reducer, second_reducer)
+          else
+            reducer = finish_split(first_reducer, reducer)
+            second_split(elem, reducer, second_reducer)
+          end
+      end,
+      fn reducer, {first_reducer, second_reducer} ->
+        reducer = finish_split(first_reducer, reducer)
+        reducer = finish_split(second_reducer, reducer)
+        finish(reducer)
+      end
+    )
+  end
+  def split_while(%ET.Transducer{} = trans, fun, first_r_fun, second_r_fun) do
+    compose(trans, split_while(fun, first_r_fun, second_r_fun))
+  end
+
+  defp first_split(_, reducer, {_,{:halt,_}} = first_reducer, second_reducer) do
+    reducer |> cont({first_reducer, second_reducer})
+  end
+  defp first_split(elem, reducer, first_reducer, second_reducer) do
+    first_reducer = elem |> reduce(first_reducer)
+    if halted? first_reducer do
+      first_reducer |> finish |> reduce(reducer)
+      |> cont({first_reducer, second_reducer})
+    else
+      reducer |> cont({first_reducer, second_reducer})
+    end
+  end
+
+  defp second_split(_, {_,{:halt,_}} = reducer, second_reducer) do
+    finish(second_reducer)
+    reducer |> halt({nil, nil})
+  end
+  defp second_split(elem, reducer, second_reducer) do
+    second_reducer = elem |> reduce(second_reducer)
+    if halted? second_reducer do
+      second_result = second_reducer |> finish
+      unless halted?(reducer), do: reducer = second_result |> reduce(reducer)
+      reducer |> halt({nil, nil})
+    else
+      reducer |> cont({nil, second_reducer})
+    end
+  end
+
+  defp finish_split(inner_reducer, reducer) do
+    if inner_reducer && !halted?(inner_reducer) do
+      result = finish(inner_reducer)
+      unless halted?(reducer), do: reducer = result |> reduce(reducer)
+    end
+    reducer
+  end
+
+
+  @doc """
   A transducer which limits the number of elements processed.
 
     iex> take_two = ET.Transducers.take(2) |> ET.Reducers.list
