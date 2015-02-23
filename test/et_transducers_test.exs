@@ -180,7 +180,6 @@ defmodule ETTransducersTest do
     assert ET.reduce(1..3, reducer) == [2, 2, 2]
   end
   #TODO test early :halt timing and order for inner reducer
-  #TODO test generic chunk
 
   test "ET.Transducers.chunk_by()" do
     ET.Transducers.chunk_by()

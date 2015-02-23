@@ -134,7 +134,10 @@ defmodule ET.Transducer do
 
   """
 
-  def init(reducing_fun), do: {reducing_fun, reducing_fun.(nil, :init)}
+  def init({r_fun, init_term}) do
+    {r_fun, r_fun.(init_term, :init)}
+  end
+  def init(r_fun), do: init({r_fun, nil})
 
 
   @doc """
@@ -146,11 +149,11 @@ defmodule ET.Transducer do
   """
 
   def new(cont_fun) do
-    %ET.Transducer{elements: [fn reducer ->
-      fn _, :init -> reducer.(nil, :init)
-         r_state, :fin -> reducer.(r_state, :fin)
+    %ET.Transducer{elements: [fn r_fun ->
+      fn init_term, :init -> r_fun.(init_term, :init)
+         r_state, :fin -> r_fun.(r_state, :fin)
          elem, r_state ->
-           cont_fun.(elem, {reducer, {:cont, r_state}})
+           cont_fun.(elem, {r_fun, {:cont, r_state}})
       end
      end]}
   end
@@ -194,13 +197,13 @@ defmodule ET.Transducer do
   """
 
   def new(init_fun, cont_fun, fin_fun) do
-    %ET.Transducer{elements: [fn reducer ->
-      fn _, :init ->
-           init_fun.(reducer)
+    %ET.Transducer{elements: [fn r_fun ->
+      fn init_term, :init ->
+           init_fun.({r_fun, init_term})
          [state | r_state], :fin ->
-           fin_fun.({reducer, {:cont, r_state}}, state)
+           fin_fun.({r_fun, {:cont, r_state}}, state)
          elem, [state | r_state] ->
-           cont_fun.(elem, {reducer, {:cont, r_state}}, state)
+           cont_fun.(elem, {r_fun, {:cont, r_state}}, state)
       end
     end]}
   end
