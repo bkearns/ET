@@ -46,7 +46,7 @@ defmodule ET.Transducers do
       fn {elem, index}, reducer, {indices, set} ->
         {result, indices, set} = at_indices_set_test(index, indices, set)
         {{elem,(indices == :done and Set.size(set) == 0)}, !result}
-        |> reduce(reducer)
+        |> reduce_elem(reducer)
         |> cont({indices, set})
       end,
       fn reducer, _ -> finish(reducer) end
@@ -219,11 +219,11 @@ defmodule ET.Transducers do
       fn
         elem, reducer, 0 ->
           {elem, false}
-          |> reduce(reducer)
+          |> reduce_elem(reducer)
           |> cont(0)
         elem, reducer, n ->
           {elem, true}
-          |> reduce(reducer)
+          |> reduce_elem(reducer)
           |> cont(n-1)
       end,
       fn reducer, _ -> finish(reducer) end
@@ -238,7 +238,7 @@ defmodule ET.Transducers do
         elem, reducer, {queue, 0} ->
           {{:value, val}, queue} = :queue.out(queue)
           val
-          |> reduce(reducer)
+          |> reduce_elem(reducer)
           |> cont({:queue.in(elem, queue), 0})
         elem, reducer, {queue, n} ->
           cont(reducer, {:queue.in(elem, queue), n-1})
@@ -267,11 +267,11 @@ defmodule ET.Transducers do
         elem, reducer, bool when bool in [false, nil] ->
           result = fun.(elem)
           {elem, result}
-          |> reduce(reducer)
+          |> reduce_elem(reducer)
           |> cont(!result)
         elem, reducer, bool ->
           {elem, !bool}
-          |> reduce(reducer)
+          |> reduce_elem(reducer)
           |> cont(true)
       end,
       fn reducer, _ -> finish(reducer) end
@@ -296,11 +296,11 @@ defmodule ET.Transducers do
       fn
         elem, reducer, {:cont, 0} ->
           elem
-          |> reduce(reducer)
+          |> reduce_elem(reducer)
           |> cont({:cont, 0})
 
         elem, reducer, {:cont, n} ->
-          reducer = reduce(elem, reducer)
+          reducer = reduce_elem(elem, reducer)
           if halted?(reducer) do
             reducer |> cont_no_halt({:halt, n-1})
           else
@@ -427,7 +427,7 @@ defmodule ET.Transducers do
       fn
         elem, reducer ->
           fun.(elem)
-          |> reduce(reducer)
+          |> reduce_elem(reducer)
           |> cont
       end
     )
@@ -626,9 +626,9 @@ defmodule ET.Transducers do
     reducer |> cont({first_reducer, second_reducer})
   end
   defp first_split(elem, reducer, first_reducer, second_reducer) do
-    first_reducer = elem |> reduce(first_reducer)
+    first_reducer = elem |> reduce_elem(first_reducer)
     if halted? first_reducer do
-      first_reducer |> finish |> reduce(reducer)
+      first_reducer |> finish |> reduce_elem(reducer)
       |> cont({first_reducer, second_reducer})
     else
       reducer |> cont({first_reducer, second_reducer})
@@ -640,10 +640,10 @@ defmodule ET.Transducers do
     reducer |> halt({nil, nil})
   end
   defp second_split(elem, reducer, second_reducer) do
-    second_reducer = elem |> reduce(second_reducer)
+    second_reducer = elem |> reduce_elem(second_reducer)
     if halted? second_reducer do
       second_result = second_reducer |> finish
-      unless halted?(reducer), do: reducer = second_result |> reduce(reducer)
+      unless halted?(reducer), do: reducer = second_result |> reduce_elem(reducer)
       reducer |> halt({nil, nil})
     else
       reducer |> cont({nil, second_reducer})
@@ -653,7 +653,7 @@ defmodule ET.Transducers do
   defp finish_split(inner_reducer, reducer) do
     if inner_reducer && !halted?(inner_reducer) do
       result = finish(inner_reducer)
-      unless halted?(reducer), do: reducer = result |> reduce(reducer)
+      unless halted?(reducer), do: reducer = result |> reduce_elem(reducer)
     end
     reducer
   end

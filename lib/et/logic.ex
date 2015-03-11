@@ -26,11 +26,11 @@ defmodule ET.Logic do
       fn r_fun -> r_fun |> init |> cont(n) end,
       fn
         {_, bool} = elem, reducer, n when bool in [false, nil]->
-          {elem, bool} |> reduce(reducer) |> cont(n)
+          {elem, bool} |> reduce_elem(reducer) |> cont(n)
         elem, reducer, 0 ->
-          {elem, false} |> reduce(reducer) |> cont(0)
+          {elem, false} |> reduce_elem(reducer) |> cont(0)
         {_,bool} = elem, reducer, n ->
-          {elem, bool} |> reduce(reducer) |> cont(n-1)
+          {elem, bool} |> reduce_elem(reducer) |> cont(n-1)
       end,
       fn reducer, _ -> finish(reducer) end
     )
@@ -64,7 +64,7 @@ defmodule ET.Logic do
         curr = change_check.(elem)
         same = curr == prev or (!first and (prev == ref))
         {elem, !same}
-        |> reduce(reducer)
+        |> reduce_elem(reducer)
         |> cont(curr)
       end,
       fn reducer, _ -> finish(reducer) end
@@ -130,11 +130,11 @@ defmodule ET.Logic do
     do_chunk(elem, curr_chunk, chunks, inner_r_fun, reducer)
   end
   defp do_chunk(elem, {_,{:halt,_}} = curr_chunk, chunks, inner_r_fun, reducer) do
-    reducer = curr_chunk |> finish |> reduce(reducer)
+    reducer = curr_chunk |> finish |> reduce_elem(reducer)
     do_chunk(elem, nil, chunks, inner_r_fun, reducer)
   end
   defp do_chunk(elem, {_,{:cont,_}} = curr_chunk, chunks, inner_r_fun, reducer) do
-    curr_chunk = elem |> reduce(curr_chunk)
+    curr_chunk = elem |> reduce_elem(curr_chunk)
     if halted?(curr_chunk) do
       do_chunk(elem, curr_chunk, chunks, inner_r_fun, reducer)
     else
@@ -168,7 +168,7 @@ defmodule ET.Logic do
       fn
         reducer, {curr_chunk, chunks} ->
           if curr_chunk do
-            reducer = curr_chunk |> finish |> reduce(reducer)
+            reducer = curr_chunk |> finish |> reduce_elem(reducer)
           end
           chunks |> ET.reduce(finish_chunks(inner_r_fun, reducer))
       end
@@ -182,7 +182,7 @@ defmodule ET.Logic do
 
       fn chunk, reducer, _ ->
         chunk |> :lists.reverse |> reduce_many(inner_r_fun |> init)
-        |> finish |> elem(1) |> reduce(reducer) |> cont(nil)
+        |> finish |> elem(1) |> reduce_elem(reducer) |> cont(nil)
       end,
 
       fn reducer, _ -> finish(reducer) end
@@ -202,7 +202,7 @@ defmodule ET.Logic do
     new(
       fn
         {_,bool} = elem, reducer when bool in [false, nil] ->
-          elem |> reduce(reducer) |> cont
+          elem |> reduce_elem(reducer) |> cont
         _, reducer ->
           cont(reducer)
       end
@@ -221,9 +221,9 @@ defmodule ET.Logic do
     new(
       fn
         {_, bool} = elem, reducer when bool in [false, nil] ->
-          elem |> reduce(reducer) |> cont
+          elem |> reduce_elem(reducer) |> cont
         elem, reducer ->
-          elem |> reduce(reducer) |> halt
+          elem |> reduce_elem(reducer) |> halt
       end
     )
   end
@@ -239,7 +239,7 @@ defmodule ET.Logic do
     new(
       fn
         {_, bool} = elem, reducer when bool in [false, nil] ->
-          elem |> reduce(reducer) |> cont
+          elem |> reduce_elem(reducer) |> cont
         _, reducer ->
           reducer |> halt
       end
@@ -285,10 +285,10 @@ defmodule ET.Logic do
 
   defp do_group_by(:done, _, reducer, groups), do: cont(reducer, groups)
   defp do_group_by(v_reducer, {_,value} = elem, reducer, groups) do
-    v_reducer = elem |> reduce(v_reducer)
+    v_reducer = elem |> reduce_elem(v_reducer)
     if halted?(v_reducer) do
       result = finish(v_reducer)
-      reducer = {value, result} |> reduce(reducer)
+      reducer = {value, result} |> reduce_elem(reducer)
       if halted?(reducer) do
         ET.reduce(groups, finish_group_reducer)
         halt(reducer, %{})
@@ -320,9 +320,9 @@ defmodule ET.Logic do
       fn r_fun -> r_fun |> init |> cont(n) end,
       fn
         {_,bool} = elem, reducer, n when n == 0 or bool in [false, nil] ->
-          {elem, bool} |> reduce(reducer) |> cont(n)
+          {elem, bool} |> reduce_elem(reducer) |> cont(n)
         elem, reducer, n ->
-          {elem, false} |> reduce(reducer) |> cont(n-1)
+          {elem, false} |> reduce_elem(reducer) |> cont(n-1)
       end,
       fn reducer, _ -> finish(reducer) end
     )
@@ -340,10 +340,10 @@ defmodule ET.Logic do
     new(
       fn
         {_,bool} = elem, reducer when bool in [false, nil] ->
-          elem |> reduce(reducer) |> cont
+          elem |> reduce_elem(reducer) |> cont
         elem, reducer ->
-          reducer = term |> reduce(reducer)
-          elem |> reduce(reducer) |> cont
+          reducer = term |> reduce_elem(reducer)
+          elem |> reduce_elem(reducer) |> cont
       end
     )
   end
@@ -374,13 +374,13 @@ defmodule ET.Logic do
       fn
         {_,test} = elem, reducer, {:done, set} = state ->
           {elem, Set.member?(set, test)}
-          |> reduce(reducer)
+          |> reduce_elem(reducer)
           |> cont(state)
 
         {_,test} = elem, reducer, {t, set} ->
           {result, t, set} = in_collection_set_test(test, t, set)
           {elem, result}
-          |> reduce(reducer)
+          |> reduce_elem(reducer)
           |> cont({t, set})
       end,
       fn reducer, _ -> finish(reducer) end
@@ -394,14 +394,14 @@ defmodule ET.Logic do
         {_,test} = elem, reducer, {:done, dict} ->
           {result, dict, _} = in_collection_dict_test(test, dict, [])
           {elem, result}
-          |> reduce(reducer)
+          |> reduce_elem(reducer)
           |> cont({:done, dict})
 
         {_,test} = elem, reducer, {t, dict} ->
            {result, dict, t} =
              in_collection_dict_test(test, dict, t)
            {elem, result}
-           |> reduce(reducer)
+           |> reduce_elem(reducer)
            |> cont({t, dict})
       end,
       fn reducer, _ -> finish(reducer) end
@@ -471,7 +471,7 @@ defmodule ET.Logic do
       end,
       fn
         reducer, {_, bool} = elem when not (bool in [false, nil]) ->
-          elem |> reduce(reducer) |> finish
+          elem |> reduce_elem(reducer) |> finish
         reducer, _ -> finish(reducer)
       end
     )
@@ -490,7 +490,7 @@ defmodule ET.Logic do
     new(
       fn {_,bool} = elem, reducer ->
         {elem, !bool}
-        |> reduce(reducer)
+        |> reduce_elem(reducer)
         |> cont
       end
     )
@@ -505,7 +505,7 @@ defmodule ET.Logic do
   def reverse_unwrap() do
     new(
       fn {_, v}, reducer ->
-        v |> reduce(reducer) |> cont
+        v |> reduce_elem(reducer) |> cont
       end
     )
   end
@@ -552,11 +552,11 @@ defmodule ET.Logic do
       fn
         elem, reducer, 0 ->
           {elem, true}
-          |> reduce(reducer)
+          |> reduce_elem(reducer)
           |> cont(n-1)
         elem, reducer, count ->
           {elem, false}
-          |> reduce(reducer)
+          |> reduce_elem(reducer)
           |> cont(count-1)
       end,
       fn reducer, _ -> finish(reducer) end
@@ -579,7 +579,7 @@ defmodule ET.Logic do
       fn r_fun -> r_fun |> init |> cont(acc) end,
       fn elem, reducer, acc ->
         {result, acc} = fun.(elem, acc)
-        {elem, result} |> reduce(reducer) |> cont(acc)
+        {elem, result} |> reduce_elem(reducer) |> cont(acc)
       end,
       fn reducer, _ -> finish(reducer) end
     )
@@ -603,7 +603,7 @@ defmodule ET.Logic do
           reducer |> cont(set)
         else
           set = Set.put(set, value)
-          elem |> reduce(reducer) |> cont(set)
+          elem |> reduce_elem(reducer) |> cont(set)
         end
       end,
       fn reducer, _ -> finish(reducer) end
@@ -645,7 +645,7 @@ defmodule ET.Logic do
       fn r_fun -> r_fun |> init |> cont(0) end,
       fn elem, reducer, index ->
         {elem, index}
-        |> reduce(reducer)
+        |> reduce_elem(reducer)
         |> cont(index+1)
       end,
       fn reducer, _ -> finish(reducer) end
@@ -663,7 +663,7 @@ defmodule ET.Logic do
     new(
       fn elem, reducer ->
         {elem, fun.(elem)}
-        |> reduce(reducer)
+        |> reduce_elem(reducer)
         |> cont
       end
     )

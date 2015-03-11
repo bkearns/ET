@@ -217,8 +217,8 @@ defmodule ET.Transducer do
 
   """
 
-  def reduce(elem, reducer)
-  def reduce(elem, {r_fun, {:cont, r_state}}) do
+  def reduce_elem(elem, reducer)
+  def reduce_elem(elem, {r_fun, {:cont, r_state}}) do
     {r_fun, r_fun.(elem, r_state)}
   end
 

@@ -73,7 +73,7 @@ defmodule ETTransducerTest do
   test "ET.Transducer.new(fun)" do
     ET.Transducer.new(
       fn 3, reducer -> halt(reducer)
-         n, reducer -> n |> reduce(reducer) |> cont
+         n, reducer -> n |> reduce_elem(reducer) |> cont
       end
     )
     |> ET.Reducers.list
@@ -84,7 +84,7 @@ defmodule ETTransducerTest do
     identity_trans
     |> ET.Transducer.new(
          fn 3, reducer -> halt(reducer)
-            n, reducer -> n |> reduce(reducer) |> cont
+            n, reducer -> n |> reduce_elem(reducer) |> cont
          end
        )
     |> ET.Reducers.list
@@ -101,11 +101,11 @@ defmodule ETTransducerTest do
       fn
         elem, reducer, 0 ->
           elem
-          |> reduce(reducer)
+          |> reduce_elem(reducer)
           |> halt(0)
         elem, reducer, count ->
           elem
-          |> reduce(reducer)
+          |> reduce_elem(reducer)
           |> cont(count-1)
       end,
       fn reducer, _ -> finish(reducer) end
@@ -121,11 +121,11 @@ defmodule ETTransducerTest do
       fn
         elem, reducer, 0 ->
           elem
-          |> reduce(reducer)
+          |> reduce_elem(reducer)
           |> halt(0)
         elem, reducer, count ->
           elem
-          |> reduce(reducer)
+          |> reduce_elem(reducer)
           |> cont(count-1)
       end,
       fn reducer, _ -> finish(reducer) end
@@ -139,17 +139,17 @@ defmodule ETTransducerTest do
     assert ET.reduce(1..2, take_three) == [1,2]
   end
 
-  test "ET.Transducer.reduce(elem, cont_reducer_tuple)" do
+  test "ET.Transducer.reduce_elem(elem, cont_reducer_tuple)" do
     list_reducer = ET.Reducers.list
     reducer_tuple = {list_reducer, {:cont, [[]]}}
-    assert ET.Transducer.reduce(:foo, reducer_tuple) ==
+    assert ET.Transducer.reduce_elem(:foo, reducer_tuple) ==
            {list_reducer, {:cont, [[:foo]]}}
   end
 
-  test "ET.Transducer.reduce(elem, done_reducer_tuple)" do
+  test "ET.Transducer.reduce_elem(elem, done_reducer_tuple)" do
     list_reducer = ET.Reducers.list
     reducer_tuple = {list_reducer, {:done, [[]]}}
-    assert_raise FunctionClauseError, fn -> ET.Transducer.reduce(:foo, reducer_tuple) end
+    assert_raise FunctionClauseError, fn -> ET.Transducer.reduce_elem(:foo, reducer_tuple) end
   end
 
   test "ET.Transducer.reduce_many(transducible, reducer)" do
