@@ -40,7 +40,7 @@ defmodule ET.Transducers do
     compose(trans, at_indices(indices))
   end
   def at_indices(indices) do
-    ET.Logic.with_index
+    ET.Wrapped.with_index
     |> new(
       fn r_fun -> r_fun |> init |> cont({indices, HashSet.new}) end,
       fn {elem, index}, reducer, {indices, set} ->
@@ -51,10 +51,10 @@ defmodule ET.Transducers do
       end,
       fn reducer, _ -> finish(reducer) end
     )
-    |> ET.Logic.filter
-    |> ET.Logic.unwrap
-    |> ET.Logic.halt_after
-    |> ET.Logic.unwrap
+    |> ET.Wrapped.filter
+    |> ET.Wrapped.unwrap
+    |> ET.Wrapped.halt_after
+    |> ET.Wrapped.unwrap
   end
 
   defp at_indices_set_test(index, indices, set) do
@@ -146,12 +146,12 @@ defmodule ET.Transducers do
   end
   def chunk(size, step, padding, reducer) do
     inner_reducer =
-      ET.Logic.unwrap
+      ET.Wrapped.unwrap
       |> take(size)
       |> compose(reducer)
 
-    ET.Logic.true_every(step, first: true)
-    |> ET.Logic.chunk(inner_reducer, padding)
+    ET.Wrapped.true_every(step, first: true)
+    |> ET.Wrapped.chunk(inner_reducer, padding)
   end
   def chunk(%ET.Transducer{} = trans, two, three, four, five) do
     compose(trans, chunk(two, three, four, five))
@@ -173,13 +173,13 @@ defmodule ET.Transducers do
   end
   def chunk_by(change_fun, inner_reducer) do
     inner_reducer =
-      ET.Logic.ignore(1)
-      |> ET.Logic.halt_on
-      |> ET.Logic.unwrap(2)
+      ET.Wrapped.ignore(1)
+      |> ET.Wrapped.halt_on
+      |> ET.Wrapped.unwrap(2)
       |> compose(inner_reducer)
 
-      ET.Logic.change?(change_fun, first: true)
-    |> ET.Logic.chunk(inner_reducer, [])
+      ET.Wrapped.change?(change_fun, first: true)
+    |> ET.Wrapped.chunk(inner_reducer, [])
   end
   def chunk_by(%ET.Transducer{} = trans, change_fun, inner_reducer) do
     compose(trans, chunk_by(change_fun, inner_reducer))
@@ -228,8 +228,8 @@ defmodule ET.Transducers do
       end,
       fn reducer, _ -> finish(reducer) end
     )
-    |> ET.Logic.filter
-    |> ET.Logic.unwrap
+    |> ET.Wrapped.filter
+    |> ET.Wrapped.unwrap
   end
   def drop(n) do
     new(
@@ -276,8 +276,8 @@ defmodule ET.Transducers do
       end,
       fn reducer, _ -> finish(reducer) end
     )
-    |> ET.Logic.filter
-    |> ET.Logic.unwrap
+    |> ET.Wrapped.filter
+    |> ET.Wrapped.unwrap
   end
 
 
@@ -327,10 +327,10 @@ defmodule ET.Transducers do
   @spec filter((term -> term)) :: ET.Transducer.t
   def filter(%ET.Transducer{} = trans, fun), do: compose(trans, filter(fun))
   def filter(fun) do
-    ET.Logic.wrap(fun)
-    |> ET.Logic.negate
-    |> ET.Logic.filter
-    |> ET.Logic.unwrap(2)
+    ET.Wrapped.wrap(fun)
+    |> ET.Wrapped.negate
+    |> ET.Wrapped.filter
+    |> ET.Wrapped.unwrap(2)
   end
 
 
@@ -341,11 +341,11 @@ defmodule ET.Transducers do
   """
 
   def find_indices(fun) do
-    ET.Logic.with_index
-    |> ET.Logic.wrap(fn {elem, _} -> !fun.(elem) end)
-    |> ET.Logic.filter
-    |> ET.Logic.unwrap
-    |> ET.Logic.reverse_unwrap
+    ET.Wrapped.with_index
+    |> ET.Wrapped.wrap(fn {elem, _} -> !fun.(elem) end)
+    |> ET.Wrapped.filter
+    |> ET.Wrapped.unwrap
+    |> ET.Wrapped.reverse_unwrap
   end
   def find_indices(%ET.Transducer{} = trans, fun) do
     compose(trans, find_indices(fun))
@@ -372,11 +372,11 @@ defmodule ET.Transducers do
     compose(trans, group_by(fun, r_fun))
   end
   def group_by(fun, r_fun, r_funs) do
-    r_fun = compose(ET.Logic.unwrap, r_fun)
+    r_fun = compose(ET.Wrapped.unwrap, r_fun)
     r_funs = unwrap_r_funs(r_funs)
 
-    ET.Logic.wrap(fun)
-    |> ET.Logic.group_by(r_fun, r_funs)
+    ET.Wrapped.wrap(fun)
+    |> ET.Wrapped.group_by(r_fun, r_funs)
   end
   def group_by(%ET.Transducer{} = trans, fun, r_fun, r_funs) do
     compose(trans, group_by(fun, r_fun, r_funs))
@@ -385,7 +385,7 @@ defmodule ET.Transducers do
   defp unwrap_r_funs(r_funs) do
     reducer =
       ET.Transducers.map(fn {v,v_fun} ->
-        {v, compose(ET.Logic.unwrap, v_fun)}
+        {v, compose(ET.Wrapped.unwrap, v_fun)}
       end)
     |> ET.Reducers.list
 
@@ -401,10 +401,10 @@ defmodule ET.Transducers do
   """
 
   def intersperse(term) do
-    ET.Logic.wrap(fn _ -> true end)
-    |> ET.Logic.ignore(1)
-    |> ET.Logic.insert_before({{term, nil}, nil})
-    |> ET.Logic.unwrap(2)
+    ET.Wrapped.wrap(fn _ -> true end)
+    |> ET.Wrapped.ignore(1)
+    |> ET.Wrapped.insert_before({{term, nil}, nil})
+    |> ET.Wrapped.unwrap(2)
   end
   def intersperse(%ET.Transducer{} = trans, term) do
     compose(trans, intersperse(term))
@@ -463,8 +463,8 @@ defmodule ET.Transducers do
   """
 
   def scan(acc, fun) do
-    ET.Logic.unfold(acc, fn e, a -> r = fun.(e,a); {r,r} end)
-    |> ET.Logic.reverse_unwrap
+    ET.Wrapped.unfold(acc, fn e, a -> r = fun.(e,a); {r,r} end)
+    |> ET.Wrapped.reverse_unwrap
   end
   def scan(%ET.Transducer{} = trans, acc, fun) do
     compose(trans, scan(acc, fun))
@@ -478,9 +478,9 @@ defmodule ET.Transducers do
   """
 
   def shuffle() do
-    ET.Logic.wrap(fn _ -> :random.uniform end)
-    |> ET.Logic.sort_by
-    |> ET.Logic.unwrap
+    ET.Wrapped.wrap(fn _ -> :random.uniform end)
+    |> ET.Wrapped.sort_by
+    |> ET.Wrapped.unwrap
   end
   def shuffle(%ET.Transducer{} = trans), do: compose(trans, shuffle)
 
@@ -514,10 +514,10 @@ defmodule ET.Transducers do
   defp first_slice(n), do: take(n)
 
   defp last_slice(first, n) when n >= 0 do
-    ET.Logic.with_index
+    ET.Wrapped.with_index
     |> compose(first)
     |> take_while(&(elem(&1,1) <= n))
-    |> ET.Logic.unwrap
+    |> ET.Wrapped.unwrap
   end
   defp last_slice(first, n), do: compose(first, drop(n+1))
 
@@ -544,9 +544,9 @@ defmodule ET.Transducers do
     compose(trans, sort_by(map_fun))
   end
   def sort_by(map_fun, sort_fun) do
-    ET.Logic.wrap(map_fun)
-    |> ET.Logic.sort_by(sort_fun)
-    |> ET.Logic.unwrap
+    ET.Wrapped.wrap(map_fun)
+    |> ET.Wrapped.sort_by(sort_fun)
+    |> ET.Wrapped.unwrap
   end
   def sort_by(%ET.Transducer{} = trans, map_fun, sort_fun) do
     compose(trans, sort_by(map_fun, sort_fun))
@@ -568,10 +568,10 @@ defmodule ET.Transducers do
     compose(trans, split(n, r_fun))
   end
   def split(n, first_r_fun, second_r_fun) do
-    first_r_fun = compose(ET.Logic.unwrap, first_r_fun)
-    second_r_fun = compose(ET.Logic.unwrap, second_r_fun)
+    first_r_fun = compose(ET.Wrapped.unwrap, first_r_fun)
+    second_r_fun = compose(ET.Wrapped.unwrap, second_r_fun)
 
-    ET.Logic.with_index
+    ET.Wrapped.with_index
     |> split_while(&(elem(&1,1) < n), first_r_fun, second_r_fun)
   end
   def split(%ET.Transducer{} = trans, n, first_r_fun, second_r_fun) do
@@ -670,9 +670,9 @@ defmodule ET.Transducers do
 
   def take(%ET.Transducer{} = trans, num), do: compose(trans, take(num))
   def take(n) when n >= 0 do
-    ET.Logic.true_every(n)
-    |> ET.Logic.halt_after
-    |> ET.Logic.unwrap
+    ET.Wrapped.true_every(n)
+    |> ET.Wrapped.halt_after
+    |> ET.Wrapped.unwrap
   end
   def take(n) do
     new(
@@ -697,10 +697,10 @@ defmodule ET.Transducers do
   """
 
   def take_every(n) do
-    ET.Logic.true_every(n, first: true)
-    |> ET.Logic.negate
-    |> ET.Logic.filter
-    |> ET.Logic.unwrap(2)
+    ET.Wrapped.true_every(n, first: true)
+    |> ET.Wrapped.negate
+    |> ET.Wrapped.filter
+    |> ET.Wrapped.unwrap(2)
   end
   def take_every(%ET.Transducer{} = trans, n) do
     compose(trans, take_every(n))
@@ -713,10 +713,10 @@ defmodule ET.Transducers do
   """
 
   def take_while(fun) do
-    ET.Logic.wrap(fun)
-    |> ET.Logic.negate
-    |> ET.Logic.halt_on
-    |> ET.Logic.unwrap(2)
+    ET.Wrapped.wrap(fun)
+    |> ET.Wrapped.negate
+    |> ET.Wrapped.halt_on
+    |> ET.Wrapped.unwrap(2)
   end
   def take_while(%ET.Transducer{} = trans, fun) do
     compose(trans, take_while(fun))
@@ -729,9 +729,9 @@ defmodule ET.Transducers do
   """
 
   def uniq() do
-    ET.Logic.wrap(&(&1))
-    |> ET.Logic.unique_by
-    |> ET.Logic.unwrap
+    ET.Wrapped.wrap(&(&1))
+    |> ET.Wrapped.unique_by
+    |> ET.Wrapped.unwrap
   end
   def uniq(%ET.Transducer{} = trans), do: compose(trans, uniq)
 
@@ -755,8 +755,8 @@ defmodule ET.Transducers do
   """
 
   def zip() do
-    ET.Logic.zip
-    |> ET.Logic.unwrap
+    ET.Wrapped.zip
+    |> ET.Wrapped.unwrap
   end
   def zip(%ET.Transducer{} = trans), do: compose(trans, zip)
 end

@@ -3,15 +3,15 @@ defmodule ETLogicTest do
 
   defp identity_trans, do: ET.Transducers.map(&(&1))
 
-  test "ET.Logic.allow(n)" do
-    ET.Logic.allow(2)
+  test "ET.Wrapped.allow(n)" do
+    ET.Wrapped.allow(2)
     |> ET.Reducers.list
     |> allow_n_test
   end
 
-  test "ET.Logic.allow(transducer, n)" do
+  test "ET.Wrapped.allow(transducer, n)" do
     identity_trans
-    |> ET.Logic.allow(2)
+    |> ET.Wrapped.allow(2)
     |> ET.Reducers.list
     |> allow_n_test
   end
@@ -23,15 +23,15 @@ defmodule ETLogicTest do
        {{:four, 1}, 1}, {{:five, true}, false}]
   end
 
-  test "ET.Logic.change?()" do
-    ET.Logic.change?
+  test "ET.Wrapped.change?()" do
+    ET.Wrapped.change?
     |> ET.Reducers.list
     |> change_test
   end
 
-  test "ET.Logic.change?(transducer)" do
+  test "ET.Wrapped.change?(transducer)" do
     identity_trans
-    |> ET.Logic.change?
+    |> ET.Wrapped.change?
     |> ET.Reducers.list
     |> change_test
   end
@@ -41,15 +41,15 @@ defmodule ETLogicTest do
            [{1, false}, {1, false}, {1, false}, {2, true}, {3, true}]
   end
 
-  test "ET.Logic.change?(first: true)" do
-    ET.Logic.change?(first: true)
+  test "ET.Wrapped.change?(first: true)" do
+    ET.Wrapped.change?(first: true)
     |> ET.Reducers.list
     |> change_first_true_test
   end
 
-  test "ET.Logic.change?(transducer, first: true)" do
+  test "ET.Wrapped.change?(transducer, first: true)" do
     identity_trans
-    |> ET.Logic.change?(first: true)
+    |> ET.Wrapped.change?(first: true)
     |> ET.Reducers.list
     |> change_first_true_test
   end
@@ -59,15 +59,15 @@ defmodule ETLogicTest do
            [{1, true}, {1, false}, {1, false}, {2, true}, {3, true}]
   end
 
-  test "ET.Logic.change?(change_check)" do
-    ET.Logic.change?(&(rem(&1, 2)))
+  test "ET.Wrapped.change?(change_check)" do
+    ET.Wrapped.change?(&(rem(&1, 2)))
     |> ET.Reducers.list
     |> change_change_check_test
   end
 
-  test "ET.Logic.change?(transducer, change_check)" do
+  test "ET.Wrapped.change?(transducer, change_check)" do
     identity_trans
-    |> ET.Logic.change?(&(rem(&1, 2)))
+    |> ET.Wrapped.change?(&(rem(&1, 2)))
     |> ET.Reducers.list
     |> change_change_check_test
   end
@@ -77,15 +77,15 @@ defmodule ETLogicTest do
            [{1, false}, {3, false}, {1, false}, {2, true}, {3, true}]
   end
 
-  test "ET.Logic.change?(change_check, first: true)" do
-    ET.Logic.change?(&(rem(&1, 2)), first: true)
+  test "ET.Wrapped.change?(change_check, first: true)" do
+    ET.Wrapped.change?(&(rem(&1, 2)), first: true)
     |> ET.Reducers.list
     |> change_change_check_first_true_test
   end
 
-  test "ET.Logic.change?(transducer, change_check, first: true)" do
+  test "ET.Wrapped.change?(transducer, change_check, first: true)" do
     identity_trans
-    |> ET.Logic.change?(&(rem(&1, 2)), first: true)
+    |> ET.Wrapped.change?(&(rem(&1, 2)), first: true)
     |> ET.Reducers.list
     |> change_change_check_first_true_test
   end
@@ -95,15 +95,15 @@ defmodule ETLogicTest do
            [{1, true}, {3, false}, {1, false}, {2, true}, {3, true}]
   end
 
-  test "ET.Logic.chunk(inner_r_fun)" do
-    ET.Logic.chunk(ET.Transducers.take(2) |> ET.Reducers.list)
+  test "ET.Wrapped.chunk(inner_r_fun)" do
+    ET.Wrapped.chunk(ET.Transducers.take(2) |> ET.Reducers.list)
     |> ET.Reducers.list
     |> chunk_inner_reducer_test
   end
 
-  test "ET.Logic.chunk(transducer, inner_r_fun)" do
+  test "ET.Wrapped.chunk(transducer, inner_r_fun)" do
     identity_trans
-    |> ET.Logic.chunk(ET.Transducers.take(2) |> ET.Reducers.list)
+    |> ET.Wrapped.chunk(ET.Transducers.take(2) |> ET.Reducers.list)
     |> ET.Reducers.list
     |> chunk_inner_reducer_test
   end
@@ -113,15 +113,15 @@ defmodule ETLogicTest do
     [[{2, true}, {3, false}]]
   end
 
-  test "ET.Logic.chunk(inner_reducer, padding)" do
-    ET.Logic.chunk((ET.Transducers.take(2) |> ET.Reducers.list), [])
+  test "ET.Wrapped.chunk(inner_reducer, padding)" do
+    ET.Wrapped.chunk((ET.Transducers.take(2) |> ET.Reducers.list), [])
     |> ET.Reducers.list
     |> chunk_inner_reducer_padding_test
   end
 
-  test "ET.Logic.chunk(transducer, inner_reducer, padding)" do
+  test "ET.Wrapped.chunk(transducer, inner_reducer, padding)" do
     identity_trans
-    |> ET.Logic.chunk((ET.Transducers.take(2) |> ET.Reducers.list), [])
+    |> ET.Wrapped.chunk((ET.Transducers.take(2) |> ET.Reducers.list), [])
     |> ET.Reducers.list
     |> chunk_inner_reducer_padding_test
   end
@@ -131,24 +131,24 @@ defmodule ETLogicTest do
     [[{2, true}, {3, false}], [{4, true}]]
   end
 
-  test "ET.Logic.chunk(inner_reducer, padding) with extra padding" do
+  test "ET.Wrapped.chunk(inner_reducer, padding) with extra padding" do
     r_fun =
-      ET.Logic.chunk((ET.Transducers.take(2) |> ET.Reducers.list), 5..8)
+      ET.Wrapped.chunk((ET.Transducers.take(2) |> ET.Reducers.list), 5..8)
       |> ET.Reducers.list
 
     assert ET.reduce([{1, false}, {2, true}, {3, false}, {4, true}], r_fun) ==
     [[{2, true}, {3, false}], [{4, true}, {5, nil}]]
   end
 
-  test "ET.Logic.filter()" do
-    ET.Logic.filter
+  test "ET.Wrapped.filter()" do
+    ET.Wrapped.filter
     |> ET.Reducers.list
     |> filter_test
   end
 
-  test "ET.Logic.filter(transducer)" do
+  test "ET.Wrapped.filter(transducer)" do
     identity_trans
-    |> ET.Logic.filter
+    |> ET.Wrapped.filter
     |> ET.Reducers.list
     |> filter_test
   end
@@ -158,17 +158,17 @@ defmodule ETLogicTest do
            [{3, false}]
   end
 
-  test "ET.Logic.group_by(reducer, reducers)" do
-    ET.Logic.group_by(ET.Reducers.count,
-                      %{2 => ET.Logic.unwrap |> ET.Reducers.list})
+  test "ET.Wrapped.group_by(reducer, reducers)" do
+    ET.Wrapped.group_by(ET.Reducers.count,
+                      %{2 => ET.Wrapped.unwrap |> ET.Reducers.list})
     |> ET.Reducers.map
     |> group_by_reducer_reducers_test
   end
 
-  test "ET.Logic.group_by(transducer, reducer, reducers)" do
+  test "ET.Wrapped.group_by(transducer, reducer, reducers)" do
     identity_trans
-    |> ET.Logic.group_by(ET.Reducers.count,
-                         %{2 => ET.Logic.unwrap |> ET.Reducers.list})
+    |> ET.Wrapped.group_by(ET.Reducers.count,
+                         %{2 => ET.Wrapped.unwrap |> ET.Reducers.list})
     |> ET.Reducers.map
     |> group_by_reducer_reducers_test
   end
@@ -179,15 +179,15 @@ defmodule ETLogicTest do
            %{1 => 2, 2 => [:foo, :bar], 3 => 1}
   end
 
-  test "ET.Logic.group_by(r_fun)" do
-    ET.Logic.group_by(ET.Logic.unwrap |> ET.Reducers.list)
+  test "ET.Wrapped.group_by(r_fun)" do
+    ET.Wrapped.group_by(ET.Wrapped.unwrap |> ET.Reducers.list)
     |> ET.Reducers.map
     |> group_by_reducer_test
   end
 
-  test "ET.Logic.group_by(transducer, r_fun)" do
+  test "ET.Wrapped.group_by(transducer, r_fun)" do
     identity_trans
-    |> ET.Logic.group_by(ET.Logic.unwrap |> ET.Reducers.list)
+    |> ET.Wrapped.group_by(ET.Wrapped.unwrap |> ET.Reducers.list)
     |> ET.Reducers.map
     |> group_by_reducer_test
   end
@@ -197,28 +197,28 @@ defmodule ETLogicTest do
     %{1 => [1,3], 2 => [2,4]}
   end
 
-  test "ET.Logic.group_by doesn't send items to done reducer" do
+  test "ET.Wrapped.group_by doesn't send items to done reducer" do
     r_fun =
-      ET.Logic.wrap(&(&1))
-      |> ET.Logic.group_by(ET.Transducers.take(1)
-                           |> ET.Logic.unwrap
+      ET.Wrapped.wrap(&(&1))
+      |> ET.Wrapped.group_by(ET.Transducers.take(1)
+                           |> ET.Wrapped.unwrap
                            |> ET.Reducers.list)
       |> ET.Transducers.take(1)
-      |> ET.Logic.unwrap
+      |> ET.Wrapped.unwrap
       |> ET.Reducers.list
 
     assert ET.reduce(1..6, r_fun) == [1]
   end
 
-  test "ET.Logic.halt_after()" do
-    ET.Logic.halt_after
+  test "ET.Wrapped.halt_after()" do
+    ET.Wrapped.halt_after
     |> ET.Reducers.list
     |> halt_after_test
   end
 
-  test "ET.Logic.halt_after(transducer)" do
+  test "ET.Wrapped.halt_after(transducer)" do
     identity_trans
-    |> ET.Logic.halt_after
+    |> ET.Wrapped.halt_after
     |> ET.Reducers.list
     |> halt_after_test
   end
@@ -228,15 +228,15 @@ defmodule ETLogicTest do
     [{1, false}, {2, false}, {3, true}]
   end
 
-  test "ET.Logic.halt_on()" do
-    ET.Logic.halt_on
+  test "ET.Wrapped.halt_on()" do
+    ET.Wrapped.halt_on
     |> ET.Reducers.list
     |> halt_on_test
   end
 
-  test "ET.Logic.halt_on(transducer)" do
+  test "ET.Wrapped.halt_on(transducer)" do
     identity_trans
-    |> ET.Logic.halt_on
+    |> ET.Wrapped.halt_on
     |> ET.Reducers.list
     |> halt_on_test
   end
@@ -246,15 +246,15 @@ defmodule ETLogicTest do
     [{1, false}, {2, false}]
   end
 
-  test "ET.Logic.ignore(n)" do
-    ET.Logic.ignore(2)
+  test "ET.Wrapped.ignore(n)" do
+    ET.Wrapped.ignore(2)
     |> ET.Reducers.list
     |> ignore_n_test
   end
 
-  test "ET.Logic.ignore(transducer, n)" do
+  test "ET.Wrapped.ignore(transducer, n)" do
     identity_trans
-    |> ET.Logic.ignore(2)
+    |> ET.Wrapped.ignore(2)
     |> ET.Reducers.list
     |> ignore_n_test
   end
@@ -265,15 +265,15 @@ defmodule ETLogicTest do
        {{:c, true}, false}, {{:d, true}, true}]
   end
 
-  test "ET.Logic.insert_before(term)" do
-    ET.Logic.insert_before({:foo, :bar})
+  test "ET.Wrapped.insert_before(term)" do
+    ET.Wrapped.insert_before({:foo, :bar})
     |> ET.Reducers.list
     |> insert_before_term_test
   end
 
-  test "ET.Logic.insert_before(transducer, term)" do
+  test "ET.Wrapped.insert_before(transducer, term)" do
     identity_trans
-    |> ET.Logic.insert_before({:foo, :bar})
+    |> ET.Wrapped.insert_before({:foo, :bar})
     |> ET.Reducers.list
     |> insert_before_term_test
   end
@@ -283,15 +283,15 @@ defmodule ETLogicTest do
            [{:foo, :bar}, {1,true}, {2,false}, {:foo, :bar}, {3,true}]
   end
 
-  test "ET.Logic.in_collection(transducible)" do
-    ET.Logic.in_collection([2, 1, 5])
+  test "ET.Wrapped.in_collection(transducible)" do
+    ET.Wrapped.in_collection([2, 1, 5])
     |> ET.Reducers.list
     |> logic_in_collection_transducible_test
   end
 
-  test "ET.Logic.in_collection(transducer, transducible)" do
+  test "ET.Wrapped.in_collection(transducer, transducible)" do
     identity_trans
-    |> ET.Logic.in_collection([2, 1, 5])
+    |> ET.Wrapped.in_collection([2, 1, 5])
     |> ET.Reducers.list
     |> logic_in_collection_transducible_test
   end
@@ -302,15 +302,15 @@ defmodule ETLogicTest do
                       {{false,4},false}, {{true, 1},true}]
   end
 
-  test "ET.Logic.in_collection(transducible, one_for_one: true)" do
-    ET.Logic.in_collection([2, 1, 5], one_for_one: true)
+  test "ET.Wrapped.in_collection(transducible, one_for_one: true)" do
+    ET.Wrapped.in_collection([2, 1, 5], one_for_one: true)
     |> ET.Reducers.list
     |> logic_in_collection_transducible_one_for_one_test
   end
 
-  test "ET.Logic.in_collection(transducer, transducible, one_for_one: true)" do
+  test "ET.Wrapped.in_collection(transducer, transducible, one_for_one: true)" do
     identity_trans
-    |> ET.Logic.in_collection([2, 1, 5], one_for_one: true)
+    |> ET.Wrapped.in_collection([2, 1, 5], one_for_one: true)
     |> ET.Reducers.list
     |> logic_in_collection_transducible_one_for_one_test
   end
@@ -321,24 +321,24 @@ defmodule ETLogicTest do
                       {{false,4},false}, {{true, 1},false}]
   end
 
-  test "ET.Logic.in_collection(transducible, one_for_one: true) when transducible is empty" do
+  test "ET.Wrapped.in_collection(transducible, one_for_one: true) when transducible is empty" do
     r_fun =
-      ET.Logic.in_collection([1], one_for_one: true)
+      ET.Wrapped.in_collection([1], one_for_one: true)
       |> ET.Reducers.list
 
     assert ET.reduce([{false, 1}, {true, 1}], r_fun) ==
            [{{false, 1}, true}, {{true, 1}, nil}]
   end
 
-  test "ET.Logic.last_by()" do
-    ET.Logic.last_by
+  test "ET.Wrapped.last_by()" do
+    ET.Wrapped.last_by
     |> ET.Reducers.last
     |> last_by_test
   end
 
-  test "ET.Logic.last_by(transducer)" do
+  test "ET.Wrapped.last_by(transducer)" do
     identity_trans
-    |> ET.Logic.last_by
+    |> ET.Wrapped.last_by
     |> ET.Reducers.last
     |> last_by_test
   end
@@ -348,23 +348,23 @@ defmodule ETLogicTest do
            {:one, true}
   end
 
-  test "ET.Logic.last_by() nothing true" do
+  test "ET.Wrapped.last_by() nothing true" do
     r_fun =
-      ET.Logic.last_by
+      ET.Wrapped.last_by
       |> ET.Reducers.last
 
     assert ET.reduce([one: false, two: false], r_fun) == nil
   end
 
-  test "ET.Logic.negate()" do
-    ET.Logic.negate
+  test "ET.Wrapped.negate()" do
+    ET.Wrapped.negate
     |> ET.Reducers.list
     |> negate_test
   end
 
-  test "ET.Logic.negate(transducer)" do
+  test "ET.Wrapped.negate(transducer)" do
     identity_trans
-    |> ET.Logic.negate
+    |> ET.Wrapped.negate
     |> ET.Reducers.list
     |> negate_test
   end
@@ -374,15 +374,15 @@ defmodule ETLogicTest do
            [{{1,true},false}, {{2,2},false}, {{3,false},true}, {{4,nil},true}]
   end
 
-  test "ET.Logic.reverse_unwrap()" do
-    ET.Logic.reverse_unwrap
+  test "ET.Wrapped.reverse_unwrap()" do
+    ET.Wrapped.reverse_unwrap
     |> ET.Reducers.list
     |> reverse_unwrap_test
   end
 
-  test "ET.Logic.reverse_unwrap(transducer)" do
+  test "ET.Wrapped.reverse_unwrap(transducer)" do
     identity_trans
-    |> ET.Logic.reverse_unwrap
+    |> ET.Wrapped.reverse_unwrap
     |> ET.Reducers.list
     |> reverse_unwrap_test
   end
@@ -392,15 +392,15 @@ defmodule ETLogicTest do
            [true, 2, false, nil]
   end
 
-  test "ET.Logic.sort_by()" do
-    ET.Logic.sort_by
+  test "ET.Wrapped.sort_by()" do
+    ET.Wrapped.sort_by
     |> ET.Reducers.list
     |> sort_by_test
   end
 
-  test "ET.Logic.sort_by(transducer)" do
+  test "ET.Wrapped.sort_by(transducer)" do
     identity_trans
-    |> ET.Logic.sort_by
+    |> ET.Wrapped.sort_by
     |> ET.Reducers.list
     |> sort_by_test
   end
@@ -410,15 +410,15 @@ defmodule ETLogicTest do
            [one: 1, two: 2, three: 3, four: 4]
   end
 
-  test "ET.Logic.sort_by(fun)" do
-    ET.Logic.sort_by(&>=/2)
+  test "ET.Wrapped.sort_by(fun)" do
+    ET.Wrapped.sort_by(&>=/2)
     |> ET.Reducers.list
     |> sort_by_fun_test
   end
 
-  test "ET.Logic.sort_by(transducer, fun)" do
+  test "ET.Wrapped.sort_by(transducer, fun)" do
     identity_trans
-    |> ET.Logic.sort_by(&>=/2)
+    |> ET.Wrapped.sort_by(&>=/2)
     |> ET.Reducers.list
     |> sort_by_fun_test
   end
@@ -428,15 +428,15 @@ defmodule ETLogicTest do
            [four: 4, three: 3, two: 2, one: 1]
   end
 
-  test "ET.Logic.true_every(n)" do
-    ET.Logic.true_every(2)
+  test "ET.Wrapped.true_every(n)" do
+    ET.Wrapped.true_every(2)
     |> ET.Reducers.list
     |> true_every_n_test
   end
 
-  test "ET.Logic.true_every(n, transducer)" do
+  test "ET.Wrapped.true_every(n, transducer)" do
     identity_trans
-    |> ET.Logic.true_every(2)
+    |> ET.Wrapped.true_every(2)
     |> ET.Reducers.list
     |> true_every_n_test
   end
@@ -446,15 +446,15 @@ defmodule ETLogicTest do
            [{1, false}, {2, true}, {3, false}, {4, true}]
   end
 
-  test "ET.Logic.true_every(n, first: true)" do
-    ET.Logic.true_every(2, first: true)
+  test "ET.Wrapped.true_every(n, first: true)" do
+    ET.Wrapped.true_every(2, first: true)
     |> ET.Reducers.list
     |> true_every_n_first_true_test
   end
 
-  test "ET.Logic.true_every(transducer, n, first: true)" do
+  test "ET.Wrapped.true_every(transducer, n, first: true)" do
     identity_trans
-    |> ET.Logic.true_every(2, first: true)
+    |> ET.Wrapped.true_every(2, first: true)
     |> ET.Reducers.list
     |> true_every_n_first_true_test
   end
@@ -464,15 +464,15 @@ defmodule ETLogicTest do
            [{1, true}, {2, false}, {3, true}, {4, false}]
   end
 
-  test "ET.Logic.unfold(acc, fun)" do
-    ET.Logic.unfold(0, fn e, a -> r = e+a; {rem(r,3), r} end)
+  test "ET.Wrapped.unfold(acc, fun)" do
+    ET.Wrapped.unfold(0, fn e, a -> r = e+a; {rem(r,3), r} end)
     |> ET.Reducers.list
     |> unfold_acc_fun_test
   end
 
-  test "ET.Logic.unfold(transducer, acc, fun)" do
+  test "ET.Wrapped.unfold(transducer, acc, fun)" do
     identity_trans
-    |> ET.Logic.unfold(0, fn e, a -> r = e+a; {rem(r,3), r} end)
+    |> ET.Wrapped.unfold(0, fn e, a -> r = e+a; {rem(r,3), r} end)
     |> ET.Reducers.list
     |> unfold_acc_fun_test
   end
@@ -482,15 +482,15 @@ defmodule ETLogicTest do
            [{1,1},{2,0},{3,0},{4,1},{5,0}]
   end
 
-  test "ET.Logic.unique_by()" do
-    ET.Logic.unique_by
+  test "ET.Wrapped.unique_by()" do
+    ET.Wrapped.unique_by
     |> ET.Reducers.list
     |> unique_by_test
   end
 
-  test "ET.Logic.unique_by(transducer)" do
+  test "ET.Wrapped.unique_by(transducer)" do
     identity_trans
-    |> ET.Logic.unique_by
+    |> ET.Wrapped.unique_by
     |> ET.Reducers.list
     |> unique_by_test
   end
@@ -500,15 +500,15 @@ defmodule ETLogicTest do
            [one: 1, two: 2, four: 4]
   end
 
-  test "ET.Logic.unwrap()" do
-    ET.Logic.unwrap
+  test "ET.Wrapped.unwrap()" do
+    ET.Wrapped.unwrap
     |> ET.Reducers.list
     |> unwrap_test
   end
 
-  test "ET.Logic.unwrap(transducer)" do
+  test "ET.Wrapped.unwrap(transducer)" do
     identity_trans
-    |> ET.Logic.unwrap
+    |> ET.Wrapped.unwrap
     |> ET.Reducers.list
     |> unwrap_test
   end
@@ -518,15 +518,15 @@ defmodule ETLogicTest do
            [1,2,3]
   end
 
-  test "ET.Logic.unwrap(n)" do
-    ET.Logic.unwrap(2)
+  test "ET.Wrapped.unwrap(n)" do
+    ET.Wrapped.unwrap(2)
     |> ET.Reducers.list
     |> unwrap_n_test
   end
 
-  test "ET.Logic.unwrap(transducer, n)" do
+  test "ET.Wrapped.unwrap(transducer, n)" do
     identity_trans
-    |> ET.Logic.unwrap(2)
+    |> ET.Wrapped.unwrap(2)
     |> ET.Reducers.list
     |> unwrap_n_test
   end
@@ -536,15 +536,15 @@ defmodule ETLogicTest do
            [1,2,3]
   end
 
-  test "ET.Logic.with_index()" do
-    ET.Logic.with_index
+  test "ET.Wrapped.with_index()" do
+    ET.Wrapped.with_index
     |> ET.Reducers.list
     |> with_index_test
   end
 
-  test "ET.Logic.with_index(transducer)" do
+  test "ET.Wrapped.with_index(transducer)" do
     identity_trans
-    |> ET.Logic.with_index
+    |> ET.Wrapped.with_index
     |> ET.Reducers.list
     |> with_index_test
   end
@@ -553,15 +553,15 @@ defmodule ETLogicTest do
     assert ET.reduce(1..3, r_fun) == [{1,0},{2,1},{3,2}]
   end
 
-  test "ET.Logic.wrap(fun)" do
-    ET.Logic.wrap(&(rem(&1,3)))
+  test "ET.Wrapped.wrap(fun)" do
+    ET.Wrapped.wrap(&(rem(&1,3)))
     |> ET.Reducers.list
     |> wrap_test
   end
 
-  test "ET.Logic.wrap(transducer, fun)" do
+  test "ET.Wrapped.wrap(transducer, fun)" do
     identity_trans
-    |> ET.Logic.wrap(&(rem(&1,3)))
+    |> ET.Wrapped.wrap(&(rem(&1,3)))
     |> ET.Reducers.list
     |> wrap_test
   end
@@ -571,15 +571,15 @@ defmodule ETLogicTest do
            [{1,1},{2,2},{3,0},{4,1}]
   end
 
-  test "ET.Logic.zip()" do
-    ET.Logic.zip
+  test "ET.Wrapped.zip()" do
+    ET.Wrapped.zip
     |> ET.Reducers.list
     |> zip_test
   end
 
-  test "ET.Logic.zip(transducer)" do
+  test "ET.Wrapped.zip(transducer)" do
     identity_trans
-    |> ET.Logic.zip
+    |> ET.Wrapped.zip
     |> ET.Reducers.list
     |> zip_test
   end

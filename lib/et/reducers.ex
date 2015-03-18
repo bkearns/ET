@@ -228,10 +228,10 @@ defmodule ET.Reducers do
   """
 
   def max_by(fun) do
-    ET.Logic.wrap(fun)
-    |> ET.Logic.unfold(nil, max_compare_fun)
-    |> ET.Logic.last_by
-    |> ET.Logic.unwrap(2)
+    ET.Wrapped.wrap(fun)
+    |> ET.Wrapped.unfold(nil, max_compare_fun)
+    |> ET.Wrapped.last_by
+    |> ET.Wrapped.unwrap(2)
     |> ET.Reducers.last
   end
   def max_by(%ET.Transducer{} = trans, fun), do: compose(trans, max_by(fun))
@@ -264,10 +264,10 @@ defmodule ET.Reducers do
   """
 
   def min_by(fun) do
-    ET.Logic.wrap(fun)
-    |> ET.Logic.unfold(nil, min_compare_fun)
-    |> ET.Logic.last_by
-    |> ET.Logic.unwrap(2)
+    ET.Wrapped.wrap(fun)
+    |> ET.Wrapped.unfold(nil, min_compare_fun)
+    |> ET.Wrapped.last_by
+    |> ET.Wrapped.unwrap(2)
     |> ET.Reducers.last
   end
   def min_by(%ET.Transducer{} = trans, fun), do: compose(trans, min_by(fun))

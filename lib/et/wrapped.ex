@@ -1,4 +1,4 @@
-defmodule ET.Logic do
+defmodule ET.Wrapped do
   @moduledoc """
   Provides logic transducers of various sorts. These are transducers
   which interact with elements in the form {elem, logic} where logic
